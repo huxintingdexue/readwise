@@ -37,7 +37,7 @@
 ```
 注：`read_progress` 由后端 join `reading_progress` 表计算（scroll_position / length(content_plain) * 100）。
 
-**状态：** ⬜ 待实现
+**状态：** ✅ 已实现
 
 ---
 
@@ -66,7 +66,7 @@
 - `content_plain`：纯文本（无 HTML 标签），用于前端计算划线字符位置
 - 两个字段都必须返回
 
-**状态：** ⬜ 待实现
+**状态：** ✅ 已实现
 
 ---
 

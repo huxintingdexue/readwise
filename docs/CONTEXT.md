@@ -7,12 +7,12 @@
 
 ## 当前状态（每次任务后必须更新）
 
-- 最后完成步骤：PRD 第十一节第 3 步：抓取脚本 + GitHub Actions ✅
+- 最后完成步骤：PRD 第十一节第 4 步：后端基础 API ✅
 - 本地/部署是否可运行：⚠️ 可启动基础骨架（页面与 API 业务逻辑尚未实现）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅
 - 当前已有真实数据：✅（抓取脚本 smoke test 已写入 2 篇：sam 1、andrej 1）
-- 下一步任务：PRD 第十一节第 4 步：后端基础 API
+- 下一步任务：PRD 第十一节第 5 步：前端基础
 
 ---
 
@@ -56,7 +56,7 @@ Vercel Serverless Functions（/api/*）
 |------|------|------|
 | scripts/fetch-articles.js | 抓取RSS、爬全文、生成content_plain、翻译前2000字、写入数据库 | ✅ 已完成 |
 | .github/workflows/fetch.yml | cron UTC 14:00，支持 INITIAL_FETCH | ✅ 已完成 |
-| api/articles.js | GET /api/articles（join进度表返回百分比）| ⬜ 待开发 |
+| api/articles.js | GET /api/articles（join进度表返回百分比）| ✅ 已完成 |
 | api/highlights.js | GET/POST /api/highlights | ⬜ 待开发 |
 | api/qa.js | POST /api/qa，DeepSeek 问答，失败降级 | ⬜ 待开发 |
 | api/reading-list.js | GET/POST/PATCH /api/reading-list | ⬜ 待开发 |
@@ -79,12 +79,13 @@ Vercel Serverless Functions（/api/*）
 - ✅ 完成数据库初始化：在 Neon 创建 5 张核心表并校验索引
 - ✅ 完成抓取脚本与工作流：支持三源抓取、summary 降级、content_plain 生成、翻译前 2000 字、`INITIAL_FETCH`
 - ✅ 修复抓取数据质量：清除 `summary_en/summary_zh` 中的 HTML 标签，并修复 `content_plain` 开头重复标题
+- ✅ 完成后端基础 API：`GET /api/articles`（支持筛选排序、含阅读进度 join）和 `GET /api/articles/:id`（返回 `content_en` + `content_plain`）
 
 ## 待开发功能（严格按此顺序）
 1. ✅ 项目初始化
 2. ✅ 数据库建表
 3. ✅ 抓取脚本 + GitHub Actions
-4. ⬜ 后端基础 API
+4. ✅ 后端基础 API
 5. ⬜ 前端基础
 6. ⬜ PWA + 缓存 + 进度
 7. ⬜ 按需翻译 + 查看英文原文

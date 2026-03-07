@@ -199,3 +199,27 @@
 
 ### 待下一步
 - 执行 PRD 第十一节第 4 步：后端基础 API（`api/articles.js`）
+
+---
+
+## 2026-03-07 — 后端基础 API（v1.0）
+
+### 已完成
+- ✅ 实现 `api/articles.js`
+- ✅ 支持 `GET /api/articles`：`status/author/sort` 筛选参数
+- ✅ 列表接口完成 `reading_progress` 表 join，并返回 `read_progress` 百分比（`scroll_position / length(content_plain) * 100`）
+- ✅ 支持 `GET /api/articles/:id`
+- ✅ 详情接口返回 `content_en` 与 `content_plain` 两个字段
+- ✅ 所有接口增加 `Authorization: Bearer <API_SECRET>` 校验，不匹配返回 401
+- ✅ 更新 `vercel.json` 路由，支持 `/api/articles/:id` 映射到 `api/articles.js`
+- ✅ 更新 `docs/API.md` 对应接口状态为已实现
+
+### 变更文件
+- api/articles.js（从空文件实现为后端接口）
+- vercel.json（新增 `/api/articles/:id` 路由映射）
+- docs/API.md（两个 articles 接口状态改为 ✅）
+- docs/CONTEXT.md（第 4 步状态更新）
+- docs/CHANGELOG.md（追加 v1.0）
+
+### 待下一步
+- 执行 PRD 第十一节第 5 步：前端基础（Tab 导航、文章列表、阅读页）

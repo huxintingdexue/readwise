@@ -12,6 +12,10 @@
   ],
   "routes": [
     {
+      "src": "^/api/articles/([^/]+)/?$",
+      "dest": "/api/articles.js?id=$1"
+    },
+    {
       "src": "^/api/(.*)$",
       "dest": "/api/$1.js"
     },
