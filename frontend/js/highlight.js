@@ -33,7 +33,7 @@ function getPlainSelectionText(selection) {
   return selection?.toString()?.replace(/\s+/g, ' ').trim() || '';
 }
 
-function inferPosition(contentPlain, selectedText, lastStartRef) {
+function inferPosition(contentPlain, contentZh, selectedText, lastStartRef) {
   const plain = contentPlain || '';
   if (!plain || !selectedText) return { start: -1, end: -1 };
 
@@ -59,7 +59,23 @@ function inferPosition(contentPlain, selectedText, lastStartRef) {
   }
 
   lastStartRef.value = best.start;
-  return { start: best.start, end: best.end };
+  return { start: best.start, end: best.end, approximate: false };
+}
+
+function inferApproximatePosition(contentPlain, contentZh, selectedText) {
+  const plain = contentPlain || '';
+  const zh = contentZh || '';
+  if (!plain || !zh || !selectedText) return { start: -1, end: -1, approximate: true };
+
+  const zhIndex = zh.indexOf(selectedText);
+  if (zhIndex < 0) return { start: -1, end: -1, approximate: true };
+
+  const ratio = zhIndex / Math.max(1, zh.length);
+  const approxStart = Math.floor(plain.length * ratio);
+  const lengthRatio = plain.length / Math.max(1, zh.length);
+  const approxLen = Math.max(1, Math.floor(selectedText.length * lengthRatio));
+  const approxEnd = Math.min(plain.length, approxStart + approxLen);
+  return { start: approxStart, end: approxEnd, approximate: true };
 }
 
 export function initHighlightFeature({
@@ -95,7 +111,10 @@ export function initHighlightFeature({
       return;
     }
 
-    const pos = inferPosition(article.content_plain || '', text, lastStartRef);
+    let pos = inferPosition(article.content_plain || '', article.content_zh || '', text, lastStartRef);
+    if (pos.start < 0 || pos.end <= pos.start) {
+      pos = inferApproximatePosition(article.content_plain || '', article.content_zh || '', text);
+    }
     if (pos.start < 0 || pos.end <= pos.start) {
       showToast('无法定位到原文位置，请调整选区后重试');
       hideMenu();
@@ -108,12 +127,17 @@ export function initHighlightFeature({
       text,
       positionStart: pos.start,
       positionEnd: pos.end,
-      originText: (article.content_plain || '').slice(pos.start, pos.end)
+      originText: (article.content_plain || '').slice(pos.start, pos.end),
+      approximate: pos.approximate === true
     };
 
     const x = rect.left + window.scrollX;
     const y = rect.top + window.scrollY - 46;
     showMenu(x, Math.max(12, y));
+
+    if (currentSelection.approximate) {
+      showToast('原文位置为近似匹配，可调整选区以提升准确度');
+    }
 
     event?.stopPropagation?.();
   }
