@@ -204,7 +204,7 @@ Query: `?article_id=uuid`
 ```
 注：`scroll_position` 基于 `content_plain` 字符位置。
 
-**状态：** ⬜ 待实现
+**状态：** ✅ 已实现
 
 ---
 

@@ -137,3 +137,18 @@ export async function postTranslateNext(articleId, fromChar) {
     }
   });
 }
+
+export async function getHighlights(articleId) {
+  if (!articleId) {
+    return [];
+  }
+  const data = await requestJson(`/api/highlights?article_id=${encodeURIComponent(articleId)}`);
+  return data.highlights || [];
+}
+
+export async function createHighlight(payload) {
+  return requestJson('/api/highlights', {
+    method: 'POST',
+    body: payload
+  });
+}

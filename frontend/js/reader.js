@@ -37,45 +37,8 @@ function restoreScrollByPlainLength(scrollPosition, contentPlainLength) {
   requestAnimationFrame(() => window.scrollTo({ top: targetY, behavior: 'auto' }));
 }
 
-function splitParagraphs(text) {
-  return (text || '')
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-}
-
-function buildOriginSnippets(translatedParagraphs, contentPlain) {
-  const snippets = [];
-  const plain = contentPlain || '';
-  const totalTranslatedChars = translatedParagraphs.reduce((n, p) => n + p.length, 0) || 1;
-
-  let consumed = 0;
-  translatedParagraphs.forEach((paragraph) => {
-    const startRatio = consumed / totalTranslatedChars;
-    consumed += paragraph.length;
-    const endRatio = consumed / totalTranslatedChars;
-
-    const start = Math.max(0, Math.floor(plain.length * startRatio));
-    const end = Math.max(start + 1, Math.floor(plain.length * endRatio));
-    const snippet = plain.slice(start, Math.min(plain.length, end + 120)).trim();
-    snippets.push(snippet || '(暂无对应英文片段)');
-  });
-
-  return snippets;
-}
-
 function renderTranslatedContent(detail) {
-  const translatedParagraphs = splitParagraphs(detail.content_zh);
-  const snippets = buildOriginSnippets(translatedParagraphs, detail.content_plain || '');
-
-  const html = translatedParagraphs
-    .map(
-      (p, idx) =>
-        `<div class="translated-paragraph"><p>${escapeHtml(p).replace(/\n/g, '<br/>')}</p><button class="origin-btn" type="button" data-origin-index="${idx}" title="查看英文原文">EN</button></div>`
-    )
-    .join('');
-
-  return { html, snippets };
+  return `<p>${escapeHtml(detail.content_zh || '').replace(/\n/g, '<br/>')}</p>`;
 }
 
 function maybeTriggerTranslate(session) {
@@ -124,10 +87,6 @@ function stopReadingSession(nodes) {
   window.removeEventListener('scroll', readingSession.onScroll, { passive: true });
   document.removeEventListener('visibilitychange', readingSession.onVisibilityChange);
   window.removeEventListener('beforeunload', readingSession.onBeforeUnload);
-  if (nodes?.readerContent) {
-    nodes.readerContent.removeEventListener('click', readingSession.onReaderClick);
-  }
-
   if (readingSession.debounceTimer) {
     clearTimeout(readingSession.debounceTimer);
     readingSession.debounceTimer = null;
@@ -177,14 +136,6 @@ function startReadingSession(detail, nodes, initialProgress) {
     saveReadingProgressKeepalive(articleId, scrollPosition);
   };
 
-  const onReaderClick = (event) => {
-    const btn = event.target.closest('.origin-btn');
-    if (!btn || !readingSession) return;
-    const idx = Number.parseInt(btn.dataset.originIndex || '-1', 10);
-    if (idx < 0) return;
-    showOriginSnippet(nodes, readingSession.originSnippets[idx] || '(暂无对应英文片段)');
-  };
-
   readingSession = {
     articleId,
     contentPlainLength,
@@ -192,20 +143,16 @@ function startReadingSession(detail, nodes, initialProgress) {
     onScroll,
     onVisibilityChange,
     onBeforeUnload,
-    onReaderClick,
     translatedChars: Number(detail.translated_chars || 0),
     translationStatus: detail.translation_status || 'partial',
     nextTriggerChar: 500,
     translateInFlight: false,
-    lastTranslateAt: 0,
-    originSnippets: detail.__originSnippets || []
+    lastTranslateAt: 0
   };
 
   window.addEventListener('scroll', onScroll, { passive: true });
   document.addEventListener('visibilitychange', onVisibilityChange);
   window.addEventListener('beforeunload', onBeforeUnload);
-  nodes.readerContent.addEventListener('click', onReaderClick);
-
   restoreScrollByPlainLength(initialProgress?.scroll_position || 0, contentPlainLength);
   maybeTriggerTranslate(readingSession);
 }
@@ -220,14 +167,10 @@ export function renderReader(detail, nodes, initialProgress = null) {
   readerMeta.textContent = `${detail.source_key || 'unknown'} · ${formatDate(detail.published_at)}`;
 
   if (detail.content_zh && detail.content_zh.trim()) {
-    const rendered = renderTranslatedContent(detail);
-    detail.__originSnippets = rendered.snippets;
-    readerContent.innerHTML = rendered.html || `<p>${escapeHtml(detail.content_zh).replace(/\n/g, '<br/>')}</p>`;
+    readerContent.innerHTML = renderTranslatedContent(detail);
   } else if (detail.content_en && detail.content_en.trim()) {
-    detail.__originSnippets = [];
     readerContent.innerHTML = detail.content_en;
   } else {
-    detail.__originSnippets = [];
     readerContent.innerHTML = `<p>${escapeHtml(detail.content_plain || '暂无内容').replace(/\n/g, '<br/>')}</p>`;
   }
 
@@ -243,4 +186,8 @@ export function closeReader(nodes) {
 
 export function closeOriginSnippetPanel(nodes) {
   hideOriginSnippet(nodes);
+}
+
+export function openOriginSnippetPanel(nodes, text) {
+  showOriginSnippet(nodes, text);
 }

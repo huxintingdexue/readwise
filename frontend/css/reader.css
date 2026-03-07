@@ -294,6 +294,30 @@ body {
   color: #d5dfed;
 }
 
+.selection-menu {
+  position: absolute;
+  z-index: 50;
+  background: #121926;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  display: flex;
+  overflow: hidden;
+}
+
+.selection-menu button {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.selection-menu button:hover {
+  background: #253247;
+}
+
 .hidden {
   display: none !important;
 }

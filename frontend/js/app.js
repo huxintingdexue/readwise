@@ -1,5 +1,6 @@
 import { getArticles, getArticleById, getReadingProgress } from './api.js';
-import { closeOriginSnippetPanel, closeReader, renderReader } from './reader.js';
+import { initHighlightFeature } from './highlight.js';
+import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader } from './reader.js';
 
 const state = {
   tab: 'today',
@@ -9,6 +10,7 @@ const state = {
     sort: 'date_desc'
   },
   articles: [],
+  currentArticle: null,
   longPressTimer: null,
   longPressTargetId: null
 };
@@ -142,6 +144,7 @@ async function loadArticles() {
 async function openArticle(id) {
   try {
     const [detail, progress] = await Promise.all([getArticleById(id), getReadingProgress(id)]);
+    state.currentArticle = detail;
     renderReader(detail, {
       readerView: nodes.readerView,
       readerTitle: nodes.readerTitle,
@@ -170,6 +173,9 @@ function switchTab(nextTab) {
   });
   nodes.todayTab.classList.toggle('hidden', nextTab !== 'today');
   nodes.notesTab.classList.toggle('hidden', nextTab !== 'notes');
+  if (nextTab !== 'today') {
+    state.currentArticle = null;
+  }
   hideLongPressMenu();
 }
 
@@ -192,6 +198,7 @@ function bindEvents() {
   });
 
   nodes.backBtn.addEventListener('click', () => {
+    state.currentArticle = null;
     closeReader({
       readerView: nodes.readerView,
       listPanels: [nodes.todayTab, nodes.notesTab],
@@ -247,6 +254,16 @@ function init() {
   }
 
   bindEvents();
+  initHighlightFeature({
+    readerContent: nodes.readerContent,
+    getCurrentArticle: () => state.currentArticle,
+    showToast,
+    openOriginSnippet: (text) =>
+      openOriginSnippetPanel(
+        { originSnippet: nodes.originSnippet, originSnippetText: nodes.originSnippetText },
+        text
+      )
+  });
   switchTab('today');
   loadArticles();
 }

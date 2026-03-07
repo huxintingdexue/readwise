@@ -331,3 +331,30 @@
 
 ### 待下一步
 - 执行 PRD 第十一节第 8 步：划线功能（`highlight.js` + `api/highlights.js`）
+
+---
+
+## 2026-03-07 — 划线功能（v1.4）
+
+### 已完成
+- ✅ 实现 `api/highlights.js`（GET/POST，含鉴权）
+- ✅ 实现 `frontend/js/highlight.js`：阅读区选区菜单（复制 / 划线 / 原文）
+- ✅ 划线保存入库字段：`article_id`、`text`、`position_start`、`position_end`、`type`
+- ✅ 划线位置按 `content_plain` 计算并存储（满足后续 QA/引用链路）
+- ✅ 英文原文查看逻辑调整为“选区驱动”而非段落 `EN` 粗映射
+- ✅ 同步修正文档接口状态（`docs/API.md`）
+
+### 变更文件
+- api/highlights.js
+- frontend/js/highlight.js
+- frontend/js/api.js
+- frontend/js/app.js
+- frontend/js/reader.js
+- frontend/index.html
+- frontend/css/reader.css
+- docs/API.md
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 执行 PRD 第十一节第 9 步：AI 提问（`qa.js` + `api/qa.js`）
