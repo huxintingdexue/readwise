@@ -183,7 +183,6 @@ export function initHighlightFeature({
           position_end: currentSelection.positionEnd,
           type: 'highlight'
         });
-        showToast('划线已保存');
       } catch (err) {
         showToast(`划线保存失败：${err.message}`);
       }
