@@ -1,0 +1,13 @@
+{
+  "name": "ReadWise",
+  "short_name": "ReadWise",
+  "description": "沉浸式 AI 阅读器",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
+  "orientation": "portrait",
+  "icons": []
+}

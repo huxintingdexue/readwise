@@ -1,4 +1,4 @@
-import { getArticles, getArticleById } from './api.js';
+import { getArticles, getArticleById, getReadingProgress } from './api.js';
 import { closeReader, renderReader } from './reader.js';
 
 const state = {
@@ -132,20 +132,20 @@ async function loadArticles() {
     renderArticles();
   } catch (err) {
     nodes.articlesState.textContent = `加载失败：${err.message}`;
-    showToast('请确认 frontend/js/api.js 中 API_SECRET 已填写');
+    showToast('请确认 frontend/js/local-config.js 中 window.__API_SECRET__ 已填写');
   }
 }
 
 async function openArticle(id) {
   try {
-    const detail = await getArticleById(id);
+    const [detail, progress] = await Promise.all([getArticleById(id), getReadingProgress(id)]);
     renderReader(detail, {
       readerView: nodes.readerView,
       readerTitle: nodes.readerTitle,
       readerMeta: nodes.readerMeta,
       readerContent: nodes.readerContent,
       listPanels: [nodes.todayTab, nodes.notesTab]
-    });
+    }, progress);
   } catch (err) {
     showToast(`打开文章失败：${err.message}`);
   }
@@ -212,6 +212,12 @@ function bindEvents() {
 }
 
 function init() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('[sw] register failed', err.message);
+    });
+  }
+
   bindEvents();
   switchTab('today');
   loadArticles();

@@ -1,14 +1,25 @@
-const API_SECRET = 'REPLACE_WITH_YOUR_API_SECRET';
+function getApiSecret() {
+  return window.__API_SECRET__ || '';
+}
 
 function buildHeaders() {
+  const secret = getApiSecret();
+  if (!secret) {
+    throw new Error('Missing API secret, please set window.__API_SECRET__ in /js/local-config.js');
+  }
+
   return {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${API_SECRET}`
+    Authorization: `Bearer ${secret}`
   };
 }
 
-async function requestJson(path) {
-  const res = await fetch(path, { headers: buildHeaders() });
+async function requestJson(path, options = {}) {
+  const res = await fetch(path, {
+    method: options.method || 'GET',
+    headers: buildHeaders(),
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
@@ -41,4 +52,46 @@ export async function getArticleById(id) {
     throw new Error('Missing article id');
   }
   return requestJson(`/api/articles/${encodeURIComponent(id)}`);
+}
+
+export async function getReadingProgress(articleId) {
+  if (!articleId) {
+    return { article_id: null, scroll_position: 0, last_read_at: null };
+  }
+  const data = await requestJson(`/api/reading-progress?article_id=${encodeURIComponent(articleId)}`);
+  return {
+    article_id: data.article_id || articleId,
+    scroll_position: Number(data.scroll_position || 0),
+    last_read_at: data.last_read_at || null
+  };
+}
+
+export async function saveReadingProgress(articleId, scrollPosition) {
+  if (!articleId) {
+    throw new Error('Missing article id');
+  }
+  const normalized = Math.max(0, Number.parseInt(String(scrollPosition || 0), 10) || 0);
+  return requestJson('/api/reading-progress', {
+    method: 'POST',
+    body: {
+      article_id: articleId,
+      scroll_position: normalized
+    }
+  });
+}
+
+export function saveReadingProgressKeepalive(articleId, scrollPosition) {
+  if (!articleId) {
+    return;
+  }
+  const normalized = Math.max(0, Number.parseInt(String(scrollPosition || 0), 10) || 0);
+  fetch('/api/reading-progress', {
+    method: 'POST',
+    headers: buildHeaders(),
+    body: JSON.stringify({
+      article_id: articleId,
+      scroll_position: normalized
+    }),
+    keepalive: true
+  }).catch(() => {});
 }

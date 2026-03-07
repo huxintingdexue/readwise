@@ -89,7 +89,7 @@
   `UPDATE articles SET translated_chars = GREATEST(translated_chars, $1) WHERE id = $2`
 - 防止并发请求导致 translated_chars 回退
 
-**状态：** ⬜ 待实现
+**状态：** ✅ 已实现
 
 ---
 

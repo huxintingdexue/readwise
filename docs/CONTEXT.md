@@ -7,12 +7,12 @@
 
 ## 当前状态（每次任务后必须更新）
 
-- 最后完成步骤：PRD 第十一节第 5 步：前端基础 ✅
+- 最后完成步骤：PRD 第十一节第 6 步：PWA ✅
 - 本地/部署是否可运行：⚠️ 可启动基础骨架（页面与 API 业务逻辑尚未实现）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅
 - 当前已有真实数据：✅（抓取脚本 smoke test 已写入 2 篇：sam 1、andrej 1）
-- 下一步任务：PRD 第十一节第 6 步：PWA
+- 下一步任务：PRD 第十一节第 7 步：按需翻译
 
 ---
 
@@ -61,7 +61,7 @@ Vercel Serverless Functions（/api/*）
 | api/highlights.js | GET/POST /api/highlights | ⬜ 待开发 |
 | api/qa.js | POST /api/qa，DeepSeek 问答，失败降级 | ⬜ 待开发 |
 | api/reading-list.js | GET/POST/PATCH /api/reading-list | ⬜ 待开发 |
-| api/reading-progress.js | GET/POST /api/reading-progress | ⬜ 待开发 |
+| api/reading-progress.js | GET/POST /api/reading-progress | ✅ 已完成 |
 | api/search-reference.js | POST /api/search-reference，含失败态处理 | ⬜ 待开发 |
 | api/translate-next.js | POST /api/translate-next，GREATEST原子更新 | ⬜ 待开发 |
 | api/export.js | GET /api/export | ⬜ 待开发 |
@@ -71,8 +71,8 @@ Vercel Serverless Functions（/api/*）
 | frontend/js/qa.js | 提问弹窗、降级提示 | ⬜ 待开发 |
 | frontend/js/reference.js | 查引用、Banner、失败提示"未找到来源" | ⬜ 待开发 |
 | frontend/js/api.js | 所有fetch封装，自动带Authorization header，不传user_id | ⬜ 待开发 |
-| frontend/sw.js | 列表NetworkFirst，详情CacheFirst，图片不缓存 | ⬜ 待开发 |
-| frontend/manifest.json | PWA 配置 | ⬜ 待开发 |
+| frontend/sw.js | 列表NetworkFirst，详情CacheFirst，图片不缓存 | ✅ 已完成 |
+| frontend/manifest.json | PWA 配置 | ✅ 已完成 |
 
 ## 已完成功能
 - ✅ 完成项目初始化：创建前后端目录骨架、Serverless API 骨架、GitHub Actions 目录骨架
@@ -82,6 +82,7 @@ Vercel Serverless Functions（/api/*）
 - ✅ 修复抓取数据质量：清除 `summary_en/summary_zh` 中的 HTML 标签，并修复 `content_plain` 开头重复标题
 - ✅ 完成后端基础 API：`GET /api/articles`（支持筛选排序、含阅读进度 join）和 `GET /api/articles/:id`（返回 `content_en` + `content_plain`）
 - ✅ 完成前端基础：Tab 导航、文章列表（筛选/排序/进度百分比/长按菜单）、全文阅读视图
+- ✅ 完成 PWA 与进度：manifest、service worker 分层缓存、阅读进度防抖10秒与退出保存
 
 ## 待开发功能（严格按此顺序）
 1. ✅ 项目初始化
@@ -89,7 +90,7 @@ Vercel Serverless Functions（/api/*）
 3. ✅ 抓取脚本 + GitHub Actions
 4. ✅ 后端基础 API
 5. ✅ 前端基础
-6. ⬜ PWA + 缓存 + 进度
+6. ✅ PWA + 缓存 + 进度
 7. ⬜ 按需翻译 + 查看英文原文
 8. ⬜ 划线功能
 9. ⬜ AI 提问

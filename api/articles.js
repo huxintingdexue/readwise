@@ -1,4 +1,7 @@
+import dotenv from 'dotenv';
 import { Pool } from 'pg';
+
+dotenv.config({ path: '.env.local' });
 
 const DEFAULT_USER_ID = 'default_user';
 const VALID_STATUS = new Set(['unread', 'read', 'archived']);

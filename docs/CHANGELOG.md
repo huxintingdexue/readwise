@@ -248,3 +248,36 @@
 
 ### 待下一步
 - 执行 PRD 第十一节第 6 步：PWA（manifest + sw + 缓存策略 + 阅读进度防抖/退出保存）
+
+---
+
+## 2026-03-07 — PWA 与阅读进度（v1.2）
+
+### 已完成
+- ✅ 实现 `frontend/manifest.json`（PWA 基础配置）
+- ✅ 实现 `frontend/sw.js` 缓存策略：
+  - 文章列表 `/api/articles`：Network First
+  - 文章详情 `/api/articles/:id`：Cache First + 后台更新
+  - 图片请求：不缓存
+- ✅ 前端接入 Service Worker 自动注册（`frontend/js/app.js`）
+- ✅ 实现 `api/reading-progress.js`（GET/POST，含鉴权）
+- ✅ 阅读进度保存接入：
+  - 10 秒防抖保存
+  - `visibilitychange` 退出保存
+  - `beforeunload` 使用 `keepalive` 发送最终保存
+- ✅ 阅读页恢复进度：打开文章时读取 `reading_progress` 并按 `content_plain` 长度恢复滚动
+
+### 变更文件
+- frontend/manifest.json
+- frontend/sw.js
+- frontend/index.html
+- frontend/js/api.js
+- frontend/js/app.js
+- frontend/js/reader.js
+- api/reading-progress.js
+- docs/API.md
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 执行 PRD 第十一节第 7 步：按需翻译（`translate-next.js` + reader 5 秒节流触发 + 查看英文图标）
