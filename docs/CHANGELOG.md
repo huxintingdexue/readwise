@@ -180,3 +180,22 @@
 
 ### 待下一步
 - 执行 PRD 第十一节第 4 步：后端基础 API（优先 `api/articles.js`，含阅读进度 join）
+
+---
+
+## 2026-03-07 — 抓取数据质量修复（v0.9）
+
+### 已完成
+- ✅ 修复 `summary_en/summary_zh` 清洗逻辑：去除所有 HTML 标签（含转义标签如 `&lt;style&gt;`）
+- ✅ 强化 `content_plain` 清洗：统一走纯文本清洗函数，避免标签/样式残留
+- ✅ 增加标题去重：移除 `content_plain` 开头与标题重复的文本
+- ✅ 新增 `REPAIR_SUMMARY=1` 修复模式：对已存在 URL 允许更新 `summary_en/summary_zh/content_plain`
+- ✅ 已对现有文章执行修复回写：2 篇记录完成修复并通过回查验证
+
+### 变更文件
+- scripts/fetch-articles.js（清洗逻辑、去重逻辑、修复模式）
+- docs/CONTEXT.md（补充数据质量修复完成状态）
+- docs/CHANGELOG.md（追加 v0.9）
+
+### 待下一步
+- 执行 PRD 第十一节第 4 步：后端基础 API（`api/articles.js`）

@@ -55,14 +55,12 @@ function cleanupWhitespace(text) {
     .trim();
 }
 
-function stripTags(html) {
-  return decodeEntities(
-    html
-      .replace(/<br\s*\/?\s*>/gi, '\n')
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<\/div>/gi, '\n')
-      .replace(/<[^>]+>/g, ' ')
-  );
+function stripTags(raw) {
+  return raw
+    .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ');
 }
 
 function normalizeHtmlForStorage(html) {
@@ -78,8 +76,45 @@ function normalizeHtmlForStorage(html) {
     .trim();
 }
 
-function htmlToPlain(html) {
-  return cleanupWhitespace(stripTags(html));
+function stripPotentialStyleScriptText(raw) {
+  return raw
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/style\s*\{[\s\S]*?\}/gi, ' ')
+    .replace(/<\/?style>/gi, ' ')
+    .replace(/<\/?script>/gi, ' ');
+}
+
+function sanitizeToPlain(input) {
+  // Feed fields may include encoded tags (&lt;style&gt;...) and nested HTML.
+  // Decode + strip tags multiple times to avoid leaked markup text.
+  let text = input || '';
+  for (let i = 0; i < 2; i += 1) {
+    text = decodeEntities(text);
+    text = stripPotentialStyleScriptText(text);
+    text = stripTags(text);
+  }
+  return cleanupWhitespace(text);
+}
+
+function removeLeadingTitleDuplicate(contentPlain, title) {
+  if (!contentPlain || !title) {
+    return contentPlain;
+  }
+  const normalizedTitle = sanitizeToPlain(title).replace(/\s+/g, ' ').trim();
+  if (!normalizedTitle) {
+    return contentPlain;
+  }
+
+  const escaped = normalizedTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const duplicatedTitleRe = new RegExp(`^\\s*${escaped}\\s*[:：\\-–—|·]*\\s*`, 'i');
+  const cleaned = contentPlain.replace(duplicatedTitleRe, '');
+  return cleaned.length < contentPlain.length ? cleaned.trimStart() : contentPlain;
+}
+
+function htmlToPlain(html, titleForDedupe = '') {
+  const plain = sanitizeToPlain(html);
+  return removeLeadingTitleDuplicate(plain, titleForDedupe);
 }
 
 function splitBlocks(xml, tagName) {
@@ -174,9 +209,9 @@ function parseFeed(xml) {
     const entries = splitBlocks(xml, 'entry');
     return entries.map((entry) => {
       const content = getTagContent(entry, 'content') || getTagContent(entry, 'summary');
-      const summary = htmlToPlain(content);
+      const summary = sanitizeToPlain(content);
       return {
-        title: decodeEntities(stripTags(getTagContent(entry, 'title'))),
+        title: sanitizeToPlain(getTagContent(entry, 'title')),
         url: getAtomLink(entry),
         publishedAt: getTagContent(entry, 'published') || getTagContent(entry, 'updated') || null,
         summaryEn: summarizeText(summary),
@@ -189,9 +224,9 @@ function parseFeed(xml) {
   return items.map((item) => {
     const description = getTagContent(item, 'description');
     const content = getTagContent(item, 'content:encoded') || description;
-    const summary = htmlToPlain(description || content);
+    const summary = sanitizeToPlain(description || content);
     return {
-      title: decodeEntities(stripTags(getTagContent(item, 'title'))),
+      title: sanitizeToPlain(getTagContent(item, 'title')),
       url: decodeEntities(getTagContent(item, 'link')),
       publishedAt: getTagContent(item, 'pubDate') || getTagContent(item, 'dc:date') || null,
       summaryEn: summarizeText(summary),
@@ -213,12 +248,14 @@ function chooseMainHtmlDocument(html) {
   return body || html;
 }
 
-async function fetchAndCleanArticleHtml(url, fallbackHintHtml) {
+async function fetchAndCleanArticleHtml(url, fallbackHintHtml, articleTitle = '') {
   try {
     const rawHtml = await safeFetch(url, 20000);
     const main = chooseMainHtmlDocument(rawHtml);
     const cleanHtml = normalizeHtmlForStorage(main);
-    const contentPlain = htmlToPlain(cleanHtml);
+    const extractedTitle = cleanHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '';
+    const titleForDedupe = articleTitle || extractedTitle;
+    const contentPlain = htmlToPlain(cleanHtml, titleForDedupe);
     if (!contentPlain) {
       throw new Error('Cleaned content is empty');
     }
@@ -319,8 +356,35 @@ function parsePublishedAt(value) {
   return date.toISOString();
 }
 
-async function insertArticle(pool, article) {
-  const query = `
+async function insertArticle(pool, article, options = {}) {
+  const repairSummary = options.repairSummary === true;
+  const query = repairSummary
+    ? `
+    INSERT INTO articles (
+      source_key,
+      title_en,
+      title_zh,
+      summary_en,
+      summary_zh,
+      content_en,
+      content_plain,
+      content_zh,
+      translation_status,
+      translated_chars,
+      read_status,
+      url,
+      published_at,
+      user_id
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'unread', $11, $12, NULL
+    )
+    ON CONFLICT (url) DO UPDATE SET
+      summary_en = EXCLUDED.summary_en,
+      summary_zh = EXCLUDED.summary_zh,
+      content_plain = EXCLUDED.content_plain
+    RETURNING id, (xmax = 0) AS inserted
+  `
+    : `
     INSERT INTO articles (
       source_key,
       title_en,
@@ -359,7 +423,16 @@ async function insertArticle(pool, article) {
   ];
 
   const { rows } = await pool.query(query, values);
-  return rows.length > 0;
+  if (!repairSummary) {
+    return { inserted: rows.length > 0, repaired: false };
+  }
+  if (rows.length === 0) {
+    return { inserted: false, repaired: false };
+  }
+  return {
+    inserted: Boolean(rows[0].inserted),
+    repaired: !Boolean(rows[0].inserted)
+  };
 }
 
 async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
@@ -385,8 +458,10 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
   console.log(`[feed:${feed.key}] found ${parsed.length} candidates`);
 
   let insertedCount = 0;
+  let repairedCount = 0;
+  const repairSummary = optionalEnv('REPAIR_SUMMARY') === '1';
   for (const item of parsed) {
-    const cleaned = await fetchAndCleanArticleHtml(item.url, item.contentHintHtml);
+    const cleaned = await fetchAndCleanArticleHtml(item.url, item.contentHintHtml, item.title);
     const articleBase = {
       sourceKey: feed.key,
       titleEn: item.title,
@@ -410,10 +485,13 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
       articleBase.translatedChars = translated.translatedChars;
     }
 
-    const inserted = await insertArticle(pool, articleBase);
-    if (inserted) {
+    const writeResult = await insertArticle(pool, articleBase, { repairSummary });
+    if (writeResult.inserted) {
       insertedCount += 1;
       console.log(`[inserted] ${item.title} (${item.url})`);
+    } else if (writeResult.repaired) {
+      repairedCount += 1;
+      console.log(`[repaired] summary fields updated for existing url: ${item.url}`);
     } else {
       console.log(`[skipped] already exists: ${item.url}`);
     }
@@ -423,7 +501,7 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
     }
   }
 
-  return insertedCount;
+  return { insertedCount, repairedCount };
 }
 
 async function main() {
@@ -435,20 +513,26 @@ async function main() {
     : DEFAULT_FETCH_PER_SOURCE;
 
   console.log(`[config] fetchCountPerSource=${fetchCount}`);
+  const repairSummary = optionalEnv('REPAIR_SUMMARY') === '1';
+  if (repairSummary) {
+    console.log('[config] REPAIR_SUMMARY=1 (will update summary_en/summary_zh on existing URLs)');
+  }
 
   const pool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
   try {
     let totalInserted = 0;
+    let totalRepaired = 0;
     for (const feed of FEEDS) {
       try {
-        const inserted = await processFeed(pool, deepseekApiKey, feed, fetchCount);
-        totalInserted += inserted;
+        const { insertedCount, repairedCount } = await processFeed(pool, deepseekApiKey, feed, fetchCount);
+        totalInserted += insertedCount;
+        totalRepaired += repairedCount;
       } catch (err) {
         console.error(`[feed:${feed.key}] failed: ${err.message}`);
       }
     }
 
-    console.log(`[done] totalInserted=${totalInserted}`);
+    console.log(`[done] totalInserted=${totalInserted} totalRepaired=${totalRepaired}`);
   } finally {
     await pool.end();
   }

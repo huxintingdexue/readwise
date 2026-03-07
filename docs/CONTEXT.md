@@ -78,6 +78,7 @@ Vercel Serverless Functions（/api/*）
 - ✅ 新建基础工程配置：package.json、vercel.json、.env.example、.gitignore
 - ✅ 完成数据库初始化：在 Neon 创建 5 张核心表并校验索引
 - ✅ 完成抓取脚本与工作流：支持三源抓取、summary 降级、content_plain 生成、翻译前 2000 字、`INITIAL_FETCH`
+- ✅ 修复抓取数据质量：清除 `summary_en/summary_zh` 中的 HTML 标签，并修复 `content_plain` 开头重复标题
 
 ## 待开发功能（严格按此顺序）
 1. ✅ 项目初始化
