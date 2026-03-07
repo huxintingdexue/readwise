@@ -135,7 +135,7 @@ Query: `?article_id=uuid`
 
 **降级：** DeepSeek 失败时返回 `{ "error": "service_unavailable" }`，前端提示"服务暂时不可用，请稍后重试"。
 
-**状态：** ⬜ 待实现
+**状态：** ✅ 已实现
 
 ---
 

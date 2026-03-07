@@ -7,12 +7,12 @@
 
 ## 当前状态（每次任务后必须更新）
 
-- 最后完成步骤：PRD 第十一节第 8 步：划线功能 ✅
+- 最后完成步骤：PRD 第十一节第 9 步：AI 提问 ✅
 - 本地/部署是否可运行：⚠️ 可启动基础骨架（页面与 API 业务逻辑尚未实现）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅
 - 当前已有真实数据：✅（抓取脚本 smoke test 已写入 2 篇：sam 1、andrej 1）
-- 下一步任务：PRD 第十一节第 9 步：AI 提问
+- 下一步任务：PRD 第十一节第 10 步：引用追踪
 
 ---
 
@@ -59,7 +59,7 @@ Vercel Serverless Functions（/api/*）
 | .github/workflows/fetch.yml | cron UTC 14:00，支持 INITIAL_FETCH | ✅ 已完成 |
 | api/articles.js | GET /api/articles（join进度表返回百分比）| ✅ 已完成 |
 | api/highlights.js | GET/POST /api/highlights | ✅ 已完成 |
-| api/qa.js | POST /api/qa，DeepSeek 问答，失败降级 | ⬜ 待开发 |
+| api/qa.js | POST /api/qa，DeepSeek 问答，失败降级 | ✅ 已完成 |
 | api/reading-list.js | GET/POST/PATCH /api/reading-list | ⬜ 待开发 |
 | api/reading-progress.js | GET/POST /api/reading-progress | ✅ 已完成 |
 | api/search-reference.js | POST /api/search-reference，含失败态处理 | ⬜ 待开发 |
@@ -68,7 +68,7 @@ Vercel Serverless Functions（/api/*）
 | frontend/js/app.js | 主逻辑、Tab 切换 | ✅ 已完成（前端基础） |
 | frontend/js/reader.js | 翻页、进度（防抖10秒+退出保存）、翻译触发（5秒节流） | ✅ 已完成 |
 | frontend/js/highlight.js | 选文菜单、划线（基于content_plain）、高亮复原 | ✅ 已完成（选区菜单 + 划线保存） |
-| frontend/js/qa.js | 提问弹窗、降级提示 | ⬜ 待开发 |
+| frontend/js/qa.js | 提问弹窗、降级提示 | ✅ 已完成 |
 | frontend/js/reference.js | 查引用、Banner、失败提示"未找到来源" | ⬜ 待开发 |
 | frontend/js/api.js | 所有fetch封装，自动带Authorization header，不传user_id | ✅ 已完成 |
 | frontend/sw.js | 列表NetworkFirst，详情CacheFirst，图片不缓存 | ✅ 已完成 |
@@ -85,6 +85,7 @@ Vercel Serverless Functions（/api/*）
 - ✅ 完成 PWA 与进度：manifest、service worker 分层缓存、阅读进度防抖10秒与退出保存
 - ✅ 完成按需翻译：`translate-next` 接口、阅读触发阈值（500/1500）与 5 秒节流、段落英文原文查看图标
 - ✅ 完成划线功能：选区菜单（复制/划线/原文）、`api/highlights` 保存与查询、位置按 `content_plain` 存储
+- ✅ 完成 AI 提问：选区提问弹窗、上下文拼接、`api/qa` 入库与 DeepSeek 调用
 
 ## 待开发功能（严格按此顺序）
 1. ✅ 项目初始化
@@ -95,7 +96,7 @@ Vercel Serverless Functions（/api/*）
 6. ✅ PWA + 缓存 + 进度
 7. ✅ 按需翻译 + 查看英文原文
 8. ✅ 划线功能
-9. ⬜ AI 提问
+9. ✅ AI 提问
 10. ⬜ 引用追踪
 11. ⬜ 笔记 Tab
 12. ⬜ 数据导出

@@ -1,4 +1,5 @@
-import { createHighlight } from './api.js';
+import { createHighlight, postQa } from './api.js';
+import { openQaModal } from './qa.js';
 
 let currentSelection = null;
 let menuEl = null;
@@ -12,6 +13,7 @@ function ensureMenu() {
   menuEl.innerHTML = `
     <button type="button" data-action="copy">复制</button>
     <button type="button" data-action="highlight">划线</button>
+    <button type="button" data-action="ask">提问</button>
     <button type="button" data-action="origin">原文</button>
   `;
   document.body.appendChild(menuEl);
@@ -169,6 +171,32 @@ export function initHighlightFeature({
       return;
     }
 
+    if (action === 'ask') {
+      const article = getCurrentArticle();
+      const contextText = buildContextText(article?.content_plain || '', currentSelection.positionStart, currentSelection.positionEnd);
+      hideMenu();
+      openQaModal({
+        selectionText: currentSelection.text,
+        contextText,
+        onSubmit: async (question, context) => {
+          const highlight = await createHighlight({
+            article_id: currentSelection.articleId,
+            text: currentSelection.text,
+            position_start: currentSelection.positionStart,
+            position_end: currentSelection.positionEnd,
+            type: 'highlight'
+          });
+          await postQa({
+            highlight_id: highlight?.id || null,
+            article_id: currentSelection.articleId,
+            question,
+            context
+          });
+        }
+      });
+      return;
+    }
+
     if (action === 'highlight') {
       try {
         if (currentSelection.range) {
@@ -199,4 +227,23 @@ export function initHighlightFeature({
       hideMenu();
     }
   });
+}
+
+function buildContextText(contentPlain, start, end) {
+  const sentences = (contentPlain || '').match(/[^.!?。！？\\n]+[.!?。！？\\n]*/g) || [];
+  if (sentences.length === 0) return contentPlain || '';
+
+  let cursor = 0;
+  let startIdx = 0;
+  let endIdx = 0;
+  sentences.forEach((s, idx) => {
+    const next = cursor + s.length;
+    if (start >= cursor && start < next) startIdx = idx;
+    if (end > cursor && end <= next) endIdx = idx;
+    cursor = next;
+  });
+
+  const from = Math.max(0, startIdx - 5);
+  const to = Math.min(sentences.length, endIdx + 6);
+  return sentences.slice(from, to).join('').trim();
 }

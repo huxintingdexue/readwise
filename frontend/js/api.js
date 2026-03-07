@@ -152,3 +152,10 @@ export async function createHighlight(payload) {
     body: payload
   });
 }
+
+export async function postQa(payload) {
+  return requestJson('/api/qa', {
+    method: 'POST',
+    body: payload
+  });
+}

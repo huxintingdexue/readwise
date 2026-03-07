@@ -384,3 +384,25 @@
 - frontend/css/reader.css
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-07 — AI 提问（v1.5）
+
+### 已完成
+- ✅ 实现 `api/qa.js`（鉴权 + DeepSeek 调用 + 入库）
+- ✅ 实现 `frontend/js/qa.js`（提问弹窗 + 提交逻辑）
+- ✅ 选区菜单加入“提问”，自动拼接上下文（前后各 5 句）
+- ✅ 前端新增 QA 弹窗 UI 与样式
+- ✅ 补全 `docs/API.md` 中 `POST /api/qa` 状态
+
+### 变更文件
+- api/qa.js
+- frontend/js/qa.js
+- frontend/js/highlight.js
+- frontend/js/api.js
+- frontend/index.html
+- frontend/css/reader.css
+- docs/API.md
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
