@@ -2,6 +2,7 @@ import { createHighlight } from './api.js';
 
 let currentSelection = null;
 let menuEl = null;
+let lastMenuShownAt = 0;
 
 function ensureMenu() {
   if (menuEl) return menuEl;
@@ -27,6 +28,7 @@ function showMenu(x, y) {
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
   menu.classList.remove('hidden');
+  lastMenuShownAt = Date.now();
 }
 
 function getPlainSelectionText(selection) {
@@ -186,6 +188,9 @@ export function initHighlightFeature({
 
   document.addEventListener('scroll', hideMenu, { passive: true });
   document.addEventListener('click', (event) => {
+    if (Date.now() - lastMenuShownAt < 250) {
+      return;
+    }
     if (!event.target.closest('.selection-menu')) {
       hideMenu();
     }
