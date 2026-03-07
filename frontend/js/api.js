@@ -1,5 +1,17 @@
 function getApiSecret() {
-  return window.__API_SECRET__ || '';
+  const runtimeSecret = window.__API_SECRET__ || '';
+  if (runtimeSecret) {
+    try {
+      localStorage.setItem('readwise_api_secret', runtimeSecret);
+    } catch (_) {}
+    return runtimeSecret;
+  }
+
+  try {
+    return localStorage.getItem('readwise_api_secret') || '';
+  } catch (_) {
+    return '';
+  }
 }
 
 function buildHeaders() {

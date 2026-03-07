@@ -3,7 +3,15 @@ const STATIC_CACHE = `readwise-static-${SW_VERSION}`;
 const LIST_CACHE = `readwise-list-${SW_VERSION}`;
 const ARTICLE_CACHE = `readwise-article-${SW_VERSION}`;
 
-const STATIC_ASSETS = ['/', '/index.html', '/css/reader.css', '/js/app.js', '/js/api.js', '/js/reader.js'];
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/css/reader.css',
+  '/js/app.js',
+  '/js/api.js',
+  '/js/reader.js'
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
