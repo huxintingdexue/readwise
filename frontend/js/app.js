@@ -147,7 +147,9 @@ async function openArticle(id) {
       readerTitle: nodes.readerTitle,
       readerMeta: nodes.readerMeta,
       readerContent: nodes.readerContent,
-      listPanels: [nodes.todayTab, nodes.notesTab]
+      listPanels: [nodes.todayTab, nodes.notesTab],
+      originSnippet: nodes.originSnippet,
+      originSnippetText: nodes.originSnippetText
     }, progress);
   } catch (err) {
     showToast(`打开文章失败：${err.message}`);
