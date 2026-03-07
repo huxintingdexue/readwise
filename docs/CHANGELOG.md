@@ -154,3 +154,29 @@
 
 ### 待下一步
 - 执行 PRD 第十一节第 3 步：抓取脚本 + GitHub Actions（完成后按新约定立即 push）
+
+---
+
+## 2026-03-07 — 抓取脚本与工作流（v0.8）
+
+### 已完成
+- ✅ 实现 `scripts/fetch-articles.js`：抓取 3 个 RSS/Atom 源（Sam/Andrej/Peter）
+- ✅ 支持 `INITIAL_FETCH`（默认每源抓取 1 篇，首次可传 `INITIAL_FETCH=3`）
+- ✅ 实现“摘要降级”策略：正文抓取失败时仍入库，`translation_status='summary_only'`
+- ✅ 实现内容双版本生成：`content_en`（清洗后 HTML）+ `content_plain`（去标签纯文本）
+- ✅ 实现入库去重策略：`ON CONFLICT (url) DO NOTHING`，保证历史内容不覆盖
+- ✅ 实现入库时翻译：标题 + 摘要 + `content_plain` 前 2000 字（按句子边界截断）
+- ✅ 增加 feed URL 回退机制（针对 Peter 源尝试 `feed.xml/index.xml/atom.xml`）
+- ✅ 新增 GitHub Actions 工作流 `.github/workflows/fetch.yml`：每天 UTC 14:00 自动运行，支持手动触发并传入 `initial_fetch`
+- ✅ 完成脚本语法校验：`node --check scripts/fetch-articles.js`
+- ✅ 完成一次 smoke test（`INITIAL_FETCH=1`）：成功入库 2 篇（Sam 1、Andrej 1）
+- ⚠️ 发现 Peter 源当前返回 404（已容错，不阻塞其他源抓取）
+
+### 变更文件
+- scripts/fetch-articles.js（从空文件实现为完整抓取脚本）
+- .github/workflows/fetch.yml（从空文件实现为定时任务）
+- docs/CONTEXT.md（更新第 3 步状态与当前快照）
+- docs/CHANGELOG.md（追加 v0.8）
+
+### 待下一步
+- 执行 PRD 第十一节第 4 步：后端基础 API（优先 `api/articles.js`，含阅读进度 join）
