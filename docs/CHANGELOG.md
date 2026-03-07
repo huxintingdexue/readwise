@@ -297,3 +297,37 @@
 - frontend/js/local-config.example.js
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-07 — 按需翻译（v1.3）
+
+### 已完成
+- ✅ 实现 `api/translate-next.js`（POST）：
+  - 鉴权校验
+  - `article_id + from_char` 入参处理
+  - 每次按句子边界翻译约 2000 字
+  - 携带前 200 字“上文参考（不翻译）”
+  - 数据库 `translated_chars` 使用 `GREATEST` 原子更新
+  - 完成后自动切换 `translation_status='full'`
+- ✅ 阅读页接入按需翻译触发：
+  - 到 500 字触发首次续翻
+  - 每隔 1500 字续翻一次
+  - 同一篇文章请求间隔至少 5 秒（节流）
+- ✅ 实现段落右侧 `EN` 图标，点击弹出对应 `content_plain` 英文片段
+- ✅ 更新 `docs/API.md`：`POST /api/translate-next` 状态改为 ✅
+- ✅ 同步前端健壮性：`getReadingProgress` 失败降级不阻塞阅读
+
+### 变更文件
+- api/translate-next.js
+- frontend/js/api.js
+- frontend/js/reader.js
+- frontend/js/app.js
+- frontend/index.html
+- frontend/css/reader.css
+- docs/API.md
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 执行 PRD 第十一节第 8 步：划线功能（`highlight.js` + `api/highlights.js`）

@@ -110,7 +110,7 @@ Query: `?article_id=uuid`
 ```
 注：`position_start/end` 基于 `content_plain` 计算，不是 `content_en`。
 
-**状态：** ⬜ 待实现
+**状态：** ✅ 已实现
 
 ---
 

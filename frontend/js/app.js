@@ -1,5 +1,5 @@
 import { getArticles, getArticleById, getReadingProgress } from './api.js';
-import { closeReader, renderReader } from './reader.js';
+import { closeOriginSnippetPanel, closeReader, renderReader } from './reader.js';
 
 const state = {
   tab: 'today',
@@ -28,7 +28,10 @@ const nodes = {
   readerContent: document.querySelector('#readerContent'),
   backBtn: document.querySelector('#backBtn'),
   longPressMenu: document.querySelector('#longPressMenu'),
-  toast: document.querySelector('#toast')
+  toast: document.querySelector('#toast'),
+  originSnippet: document.querySelector('#originSnippet'),
+  originSnippetText: document.querySelector('#originSnippetText'),
+  closeOriginSnippet: document.querySelector('#closeOriginSnippet')
 };
 
 function escapeHtml(text) {
@@ -156,9 +159,15 @@ function switchTab(nextTab) {
   nodes.tabButtons.forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.tab === nextTab);
   });
+  closeReader({
+    readerView: nodes.readerView,
+    listPanels: [nodes.todayTab, nodes.notesTab],
+    readerContent: nodes.readerContent,
+    originSnippet: nodes.originSnippet,
+    originSnippetText: nodes.originSnippetText
+  });
   nodes.todayTab.classList.toggle('hidden', nextTab !== 'today');
   nodes.notesTab.classList.toggle('hidden', nextTab !== 'notes');
-  nodes.readerView.classList.add('hidden');
   hideLongPressMenu();
 }
 
@@ -183,15 +192,32 @@ function bindEvents() {
   nodes.backBtn.addEventListener('click', () => {
     closeReader({
       readerView: nodes.readerView,
-      listPanels: [nodes.todayTab, nodes.notesTab]
+      listPanels: [nodes.todayTab, nodes.notesTab],
+      readerContent: nodes.readerContent,
+      originSnippet: nodes.originSnippet,
+      originSnippetText: nodes.originSnippetText
+    });
+  });
+
+  nodes.closeOriginSnippet?.addEventListener('click', () => {
+    closeOriginSnippetPanel({
+      originSnippet: nodes.originSnippet,
+      originSnippetText: nodes.originSnippetText
     });
   });
 
   document.addEventListener('click', (event) => {
     const insideMenu = event.target.closest('#longPressMenu');
     const insideCard = event.target.closest('.article-card');
+    const insideOrigin = event.target.closest('#originSnippet');
     if (!insideMenu && !insideCard) {
       hideLongPressMenu();
+    }
+    if (!insideOrigin && !event.target.closest('.origin-btn')) {
+      closeOriginSnippetPanel({
+        originSnippet: nodes.originSnippet,
+        originSnippetText: nodes.originSnippetText
+      });
     }
   });
 

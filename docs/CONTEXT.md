@@ -7,12 +7,12 @@
 
 ## 当前状态（每次任务后必须更新）
 
-- 最后完成步骤：PRD 第十一节第 6 步：PWA ✅
+- 最后完成步骤：PRD 第十一节第 7 步：按需翻译 ✅
 - 本地/部署是否可运行：⚠️ 可启动基础骨架（页面与 API 业务逻辑尚未实现）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅
 - 当前已有真实数据：✅（抓取脚本 smoke test 已写入 2 篇：sam 1、andrej 1）
-- 下一步任务：PRD 第十一节第 7 步：按需翻译
+- 下一步任务：PRD 第十一节第 8 步：划线功能
 
 ---
 
@@ -63,10 +63,10 @@ Vercel Serverless Functions（/api/*）
 | api/reading-list.js | GET/POST/PATCH /api/reading-list | ⬜ 待开发 |
 | api/reading-progress.js | GET/POST /api/reading-progress | ✅ 已完成 |
 | api/search-reference.js | POST /api/search-reference，含失败态处理 | ⬜ 待开发 |
-| api/translate-next.js | POST /api/translate-next，GREATEST原子更新 | ⬜ 待开发 |
+| api/translate-next.js | POST /api/translate-next，GREATEST原子更新 | ✅ 已完成 |
 | api/export.js | GET /api/export | ⬜ 待开发 |
 | frontend/js/app.js | 主逻辑、Tab 切换 | ✅ 已完成（前端基础） |
-| frontend/js/reader.js | 翻页、进度（防抖10秒+退出保存）、翻译触发（5秒节流） | ✅ 已完成（阅读基础，进度/翻译触发待第6/7步补全） |
+| frontend/js/reader.js | 翻页、进度（防抖10秒+退出保存）、翻译触发（5秒节流） | ✅ 已完成 |
 | frontend/js/highlight.js | 选文菜单、划线（基于content_plain）、高亮复原 | ⬜ 待开发 |
 | frontend/js/qa.js | 提问弹窗、降级提示 | ⬜ 待开发 |
 | frontend/js/reference.js | 查引用、Banner、失败提示"未找到来源" | ⬜ 待开发 |
@@ -83,6 +83,7 @@ Vercel Serverless Functions（/api/*）
 - ✅ 完成后端基础 API：`GET /api/articles`（支持筛选排序、含阅读进度 join）和 `GET /api/articles/:id`（返回 `content_en` + `content_plain`）
 - ✅ 完成前端基础：Tab 导航、文章列表（筛选/排序/进度百分比/长按菜单）、全文阅读视图
 - ✅ 完成 PWA 与进度：manifest、service worker 分层缓存、阅读进度防抖10秒与退出保存
+- ✅ 完成按需翻译：`translate-next` 接口、阅读触发阈值（500/1500）与 5 秒节流、段落英文原文查看图标
 
 ## 待开发功能（严格按此顺序）
 1. ✅ 项目初始化
@@ -91,7 +92,7 @@ Vercel Serverless Functions（/api/*）
 4. ✅ 后端基础 API
 5. ✅ 前端基础
 6. ✅ PWA + 缓存 + 进度
-7. ⬜ 按需翻译 + 查看英文原文
+7. ✅ 按需翻译 + 查看英文原文
 8. ⬜ 划线功能
 9. ⬜ AI 提问
 10. ⬜ 引用追踪

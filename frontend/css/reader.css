@@ -194,6 +194,31 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+.translated-paragraph {
+  position: relative;
+  padding-right: 36px;
+  margin: 0 0 16px;
+}
+
+.origin-btn {
+  position: absolute;
+  right: 0;
+  top: 2px;
+  border: 1px solid var(--line);
+  background: #141b27;
+  color: var(--muted);
+  border-radius: 99px;
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.origin-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
 .long-press-menu {
   position: fixed;
   z-index: 30;
@@ -229,6 +254,44 @@ body {
   border-radius: 999px;
   padding: 8px 14px;
   font-size: 13px;
+}
+
+.origin-snippet {
+  position: fixed;
+  z-index: 40;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 68px;
+  width: min(90vw, 760px);
+  max-height: 46vh;
+  overflow: auto;
+  background: #111823;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.origin-snippet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.origin-snippet-head button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.origin-snippet pre {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  color: #d5dfed;
 }
 
 .hidden {
