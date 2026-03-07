@@ -123,6 +123,7 @@ Vercel Serverless Functions（/api/*）
 - ⚠️ **Paul Graham暂未适配：** RSS只有标题，需单独开发爬虫
 - ⚠️ **Peter RSS 地址异常：** PRD 中的 `https://steipete.me/feed.xml` 当前返回 404（脚本已加多 URL 回退与容错）
 - ⚠️ **鉴权安全债（已记录）：** 当前前端 Bearer Secret 仅适合 MVP/本地验证；后续需改为后端会话 Cookie 或短期 Token 方案（前端不持有主密钥）
+- ⚠️ **选区定位精度：** 目前中文翻译选区到英文 `content_plain` 的映射为近似匹配，需后续设计更精确的对齐方案
 
 ## 环境变量
 

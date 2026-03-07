@@ -369,3 +369,18 @@
 
 ### 变更文件
 - frontend/js/highlight.js
+
+---
+
+## 2026-03-07 — 划线可视化与原文面板修复（v1.4.2）
+
+### 已完成
+- ✅ 选区划线后即时渲染高亮背景（`highlight-mark`）
+- ✅ 修复“点击原文无显示”问题（阻止点击事件冒泡导致面板被关闭）
+- ✅ 取消“近似匹配”提示（记录为已知问题，后续优化对齐算法）
+
+### 变更文件
+- frontend/js/highlight.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md

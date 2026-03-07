@@ -130,16 +130,15 @@ export function initHighlightFeature({
       positionStart: pos.start,
       positionEnd: pos.end,
       originText: (article.content_plain || '').slice(pos.start, pos.end),
-      approximate: pos.approximate === true
+      approximate: pos.approximate === true,
+      range
     };
 
     const x = rect.left + window.scrollX;
     const y = rect.top + window.scrollY - 46;
     showMenu(x, Math.max(12, y));
 
-    if (currentSelection.approximate) {
-      showToast('原文位置为近似匹配，可调整选区以提升准确度');
-    }
+    // Accuracy notice removed by product decision; tracking in docs.
 
     event?.stopPropagation?.();
   }
@@ -149,6 +148,7 @@ export function initHighlightFeature({
 
   const menu = ensureMenu();
   menu.addEventListener('click', async (event) => {
+    event.stopPropagation();
     const action = event.target?.dataset?.action;
     if (!action || !currentSelection) return;
 
@@ -171,6 +171,11 @@ export function initHighlightFeature({
 
     if (action === 'highlight') {
       try {
+        if (currentSelection.range) {
+          const mark = document.createElement('span');
+          mark.className = 'highlight-mark';
+          currentSelection.range.surroundContents(mark);
+        }
         await createHighlight({
           article_id: currentSelection.articleId,
           text: currentSelection.text,

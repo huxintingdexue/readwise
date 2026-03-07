@@ -318,6 +318,13 @@ body {
   background: #253247;
 }
 
+.highlight-mark {
+  background: rgba(255, 232, 138, 0.28);
+  box-shadow: 0 0 0 2px rgba(255, 232, 138, 0.15);
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
 .hidden {
   display: none !important;
 }
