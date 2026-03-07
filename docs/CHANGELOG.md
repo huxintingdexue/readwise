@@ -406,3 +406,14 @@
 - docs/API.md
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-08 — QA 弹窗兜底（v1.5.1）
+
+### 已完成
+- ✅ 当页面缺少 QA 弹窗节点时，前端自动注入弹窗结构（避免弹窗不显示）
+
+### 变更文件
+- frontend/js/qa.js
+- docs/CHANGELOG.md
