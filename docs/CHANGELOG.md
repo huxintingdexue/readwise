@@ -417,3 +417,14 @@
 ### 变更文件
 - frontend/js/qa.js
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-08 — 修复提问弹窗触发（v1.5.2）
+
+### 已完成
+- ✅ 修复“提问”按钮点击后弹窗不出现的问题（避免清空选区引用）
+
+### 变更文件
+- frontend/js/highlight.js
+- docs/CHANGELOG.md

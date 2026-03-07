@@ -173,22 +173,24 @@ export function initHighlightFeature({
 
     if (action === 'ask') {
       const article = getCurrentArticle();
-      const contextText = buildContextText(article?.content_plain || '', currentSelection.positionStart, currentSelection.positionEnd);
+      const selection = currentSelection;
+      if (!selection) return;
+      const contextText = buildContextText(article?.content_plain || '', selection.positionStart, selection.positionEnd);
       hideMenu();
       openQaModal({
-        selectionText: currentSelection.text,
+        selectionText: selection.text,
         contextText,
         onSubmit: async (question, context) => {
           const highlight = await createHighlight({
-            article_id: currentSelection.articleId,
-            text: currentSelection.text,
-            position_start: currentSelection.positionStart,
-            position_end: currentSelection.positionEnd,
+            article_id: selection.articleId,
+            text: selection.text,
+            position_start: selection.positionStart,
+            position_end: selection.positionEnd,
             type: 'highlight'
           });
           await postQa({
             highlight_id: highlight?.id || null,
-            article_id: currentSelection.articleId,
+            article_id: selection.articleId,
             question,
             context
           });
