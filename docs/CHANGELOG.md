@@ -281,3 +281,19 @@
 
 ### 待下一步
 - 执行 PRD 第十一节第 7 步：按需翻译（`translate-next.js` + reader 5 秒节流触发 + 查看英文图标）
+
+---
+
+## 2026-03-07 — PWA 离线与鉴权补丁（v1.2.1）
+
+### 已完成
+- ✅ 前端 secret 回退逻辑改为“仅 localhost 开发环境启用 localStorage”，生产默认禁用
+- ✅ `getReadingProgress` 改为失败降级，不再因进度接口失败阻塞文章打开
+- ✅ 更新本地配置示例注释，明确仅用于本地开发
+- ✅ 在 `docs/CONTEXT.md` 新增后续安全改造待办：迁移到后端 Cookie/短期 Token 鉴权
+
+### 变更文件
+- frontend/js/api.js
+- frontend/js/local-config.example.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md

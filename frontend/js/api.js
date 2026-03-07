@@ -1,17 +1,28 @@
+function isLocalDevHost() {
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+}
+
 function getApiSecret() {
   const runtimeSecret = window.__API_SECRET__ || '';
   if (runtimeSecret) {
-    try {
-      localStorage.setItem('readwise_api_secret', runtimeSecret);
-    } catch (_) {}
+    if (isLocalDevHost()) {
+      try {
+        localStorage.setItem('readwise_api_secret', runtimeSecret);
+      } catch (_) {}
+    }
     return runtimeSecret;
   }
 
-  try {
-    return localStorage.getItem('readwise_api_secret') || '';
-  } catch (_) {
-    return '';
+  if (isLocalDevHost()) {
+    try {
+      return localStorage.getItem('readwise_api_secret') || '';
+    } catch (_) {
+      return '';
+    }
   }
+
+  return '';
 }
 
 function buildHeaders() {
@@ -70,12 +81,17 @@ export async function getReadingProgress(articleId) {
   if (!articleId) {
     return { article_id: null, scroll_position: 0, last_read_at: null };
   }
-  const data = await requestJson(`/api/reading-progress?article_id=${encodeURIComponent(articleId)}`);
-  return {
-    article_id: data.article_id || articleId,
-    scroll_position: Number(data.scroll_position || 0),
-    last_read_at: data.last_read_at || null
-  };
+  try {
+    const data = await requestJson(`/api/reading-progress?article_id=${encodeURIComponent(articleId)}`);
+    return {
+      article_id: data.article_id || articleId,
+      scroll_position: Number(data.scroll_position || 0),
+      last_read_at: data.last_read_at || null
+    };
+  } catch (_) {
+    // Progress fetch failure should not block article reading.
+    return { article_id: articleId, scroll_position: 0, last_read_at: null };
+  }
 }
 
 export async function saveReadingProgress(articleId, scrollPosition) {
