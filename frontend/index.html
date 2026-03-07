@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f1115" />
+    <title>ReadWise</title>
+    <link rel="stylesheet" href="/css/reader.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <h1>ReadWise</h1>
+        <p>沉浸式阅读</p>
+      </header>
+
+      <nav class="tabs" aria-label="主导航">
+        <button class="tab-btn is-active" data-tab="today" type="button">今日</button>
+        <button class="tab-btn" data-tab="notes" type="button">笔记</button>
+      </nav>
+
+      <main>
+        <section id="tab-today" class="tab-panel">
+          <div class="filters">
+            <label>
+              状态
+              <select id="statusFilter">
+                <option value="">全部</option>
+                <option value="unread">未读</option>
+                <option value="read">已读</option>
+                <option value="archived">存档</option>
+              </select>
+            </label>
+
+            <label>
+              作者
+              <select id="authorFilter">
+                <option value="">全部</option>
+                <option value="sam">Sam</option>
+                <option value="andrej">Andrej</option>
+                <option value="peter">Peter</option>
+              </select>
+            </label>
+
+            <label>
+              排序
+              <select id="sortFilter">
+                <option value="date_desc">时间倒序</option>
+                <option value="date_asc">时间正序</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="articlesState" class="state-text">加载中...</div>
+          <ul id="articlesList" class="articles-list"></ul>
+        </section>
+
+        <section id="tab-notes" class="tab-panel hidden">
+          <div class="notes-placeholder">
+            <h2>笔记</h2>
+            <p>第 11 步将接入划线与问答聚合展示。</p>
+          </div>
+        </section>
+
+        <section id="readerView" class="reader hidden" aria-live="polite">
+          <header class="reader-header">
+            <button id="backBtn" type="button">返回列表</button>
+            <div>
+              <h2 id="readerTitle">阅读中</h2>
+              <p id="readerMeta"></p>
+            </div>
+          </header>
+          <article id="readerContent" class="reader-content"></article>
+        </section>
+      </main>
+    </div>
+
+    <div id="longPressMenu" class="long-press-menu hidden">
+      <button data-action="mark-read" type="button">标记已读</button>
+      <button data-action="archive" type="button">存档</button>
+      <button data-action="cancel-archive" type="button">取消存档</button>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>

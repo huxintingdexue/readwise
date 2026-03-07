@@ -223,3 +223,28 @@
 
 ### 待下一步
 - 执行 PRD 第十一节第 5 步：前端基础（Tab 导航、文章列表、阅读页）
+
+---
+
+## 2026-03-07 — 前端基础（v1.1）
+
+### 已完成
+- ✅ 实现 `frontend/index.html`：Tab 布局（今日/笔记）、筛选栏、文章列表、阅读视图、长按菜单、toast
+- ✅ 实现 `frontend/css/reader.css`：基础视觉样式与移动端适配
+- ✅ 实现 `frontend/js/api.js`：统一 fetch 封装，自动带 `Authorization: Bearer <API_SECRET>`
+- ✅ 实现 `frontend/js/app.js`：Tab 切换、列表拉取、筛选/排序、进度展示、长按菜单、点击进入阅读
+- ✅ 实现 `frontend/js/reader.js`：文章详情渲染，返回列表交互
+- ✅ 前端安全修复：列表渲染字段统一做 HTML 转义，避免 XSS 注入
+- ✅ 在 `docs/CONTEXT.md` 协作约定补充“三项固定汇报模板（①②③）”
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/api.js
+- frontend/js/app.js
+- frontend/js/reader.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 执行 PRD 第十一节第 6 步：PWA（manifest + sw + 缓存策略 + 阅读进度防抖/退出保存）
