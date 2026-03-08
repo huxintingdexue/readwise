@@ -265,8 +265,9 @@ Query: `?article_id=uuid`
 {
   "exported_at": "2026-03-07T14:00:00Z",
   "highlights": [...],
-  "qa_records": [...]
+  "qa_records": [...],
+  "reading_list": [...]
 }
 ```
 
-**状态：** ⬜ 待实现
+**状态：** ✅ 已实现

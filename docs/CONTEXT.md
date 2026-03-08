@@ -7,12 +7,12 @@
 
 ## 当前状态（每次任务后必须更新）
 
-- 最后完成步骤：PRD 第十一节第 11 步：笔记 Tab ✅
+- 最后完成步骤：PRD 第十一节第 12 步：数据导出 ✅
 - 本地/部署是否可运行：⚠️ 可启动基础骨架（页面与 API 业务逻辑尚未实现）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅
 - 当前已有真实数据：✅（抓取脚本 smoke test 已写入 2 篇：sam 1、andrej 1）
-- 下一步任务：PRD 第十一节第 12 步：数据导出
+- 下一步任务：无（MVP 步骤已完成）
 
 ---
 
@@ -64,7 +64,7 @@ Vercel Serverless Functions（/api/*）
 | api/reading-progress.js | GET/POST /api/reading-progress | ✅ 已完成 |
 | api/search-reference.js | POST /api/search-reference，含失败态处理 | ✅ 已完成 |
 | api/translate-next.js | POST /api/translate-next，GREATEST原子更新 | ✅ 已完成 |
-| api/export.js | GET /api/export | ⬜ 待开发 |
+| api/export.js | GET /api/export | ✅ 已完成 |
 | frontend/js/app.js | 主逻辑、Tab 切换 | ✅ 已完成（前端基础） |
 | frontend/js/reader.js | 翻页、进度（防抖10秒+退出保存）、翻译触发（5秒节流） | ✅ 已完成 |
 | frontend/js/highlight.js | 选文菜单、划线（基于content_plain）、高亮复原 | ✅ 已完成（选区菜单 + 划线保存） |
@@ -89,6 +89,7 @@ Vercel Serverless Functions（/api/*）
 - ✅ 完成 AI 提问：选区提问弹窗、上下文拼接、`api/qa` 入库与 DeepSeek 调用
 - ✅ 完成引用追踪：选区查引用、书籍自动入书单、文章来源确认加入
 - ✅ 完成笔记 Tab：按文章聚合划线/问答，书单展示，阅读页“本文划线”入口
+- ✅ 完成数据导出：`GET /api/export` 返回划线 / 问答 / 书单
 
 ## 待开发功能（严格按此顺序）
 1. ✅ 项目初始化
@@ -102,7 +103,7 @@ Vercel Serverless Functions（/api/*）
 9. ✅ AI 提问
 10. ✅ 引用追踪
 11. ✅ 笔记 Tab
-12. ⬜ 数据导出
+12. ✅ 数据导出
 
 ## 关键设计决策
 

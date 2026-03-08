@@ -528,3 +528,17 @@
 ### 变更文件
 - frontend/js/app.js
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-08 — 数据导出（v1.8）
+
+### 已完成
+- ✅ 实现 `GET /api/export`，返回划线 / 问答 / 书单
+- ✅ 更新 `docs/API.md` 与 `docs/CONTEXT.md`
+
+### 变更文件
+- api/export.js
+- docs/API.md
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
