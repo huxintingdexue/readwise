@@ -517,3 +517,14 @@
 - docs/API.md
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-08 — 笔记返回显示修复（v1.7.1）
+
+### 已完成
+- ✅ 从文章返回笔记页时不再显示“今日”列表
+
+### 变更文件
+- frontend/js/app.js
+- docs/CHANGELOG.md

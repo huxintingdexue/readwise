@@ -226,6 +226,8 @@ function bindEvents() {
       originSnippet: nodes.originSnippet,
       originSnippetText: nodes.originSnippetText
     });
+    nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
+    nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
   });
 
   nodes.closeOriginSnippet?.addEventListener('click', () => {
