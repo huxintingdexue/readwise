@@ -556,6 +556,19 @@
 
 ---
 
+## 2026-03-08 — PWA 图标补齐（v1.8.3）
+
+### 已完成
+- ✅ 补充 PWA icons（192/512）以满足安装为独立应用
+
+### 变更文件
+- frontend/manifest.json
+- frontend/icons/icon-192.svg
+- frontend/icons/icon-512.svg
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-08 — Vercel 统一托管前端（v1.8.1）
 
 ### 已完成
