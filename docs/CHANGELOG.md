@@ -617,6 +617,18 @@
 
 ---
 
+## 2026-03-08 — 移动端选区菜单优化（v1.8.8）
+
+### 已完成
+- ✅ 禁止默认长按菜单，优先展示自定义选区菜单
+
+### 变更文件
+- frontend/js/highlight.js
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-08 — Vercel 统一托管前端（v1.8.1）
 
 ### 已完成

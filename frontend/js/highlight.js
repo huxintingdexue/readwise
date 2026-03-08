@@ -144,11 +144,17 @@ export function initHighlightFeature({
 
     // Accuracy notice removed by product decision; tracking in docs.
 
+    if (event?.type === 'touchend') {
+      event.preventDefault();
+    }
     event?.stopPropagation?.();
   }
 
   readerContent.addEventListener('mouseup', onSelectionChange);
-  readerContent.addEventListener('touchend', onSelectionChange);
+  readerContent.addEventListener('touchend', onSelectionChange, { passive: false });
+  readerContent.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+  });
 
   const menu = ensureMenu();
   menu.addEventListener('click', async (event) => {

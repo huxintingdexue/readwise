@@ -227,6 +227,9 @@ body {
   line-height: 1.95;
   font-size: 18px;
   word-break: break-word;
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: none;
 }
 
 .reader-content pre,
