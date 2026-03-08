@@ -12,19 +12,20 @@
   ],
   "routes": [
     {
-      "src": "^/api/articles/([^/]+)/?$",
+      "src": "/api/articles/([^/]+)/?",
       "dest": "/api/articles.js?id=$1"
     },
     {
-      "src": "^/api/(.*)$",
+      "src": "/api/(.*)",
       "dest": "/api/$1.js"
     },
+    { "handle": "filesystem" },
     {
-      "src": "^/$",
+      "src": "/",
       "dest": "/frontend/index.html"
     },
     {
-      "src": "^/(.*)$",
+      "src": "/(.*)",
       "dest": "/frontend/$1"
     }
   ]

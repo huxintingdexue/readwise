@@ -8,7 +8,7 @@
 ## 当前状态（每次任务后必须更新）
 
 - 最后完成步骤：PRD 第十一节第 12 步：数据导出 ✅
-- 本地/部署是否可运行：⚠️ 可启动基础骨架（页面与 API 业务逻辑尚未实现）
+- 本地/部署是否可运行：✅ 可运行（Vercel 统一托管前端 + API）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅
 - 当前已有真实数据：✅（抓取脚本 smoke test 已写入 2 篇：sam 1、andrej 1）
