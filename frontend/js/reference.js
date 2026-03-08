@@ -93,20 +93,3 @@ export async function searchReference({
     showToast(err?.message || '引用识别失败，请稍后重试');
   }
 }
-
-export function initReferenceTestPanel(showToast) {
-  const panel = document.getElementById('referenceTestPanel');
-  const input = document.getElementById('referenceTestInput');
-  const btn = document.getElementById('referenceTestBtn');
-  if (!panel || !input || !btn) return;
-
-  panel.classList.remove('hidden');
-  btn.addEventListener('click', async () => {
-    const text = input.value || '';
-    if (!text.trim()) {
-      showToast('请输入测试文本');
-      return;
-    }
-    await searchReference({ text, articleId: null, highlightId: null, showToast });
-  });
-}

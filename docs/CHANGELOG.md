@@ -478,3 +478,17 @@
 - frontend/js/reference.js
 - frontend/js/app.js
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-08 — 移除引用测试面板（v1.6.2）
+
+### 已完成
+- ✅ 移除临时“引用测试”输入框
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/reference.js
+- frontend/js/app.js
+- docs/CHANGELOG.md
