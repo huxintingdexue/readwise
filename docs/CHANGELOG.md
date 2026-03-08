@@ -569,6 +569,19 @@
 
 ---
 
+## 2026-03-08 — PWA PNG 图标（v1.8.4）
+
+### 已完成
+- ✅ 生成 192/512 PNG 应用图标并更新 manifest 引用
+
+### 变更文件
+- frontend/manifest.json
+- frontend/icons/icon-192.png
+- frontend/icons/icon-512.png
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-08 — Vercel 统一托管前端（v1.8.1）
 
 ### 已完成
