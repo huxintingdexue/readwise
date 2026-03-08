@@ -606,6 +606,17 @@
 
 ---
 
+## 2026-03-08 — 补充 manifest id（v1.8.7）
+
+### 已完成
+- ✅ manifest 添加 `id: "/"`，提升可安装性/打包兼容性
+
+### 变更文件
+- frontend/manifest.json
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-08 — Vercel 统一托管前端（v1.8.1）
 
 ### 已完成

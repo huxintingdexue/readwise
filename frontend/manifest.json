@@ -3,6 +3,7 @@
   "short_name": "ReadWise",
   "description": "沉浸式 AI 阅读器",
   "lang": "zh-CN",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
