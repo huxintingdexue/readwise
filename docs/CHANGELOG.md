@@ -593,6 +593,19 @@
 
 ---
 
+## 2026-03-08 — PWA Service Worker 兜底注册（v1.8.6）
+
+### 已完成
+- ✅ 在 `index.html` 中增加 SW 兜底注册，确保 PWABuilder 可检测
+- ✅ `/sw.js` 响应头补充 `Service-Worker-Allowed`
+
+### 变更文件
+- frontend/index.html
+- vercel.json
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-08 — Vercel 统一托管前端（v1.8.1）
 
 ### 已完成
