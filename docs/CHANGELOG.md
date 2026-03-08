@@ -582,6 +582,17 @@
 
 ---
 
+## 2026-03-08 — PWA Service Worker 路由（v1.8.5）
+
+### 已完成
+- ✅ 显式将 `/sw.js` 路由到 `frontend/sw.js`
+
+### 变更文件
+- vercel.json
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-08 — Vercel 统一托管前端（v1.8.1）
 
 ### 已完成
