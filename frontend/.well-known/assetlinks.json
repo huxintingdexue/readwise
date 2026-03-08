@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "online.byguang.readwise.twa",
+      "sha256_cert_fingerprints": [
+        "9B:A8:26:A9:11:DA:7B:65:47:D0:80:82:61:49:79:BA:36:3B:62:AF:76:B0:93:70:E9:33:0B:BE:9F:30:03:EF"
+      ]
+    }
+  }
+]
