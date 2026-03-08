@@ -1,5 +1,6 @@
 import { createHighlight, postQa } from './api.js';
 import { openQaModal } from './qa.js';
+import { searchReference } from './reference.js';
 
 let currentSelection = null;
 let menuEl = null;
@@ -14,6 +15,7 @@ function ensureMenu() {
     <button type="button" data-action="copy">复制</button>
     <button type="button" data-action="highlight">划线</button>
     <button type="button" data-action="ask">提问</button>
+    <button type="button" data-action="reference">查引用</button>
     <button type="button" data-action="origin">原文</button>
   `;
   document.body.appendChild(menuEl);
@@ -197,6 +199,31 @@ export function initHighlightFeature({
           return result?.answer_summary || '';
         }
       });
+      return;
+    }
+
+    if (action === 'reference') {
+      const article = getCurrentArticle();
+      const selection = currentSelection;
+      if (!selection) return;
+      hideMenu();
+      try {
+        const highlight = await createHighlight({
+          article_id: selection.articleId,
+          text: selection.text,
+          position_start: selection.positionStart,
+          position_end: selection.positionEnd,
+          type: 'reference'
+        });
+        await searchReference({
+          text: selection.text,
+          articleId: selection.articleId,
+          highlightId: highlight?.id || null,
+          showToast
+        });
+      } catch (err) {
+        showToast(err?.message || '引用识别失败，请稍后重试');
+      }
       return;
     }
 

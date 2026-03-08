@@ -1,4 +1,5 @@
 import { postTranslateNext, saveReadingProgress, saveReadingProgressKeepalive } from './api.js';
+import { hideReferenceBanner } from './reference.js';
 
 let readingSession = null;
 
@@ -94,6 +95,7 @@ function stopReadingSession(nodes) {
 
   readingSession = null;
   hideOriginSnippet(nodes);
+  hideReferenceBanner();
 }
 
 function startReadingSession(detail, nodes, initialProgress) {
@@ -162,6 +164,7 @@ export function renderReader(detail, nodes, initialProgress = null) {
   listPanels.forEach((el) => el.classList.add('hidden'));
   readerView.classList.remove('hidden');
   hideOriginSnippet(nodes);
+  hideReferenceBanner();
 
   readerTitle.textContent = detail.title_zh || detail.title_en || '未命名文章';
   readerMeta.textContent = `${detail.source_key || 'unknown'} · ${formatDate(detail.published_at)}`;

@@ -183,6 +183,39 @@ body {
   font-size: 13px;
 }
 
+.reference-banner {
+  margin: 8px 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #121a28;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reference-banner-text {
+  font-size: 14px;
+  color: #d6dff0;
+}
+
+.reference-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.reference-banner-actions button {
+  border: 1px solid var(--line);
+  background: #1a2332;
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
 .reader-content {
   line-height: 1.95;
   font-size: 18px;

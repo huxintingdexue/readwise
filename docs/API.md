@@ -148,23 +148,51 @@ Query: `?article_id=uuid`
 { "text": "划线原文" }
 ```
 
-**Response（成功，文章）**
+**Response（识别成功，文章）**
 ```json
-{ "type": "article", "title": "文章标题", "url": "https://...", "author": "作者名" }
+{
+  "status": "article_found",
+  "candidate": {
+    "type": "article",
+    "title": "文章标题",
+    "url": "https://...",
+    "author": "作者名"
+  }
+}
 ```
 
-**Response（成功，书籍）**
+**Response（识别成功，书籍自动加入）**
 ```json
-{ "type": "book", "title": "书名", "author": "作者名" }
+{
+  "status": "book_added",
+  "entry": {
+    "id": "uuid",
+    "type": "book",
+    "title": "书名",
+    "author": "作者名"
+  }
+}
 ```
 
 **Response（失败）**
 ```json
-{ "found": false }
+{ "status": "not_found" }
 ```
-前端收到 `found: false` 时显示："未找到来源，请尝试更完整的文字"
+前端收到 `status=not_found` 时显示："未找到来源，请尝试更完整的文字"
 
-**状态：** ⬜ 待实现
+**确认加入（文章）**
+```json
+{
+  "confirm_add": true,
+  "candidate": { "type": "article", "title": "...", "author": "...", "url": "..." }
+}
+```
+成功返回：
+```json
+{ "status": "added", "entry": { "id": "uuid", "type": "article", "title": "...", "url": "..." } }
+```
+
+**状态：** ✅ 已实现
 
 ---
 

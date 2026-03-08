@@ -7,12 +7,12 @@
 
 ## 当前状态（每次任务后必须更新）
 
-- 最后完成步骤：PRD 第十一节第 9 步：AI 提问 ✅
+- 最后完成步骤：PRD 第十一节第 10 步：引用追踪 ✅
 - 本地/部署是否可运行：⚠️ 可启动基础骨架（页面与 API 业务逻辑尚未实现）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅
 - 当前已有真实数据：✅（抓取脚本 smoke test 已写入 2 篇：sam 1、andrej 1）
-- 下一步任务：PRD 第十一节第 10 步：引用追踪
+- 下一步任务：PRD 第十一节第 11 步：笔记 Tab
 
 ---
 
@@ -62,14 +62,14 @@ Vercel Serverless Functions（/api/*）
 | api/qa.js | POST /api/qa，DeepSeek 问答，失败降级 | ✅ 已完成 |
 | api/reading-list.js | GET/POST/PATCH /api/reading-list | ⬜ 待开发 |
 | api/reading-progress.js | GET/POST /api/reading-progress | ✅ 已完成 |
-| api/search-reference.js | POST /api/search-reference，含失败态处理 | ⬜ 待开发 |
+| api/search-reference.js | POST /api/search-reference，含失败态处理 | ✅ 已完成 |
 | api/translate-next.js | POST /api/translate-next，GREATEST原子更新 | ✅ 已完成 |
 | api/export.js | GET /api/export | ⬜ 待开发 |
 | frontend/js/app.js | 主逻辑、Tab 切换 | ✅ 已完成（前端基础） |
 | frontend/js/reader.js | 翻页、进度（防抖10秒+退出保存）、翻译触发（5秒节流） | ✅ 已完成 |
 | frontend/js/highlight.js | 选文菜单、划线（基于content_plain）、高亮复原 | ✅ 已完成（选区菜单 + 划线保存） |
 | frontend/js/qa.js | 提问弹窗、降级提示 | ✅ 已完成 |
-| frontend/js/reference.js | 查引用、Banner、失败提示"未找到来源" | ⬜ 待开发 |
+| frontend/js/reference.js | 查引用、Banner、失败提示"未找到来源" | ✅ 已完成 |
 | frontend/js/api.js | 所有fetch封装，自动带Authorization header，不传user_id | ✅ 已完成 |
 | frontend/sw.js | 列表NetworkFirst，详情CacheFirst，图片不缓存 | ✅ 已完成 |
 | frontend/manifest.json | PWA 配置 | ✅ 已完成 |
@@ -86,6 +86,7 @@ Vercel Serverless Functions（/api/*）
 - ✅ 完成按需翻译：`translate-next` 接口、阅读触发阈值（500/1500）与 5 秒节流、段落英文原文查看图标
 - ✅ 完成划线功能：选区菜单（复制/划线/原文）、`api/highlights` 保存与查询、位置按 `content_plain` 存储
 - ✅ 完成 AI 提问：选区提问弹窗、上下文拼接、`api/qa` 入库与 DeepSeek 调用
+- ✅ 完成引用追踪：选区查引用、书籍自动入书单、文章来源确认加入
 
 ## 待开发功能（严格按此顺序）
 1. ✅ 项目初始化
@@ -97,7 +98,7 @@ Vercel Serverless Functions（/api/*）
 7. ✅ 按需翻译 + 查看英文原文
 8. ✅ 划线功能
 9. ✅ AI 提问
-10. ⬜ 引用追踪
+10. ✅ 引用追踪
 11. ⬜ 笔记 Tab
 12. ⬜ 数据导出
 
@@ -125,6 +126,7 @@ Vercel Serverless Functions（/api/*）
 - ⚠️ **Peter RSS 地址异常：** PRD 中的 `https://steipete.me/feed.xml` 当前返回 404（脚本已加多 URL 回退与容错）
 - ⚠️ **鉴权安全债（已记录）：** 当前前端 Bearer Secret 仅适合 MVP/本地验证；后续需改为后端会话 Cookie 或短期 Token 方案（前端不持有主密钥）
 - ⚠️ **选区定位精度：** 目前中文翻译选区到英文 `content_plain` 的映射为近似匹配，需后续设计更精确的对齐方案
+- ⚠️ **AI 提问质量一般：** 当前仅取前后各 5 句作为上下文，Prompt 也未做结构化优化，需后续统一调优
 
 ## 环境变量
 

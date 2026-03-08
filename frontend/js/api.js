@@ -159,3 +159,10 @@ export async function postQa(payload) {
     body: payload
   });
 }
+
+export async function postSearchReference(payload) {
+  return requestJson('/api/search-reference', {
+    method: 'POST',
+    body: payload
+  });
+}

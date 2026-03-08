@@ -442,3 +442,25 @@
 - frontend/index.html
 - frontend/css/reader.css
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-08 — 引用追踪（v1.6）
+
+### 已完成
+- ✅ 实现 `api/search-reference.js`（鉴权 + DeepSeek 识别 + 失败态）
+- ✅ 书籍识别后自动加入阅读列表，文章识别需确认加入
+- ✅ 前端选区菜单新增“查引用”，展示 Banner 与失败提示
+- ✅ 补全 `docs/API.md` 中 `POST /api/search-reference` 状态
+
+### 变更文件
+- api/search-reference.js
+- frontend/js/reference.js
+- frontend/js/highlight.js
+- frontend/js/api.js
+- frontend/js/reader.js
+- frontend/index.html
+- frontend/css/reader.css
+- docs/API.md
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
