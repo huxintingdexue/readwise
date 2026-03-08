@@ -428,3 +428,17 @@
 ### 变更文件
 - frontend/js/highlight.js
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-08 — QA 提问结果展示（v1.5.3）
+
+### 已完成
+- ✅ 提问提交后在弹窗内展示 AI 回答
+
+### 变更文件
+- frontend/js/qa.js
+- frontend/js/highlight.js
+- frontend/index.html
+- frontend/css/reader.css
+- docs/CHANGELOG.md

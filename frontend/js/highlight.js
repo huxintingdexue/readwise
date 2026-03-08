@@ -188,12 +188,13 @@ export function initHighlightFeature({
             position_end: selection.positionEnd,
             type: 'highlight'
           });
-          await postQa({
+          const result = await postQa({
             highlight_id: highlight?.id || null,
             article_id: selection.articleId,
             question,
             context
           });
+          return result?.answer_summary || '';
         }
       });
       return;

@@ -362,6 +362,17 @@ body {
   min-height: 16px;
 }
 
+.qa-answer {
+  background: #121a28;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 14px;
+  color: #d6dff0;
+  min-height: 44px;
+  white-space: pre-wrap;
+}
+
 .qa-card-actions {
   display: flex;
   justify-content: flex-end;

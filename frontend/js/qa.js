@@ -18,6 +18,8 @@ function buildModal() {
         <label class="qa-label" for="qaQuestionInput">你的问题</label>
         <textarea id="qaQuestionInput" rows="3" placeholder="输入你的问题..."></textarea>
         <div id="qaError" class="qa-error"></div>
+        <p class="qa-label">回答</p>
+        <div id="qaAnswer" class="qa-answer"></div>
       </div>
       <div class="qa-card-actions">
         <button id="qaSubmitBtn" type="button">提交</button>
@@ -41,8 +43,9 @@ function ensureModal() {
   const questionInput = modal.querySelector('#qaQuestionInput');
   const contextPreview = modal.querySelector('#qaContextPreview');
   const errorText = modal.querySelector('#qaError');
+  const answerText = modal.querySelector('#qaAnswer');
 
-  modalNodes = { modal, closeBtn, submitBtn, questionInput, contextPreview, errorText };
+  modalNodes = { modal, closeBtn, submitBtn, questionInput, contextPreview, errorText, answerText };
   return modalNodes;
 }
 
@@ -50,6 +53,7 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
   const nodes = ensureModal();
   nodes.contextPreview.textContent = selectionText || '';
   nodes.errorText.textContent = '';
+  nodes.answerText.textContent = '';
   nodes.questionInput.value = '';
   nodes.modal.classList.remove('hidden');
 
@@ -65,12 +69,14 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
     }
 
     nodes.errorText.textContent = '';
+    nodes.answerText.textContent = '生成中...';
     nodes.submitBtn.disabled = true;
     try {
-      await onSubmit(question, contextText);
-      nodes.modal.classList.add('hidden');
+      const answer = await onSubmit(question, contextText);
+      nodes.answerText.textContent = answer || '（暂无回答）';
     } catch (err) {
       nodes.errorText.textContent = err?.message || '提交失败';
+      nodes.answerText.textContent = '';
     } finally {
       nodes.submitBtn.disabled = false;
     }
