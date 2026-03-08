@@ -1,34 +1,9 @@
-function isLocalDevHost() {
-  const host = window.location.hostname;
-  return host === 'localhost' || host === '127.0.0.1' || host === '::1';
-}
-
-function getApiSecret() {
-  const runtimeSecret = window.__API_SECRET__ || '';
-  if (runtimeSecret) {
-    if (isLocalDevHost()) {
-      try {
-        localStorage.setItem('readwise_api_secret', runtimeSecret);
-      } catch (_) {}
-    }
-    return runtimeSecret;
-  }
-
-  if (isLocalDevHost()) {
-    try {
-      return localStorage.getItem('readwise_api_secret') || '';
-    } catch (_) {
-      return '';
-    }
-  }
-
-  return '';
-}
+const API_SECRET = 'REPLACE_WITH_YOUR_API_SECRET';
 
 function buildHeaders() {
-  const secret = getApiSecret();
+  const secret = API_SECRET;
   if (!secret) {
-    throw new Error('Missing API secret, please set window.__API_SECRET__ in /js/local-config.js');
+    throw new Error('Missing API secret, please set API_SECRET in frontend/js/api.js');
   }
 
   return {

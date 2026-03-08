@@ -545,6 +545,17 @@
 
 ---
 
+## 2026-03-08 — 前端硬编码 API_SECRET（v1.8.2）
+
+### 已完成
+- ✅ `frontend/js/api.js` 改为硬编码 API_SECRET 占位，移除 localStorage 逻辑
+
+### 变更文件
+- frontend/js/api.js
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-08 — Vercel 统一托管前端（v1.8.1）
 
 ### 已完成
