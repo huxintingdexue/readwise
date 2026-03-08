@@ -1,6 +1,7 @@
 import { getArticles, getArticleById, getReadingProgress } from './api.js';
 import { initHighlightFeature } from './highlight.js';
-import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader } from './reader.js';
+import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, scrollToPlainPosition } from './reader.js';
+import { initArticleNotesPanel, loadNotesTab } from './notes.js';
 
 const state = {
   tab: 'today',
@@ -28,6 +29,12 @@ const nodes = {
   readerTitle: document.querySelector('#readerTitle'),
   readerMeta: document.querySelector('#readerMeta'),
   readerContent: document.querySelector('#readerContent'),
+  articleNotesBtn: document.querySelector('#articleNotesBtn'),
+  articleNotesPanel: document.querySelector('#articleNotesPanel'),
+  articleNotesBody: document.querySelector('#articleNotesBody'),
+  closeArticleNotes: document.querySelector('#closeArticleNotes'),
+  notesList: document.querySelector('#notesList'),
+  readingList: document.querySelector('#readingList'),
   backBtn: document.querySelector('#backBtn'),
   longPressMenu: document.querySelector('#longPressMenu'),
   toast: document.querySelector('#toast'),
@@ -141,7 +148,7 @@ async function loadArticles() {
   }
 }
 
-async function openArticle(id) {
+async function openArticle(id, jumpTo = null) {
   try {
     const [detail, progress] = await Promise.all([getArticleById(id), getReadingProgress(id)]);
     state.currentArticle = detail;
@@ -152,8 +159,12 @@ async function openArticle(id) {
       readerContent: nodes.readerContent,
       listPanels: [nodes.todayTab, nodes.notesTab],
       originSnippet: nodes.originSnippet,
-      originSnippetText: nodes.originSnippetText
+      originSnippetText: nodes.originSnippetText,
+      articleNotesPanel: nodes.articleNotesPanel
     }, progress);
+    if (jumpTo != null) {
+      scrollToPlainPosition((detail.content_plain || '').length || 0, jumpTo);
+    }
   } catch (err) {
     showToast(`打开文章失败：${err.message}`);
   }
@@ -177,6 +188,15 @@ function switchTab(nextTab) {
     state.currentArticle = null;
   }
   hideLongPressMenu();
+
+  if (nextTab === 'notes') {
+    loadNotesTab({
+      notesRoot: nodes.notesList,
+      readingRoot: nodes.readingList,
+      onJump: (articleId, position) => openArticle(articleId, position),
+      showToast
+    });
+  }
 }
 
 function bindEvents() {
@@ -254,6 +274,17 @@ function init() {
   }
 
   bindEvents();
+  const openArticleNotes = initArticleNotesPanel({
+    panel: nodes.articleNotesPanel,
+    body: nodes.articleNotesBody,
+    closeBtn: nodes.closeArticleNotes,
+    getCurrentArticle: () => state.currentArticle,
+    showToast,
+    scrollToPosition: scrollToPlainPosition
+  });
+  nodes.articleNotesBtn.addEventListener('click', () => {
+    openArticleNotes();
+  });
   initHighlightFeature({
     readerContent: nodes.readerContent,
     getCurrentArticle: () => state.currentArticle,

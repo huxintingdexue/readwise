@@ -64,13 +64,34 @@ async function callDeepSeek(apiKey, question, context) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    res.status(405).json({ error: 'method_not_allowed' });
+  if (!ensureAuthorized(req, res)) {
     return;
   }
 
-  if (!ensureAuthorized(req, res)) {
+  if (req.method === 'GET') {
+    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const articleId = req.query?.article_id || url.searchParams.get('article_id');
+    const params = [DEFAULT_USER_ID];
+    let where = 'WHERE (user_id IS NULL OR user_id = $1)';
+    if (articleId) {
+      where += ' AND article_id = $2';
+      params.push(articleId);
+    }
+
+    const sql = `
+      SELECT id, highlight_id, article_id, question, answer_summary, created_at
+      FROM qa_records
+      ${where}
+      ORDER BY created_at DESC
+    `;
+    const { rows } = await getPool().query(sql, params);
+    res.status(200).json({ records: rows });
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'GET, POST');
+    res.status(405).json({ error: 'method_not_allowed' });
     return;
   }
 

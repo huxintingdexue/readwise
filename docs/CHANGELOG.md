@@ -492,3 +492,28 @@
 - frontend/js/reference.js
 - frontend/js/app.js
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-08 — 笔记 Tab（v1.7）
+
+### 已完成
+- ✅ 新增笔记 Tab：按文章聚合划线与问答
+- ✅ 新增书单展示（reading_list）
+- ✅ 阅读页“本文划线”入口与面板
+- ✅ 补齐 `api/reading-list.js`、`GET /api/qa`、`GET /api/highlights` 全量查询
+- ✅ 同步更新 API/Context/Changelog 文档
+
+### 变更文件
+- api/reading-list.js
+- api/qa.js
+- api/highlights.js
+- frontend/js/notes.js
+- frontend/js/app.js
+- frontend/js/reader.js
+- frontend/js/api.js
+- frontend/index.html
+- frontend/css/reader.css
+- docs/API.md
+- docs/CONTEXT.md
+- docs/CHANGELOG.md

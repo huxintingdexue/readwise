@@ -1,5 +1,6 @@
 import { postTranslateNext, saveReadingProgress, saveReadingProgressKeepalive } from './api.js';
 import { hideReferenceBanner } from './reference.js';
+import { hideArticleNotesPanel } from './notes.js';
 
 let readingSession = null;
 
@@ -96,6 +97,9 @@ function stopReadingSession(nodes) {
   readingSession = null;
   hideOriginSnippet(nodes);
   hideReferenceBanner();
+  if (nodes?.articleNotesPanel) {
+    hideArticleNotesPanel(nodes.articleNotesPanel);
+  }
 }
 
 function startReadingSession(detail, nodes, initialProgress) {
@@ -193,4 +197,8 @@ export function closeOriginSnippetPanel(nodes) {
 
 export function openOriginSnippetPanel(nodes, text) {
   showOriginSnippet(nodes, text);
+}
+
+export function scrollToPlainPosition(contentPlainLength, position) {
+  restoreScrollByPlainLength(position, contentPlainLength);
 }

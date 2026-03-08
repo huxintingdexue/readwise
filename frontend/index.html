@@ -57,15 +57,22 @@
         </section>
 
         <section id="tab-notes" class="tab-panel hidden">
-          <div class="notes-placeholder">
-            <h2>笔记</h2>
-            <p>第 11 步将接入划线与问答聚合展示。</p>
+          <div class="notes-section">
+            <h2>划线与问答</h2>
+            <div id="notesList" class="notes-list"></div>
+          </div>
+          <div class="notes-section">
+            <h2>书单</h2>
+            <div id="readingList" class="reading-list"></div>
           </div>
         </section>
 
         <section id="readerView" class="reader hidden" aria-live="polite">
           <header class="reader-header">
-            <button id="backBtn" type="button">返回列表</button>
+            <div class="reader-header-actions">
+              <button id="backBtn" type="button">返回列表</button>
+              <button id="articleNotesBtn" type="button">本文划线</button>
+            </div>
             <div>
               <h2 id="readerTitle">阅读中</h2>
               <p id="readerMeta"></p>
@@ -96,6 +103,14 @@
         <button id="closeOriginSnippet" type="button">关闭</button>
       </div>
       <pre id="originSnippetText"></pre>
+    </aside>
+
+    <aside id="articleNotesPanel" class="notes-panel hidden" aria-live="polite">
+      <div class="notes-panel-head">
+        <strong>本文划线与问答</strong>
+        <button id="closeArticleNotes" type="button">关闭</button>
+      </div>
+      <div id="articleNotesBody" class="notes-panel-body"></div>
     </aside>
 
     <div id="qaModal" class="qa-modal hidden" role="dialog" aria-modal="true">

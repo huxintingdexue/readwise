@@ -1,0 +1,140 @@
+import dotenv from 'dotenv';
+import { Pool } from 'pg';
+
+dotenv.config({ path: '.env.local' });
+
+const DEFAULT_USER_ID = 'default_user';
+let pool;
+
+function getPool() {
+  if (!pool) {
+    const connectionString = process.env.NEON_DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('Missing NEON_DATABASE_URL');
+    }
+    pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+  }
+  return pool;
+}
+
+function ensureAuthorized(req, res) {
+  const expected = process.env.API_SECRET;
+  if (!expected) {
+    res.status(500).json({ error: 'server_misconfigured', message: 'Missing API_SECRET' });
+    return false;
+  }
+  const auth = req.headers.authorization || '';
+  if (auth !== `Bearer ${expected}`) {
+    res.status(401).json({ error: 'unauthorized' });
+    return false;
+  }
+  return true;
+}
+
+function readQuery(req) {
+  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  return {
+    status: req.query?.status || url.searchParams.get('status') || null
+  };
+}
+
+async function listItems(req, res) {
+  const { status } = readQuery(req);
+  const params = [DEFAULT_USER_ID];
+  let where = 'WHERE (user_id IS NULL OR user_id = $1)';
+  if (status) {
+    where += ' AND status = $2';
+    params.push(status);
+  }
+
+  const sql = `
+    SELECT id, type, title, author, url, source_highlight_id, status, added_at
+    FROM reading_list
+    ${where}
+    ORDER BY added_at DESC
+  `;
+  const { rows } = await getPool().query(sql, params);
+  res.status(200).json({ items: rows });
+}
+
+async function addItem(req, res) {
+  const type = String(req.body?.type || '').trim();
+  const title = String(req.body?.title || '').trim();
+  const author = String(req.body?.author || '').trim() || null;
+  const url = String(req.body?.url || '').trim() || null;
+  const sourceHighlightId = req.body?.source_highlight_id || null;
+
+  if (!type || !title) {
+    res.status(400).json({ error: 'bad_request', message: 'type and title are required' });
+    return;
+  }
+  if (!['article', 'book'].includes(type)) {
+    res.status(400).json({ error: 'bad_request', message: 'type must be article or book' });
+    return;
+  }
+
+  const sql = `
+    INSERT INTO reading_list (type, title, author, url, source_highlight_id, user_id)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING id, type, title, author, url, source_highlight_id, status, added_at
+  `;
+  const { rows } = await getPool().query(sql, [
+    type,
+    title,
+    author,
+    url,
+    sourceHighlightId,
+    DEFAULT_USER_ID
+  ]);
+  res.status(201).json(rows[0]);
+}
+
+async function updateItem(req, res) {
+  const id = req.body?.id;
+  const status = String(req.body?.status || '').trim();
+  if (!id || !status) {
+    res.status(400).json({ error: 'bad_request', message: 'id and status are required' });
+    return;
+  }
+  if (!['pending', 'reading', 'done'].includes(status)) {
+    res.status(400).json({ error: 'bad_request', message: 'invalid status' });
+    return;
+  }
+
+  const sql = `
+    UPDATE reading_list
+    SET status = $1
+    WHERE id = $2 AND (user_id IS NULL OR user_id = $3)
+    RETURNING id, type, title, author, url, source_highlight_id, status, added_at
+  `;
+  const { rows } = await getPool().query(sql, [status, id, DEFAULT_USER_ID]);
+  if (rows.length === 0) {
+    res.status(404).json({ error: 'not_found' });
+    return;
+  }
+  res.status(200).json(rows[0]);
+}
+
+export default async function handler(req, res) {
+  if (!ensureAuthorized(req, res)) return;
+
+  try {
+    if (req.method === 'GET') {
+      await listItems(req, res);
+      return;
+    }
+    if (req.method === 'POST') {
+      await addItem(req, res);
+      return;
+    }
+    if (req.method === 'PATCH') {
+      await updateItem(req, res);
+      return;
+    }
+    res.setHeader('Allow', 'GET, POST, PATCH');
+    res.status(405).json({ error: 'method_not_allowed' });
+  } catch (err) {
+    console.error('[api/reading-list] error', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+}

@@ -41,20 +41,26 @@ function readQuery(req) {
 
 async function getHighlights(req, res) {
   const { articleId } = readQuery(req);
-  if (!articleId) {
-    res.status(400).json({ error: 'bad_request', message: 'article_id is required' });
+  if (articleId) {
+    const sql = `
+      SELECT id, article_id, text, position_start, position_end, type, created_at
+      FROM highlights
+      WHERE article_id = $1
+        AND (user_id IS NULL OR user_id = $2)
+      ORDER BY created_at DESC
+    `;
+    const { rows } = await getPool().query(sql, [articleId, DEFAULT_USER_ID]);
+    res.status(200).json({ highlights: rows });
     return;
   }
 
   const sql = `
     SELECT id, article_id, text, position_start, position_end, type, created_at
     FROM highlights
-    WHERE article_id = $1
-      AND (user_id IS NULL OR user_id = $2)
+    WHERE (user_id IS NULL OR user_id = $1)
     ORDER BY created_at DESC
   `;
-
-  const { rows } = await getPool().query(sql, [articleId, DEFAULT_USER_ID]);
+  const { rows } = await getPool().query(sql, [DEFAULT_USER_ID]);
   res.status(200).json({ highlights: rows });
 }
 

@@ -139,10 +139,10 @@ export async function postTranslateNext(articleId, fromChar) {
 }
 
 export async function getHighlights(articleId) {
-  if (!articleId) {
-    return [];
-  }
-  const data = await requestJson(`/api/highlights?article_id=${encodeURIComponent(articleId)}`);
+  const url = articleId
+    ? `/api/highlights?article_id=${encodeURIComponent(articleId)}`
+    : '/api/highlights';
+  const data = await requestJson(url);
   return data.highlights || [];
 }
 
@@ -165,4 +165,18 @@ export async function postSearchReference(payload) {
     method: 'POST',
     body: payload
   });
+}
+
+export async function getQaRecords(articleId) {
+  const url = articleId
+    ? `/api/qa?article_id=${encodeURIComponent(articleId)}`
+    : '/api/qa';
+  const data = await requestJson(url);
+  return data.records || [];
+}
+
+export async function getReadingList(status) {
+  const url = status ? `/api/reading-list?status=${encodeURIComponent(status)}` : '/api/reading-list';
+  const data = await requestJson(url);
+  return data.items || [];
 }

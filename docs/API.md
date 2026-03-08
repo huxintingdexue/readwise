@@ -95,8 +95,8 @@
 
 ## GET/POST /api/highlights
 
-**GET** 获取某篇文章的所有划线
-Query: `?article_id=uuid`
+**GET** 获取划线（可按文章过滤）
+Query: `?article_id=uuid`（可选，缺省返回全部）
 
 **POST** 新增划线
 ```json
@@ -114,7 +114,7 @@ Query: `?article_id=uuid`
 
 ---
 
-## POST /api/qa
+## GET/POST /api/qa
 
 发起 AI 提问。
 
@@ -136,6 +136,25 @@ Query: `?article_id=uuid`
 **降级：** DeepSeek 失败时返回 `{ "error": "service_unavailable" }`，前端提示"服务暂时不可用，请稍后重试"。
 
 **状态：** ✅ 已实现
+
+**GET** 查询问答记录
+Query: `?article_id=uuid`（可选）
+
+**Response**
+```json
+{
+  "records": [
+    {
+      "id": "uuid",
+      "highlight_id": "uuid",
+      "article_id": "uuid",
+      "question": "...",
+      "answer_summary": "...",
+      "created_at": "2026-03-08T12:00:00Z"
+    }
+  ]
+}
+```
 
 ---
 
@@ -218,6 +237,7 @@ Query: `?status=pending`
 ```
 
 **状态：** ⬜ 待实现
+**状态：** ✅ 已实现
 
 ---
 
