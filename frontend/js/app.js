@@ -1,6 +1,7 @@
 import { getArticles, getArticleById, getReadingProgress } from './api.js';
 import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader } from './reader.js';
+import { initReferenceTestPanel } from './reference.js';
 
 const state = {
   tab: 'today',
@@ -254,6 +255,7 @@ function init() {
   }
 
   bindEvents();
+  initReferenceTestPanel(showToast);
   initHighlightFeature({
     readerContent: nodes.readerContent,
     getCurrentArticle: () => state.currentArticle,

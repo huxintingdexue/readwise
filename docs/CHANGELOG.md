@@ -464,3 +464,17 @@
 - docs/API.md
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-08 — 引用追踪测试面板（v1.6.1）
+
+### 已完成
+- ✅ 增加本地临时“引用测试”输入框，便于验证 search-reference
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/reference.js
+- frontend/js/app.js
+- docs/CHANGELOG.md
