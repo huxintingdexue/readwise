@@ -1,4 +1,4 @@
-const API_SECRET = 'REPLACE_WITH_YOUR_API_SECRET';
+const API_SECRET = '8a40444901904981d2da474df1102be07ed384ae1badc9eb041ccaa6e51e2633';
 
 function buildHeaders() {
   const secret = API_SECRET;
