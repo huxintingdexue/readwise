@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-03-13 — 文档清理（v1.0.1）
+
+### 已完成
+- ✅ 删除 docs 中旧命名的重复文档（Readwise api/changelog/context/prd/schema/setup），保留标准命名的一套
+
+### 变更文件
+- docs/Readwise api（删除）
+- docs/Readwise changelog（删除）
+- docs/Readwise context（删除）
+- docs/Readwise prd.md（删除）
+- docs/Readwise schema（删除）
+- docs/Readwise setup（删除）
+- docs/CHANGELOG.md（追加 v1.0.1）
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-07 — 项目规划阶段（v0.1）
 
 ### 已完成
