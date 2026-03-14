@@ -1,15 +1,17 @@
+/* ── 白天模式（默认）──────────────────────────────── */
 :root {
-  --bg: #faf7f2;
+  --bg: #F5F5F0;
   --panel: #ffffff;
-  --panel-soft: #f7f7f7;
+  --panel-soft: #f0f0ec;
   --line: #e6e1d9;
-  --text: #2f2f2f;
-  --muted: #999999;
+  --text: #1a1a1a;
+  --muted: #888888;
   --accent: #88d6b5;
   --danger: #ff7b7b;
 }
 
-.reading-mode {
+/* ── 护眼模式 ─────────────────────────────────────── */
+body.theme-warm {
   --bg: #f5ecd7;
   --panel: rgba(255, 255, 255, 0.6);
   --panel-soft: rgba(255, 255, 255, 0.8);
@@ -19,7 +21,8 @@
   --accent: #88d6b5;
 }
 
-.reading-mode.theme-dark {
+/* ── 深色模式 ─────────────────────────────────────── */
+body.theme-dark {
   --bg: #1a1a1a;
   --panel: #181c23;
   --panel-soft: #202733;
@@ -805,18 +808,22 @@ body {
   color: var(--accent);
 }
 
-.reading-mode.theme-dark .bottom-nav {
+body.theme-dark .bottom-nav {
   background: rgba(26, 26, 26, 0.92);
 }
 
+/* Theme toggle in topbar — icon-btn provides border/bg/size */
 .theme-toggle {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
   padding: 0;
   font-size: 16px;
-  display: grid;
-  place-items: center;
+}
+
+/* Button group on the right of the topbar */
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .reading-mode .topbar,

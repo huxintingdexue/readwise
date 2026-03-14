@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-03-14 — 三档主题切换 + 按钮移至列表页（v2.2.0）
+
+### 已完成
+- ✅ **三档主题循环**：白天（☀️）→ 护眼（🌿）→ 深色（🌙）→ 白天，按钮点击依次循环
+- ✅ **主题 CSS 变量全局化**：从 `.reading-mode / .reading-mode.theme-dark`（仅阅读页生效）迁移至 `body.theme-warm / body.theme-dark`（全站生效），`:root` 作为白天模式默认值
+  - 白天：`--bg: #F5F5F0`，`--panel: #fff`，`--text: #1a1a1a`，`--muted: #888`
+  - 护眼：`--bg: #F5ECD7`，`--panel: rgba(255,255,255,0.6)`，`--text: #1a1a1a`
+  - 深色：`--bg: #1a1a1a`，`--panel: #181c23`，`--text: #c8c8c8`，`--muted: #666`
+- ✅ **localStorage 默认白天**：旧存档 `'warm'` 和 `'dark'` 继续兼容，其余均 fallback 到 `'day'`
+- ✅ **主题切换按钮移位**：从阅读页状态栏移除，移至列表页顶部 topbar 右侧，位于筛选漏斗图标的左边；在阅读模式下随 topbar 一起隐藏（`reading-mode .topbar { display:none }`）
+- ✅ **`.topbar-actions`**：新增右侧按钮组（主题 + 筛选并排），`display:flex; gap:8px`
+
+### 关键设计
+- `.reading-mode` 不再承担颜色变量，仅做 UI 布局（隐藏导航栏等）
+- `.reading-mode.theme-dark .bottom-nav` → `body.theme-dark .bottom-nav`（深色底部导航全站生效）
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+
+---
+
 ## 2026-03-14 — 划线面板全屏化（v2.1.1）
 
 ### 已完成

@@ -15,14 +15,14 @@
           <h1>今日硅谷</h1>
           <p>直连硅谷，一手信息触手可及</p>
         </div>
-        <button id="filterToggle" class="icon-btn" type="button" aria-label="筛选">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M3 5h18l-7 8v5l-4 2v-7L3 5z"
-              fill="currentColor"
-            ></path>
-          </svg>
-        </button>
+        <div class="topbar-actions">
+          <button id="themeToggle" class="icon-btn theme-toggle" type="button" aria-label="切换主题">☀️</button>
+          <button id="filterToggle" class="icon-btn" type="button" aria-label="筛选">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" fill="currentColor"></path>
+            </svg>
+          </button>
+        </div>
       </header>
 
       <div id="filterPanel" class="filter-panel hidden" aria-label="筛选面板">
@@ -87,7 +87,6 @@
                   <path d="M5 19h14v2H5z"/>
                 </svg>
               </button>
-              <button id="themeToggle" class="theme-toggle" type="button" aria-label="切换主题">☀️</button>
             </div>
           </header>
           <div id="referenceBanner" class="reference-banner hidden">

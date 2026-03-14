@@ -62,25 +62,30 @@ function showToast(message, duration = 2200) {
   setTimeout(() => nodes.toast.classList.add('hidden'), duration);
 }
 
+// Three themes cycle: day → warm → dark → day
+const THEME_ICONS = { day: '☀️', warm: '🌿', dark: '🌙' };
+const THEME_CYCLE = { day: 'warm', warm: 'dark', dark: 'day' };
+
 function applyTheme(theme) {
-  if (theme === 'dark') {
-    document.body.classList.add('theme-dark');
-    if (nodes.themeToggle) nodes.themeToggle.textContent = '🌙';
-    return;
-  }
-  document.body.classList.remove('theme-dark');
-  if (nodes.themeToggle) nodes.themeToggle.textContent = '☀️';
+  document.body.classList.remove('theme-warm', 'theme-dark');
+  if (theme === 'warm') document.body.classList.add('theme-warm');
+  if (theme === 'dark') document.body.classList.add('theme-dark');
+  if (nodes.themeToggle) nodes.themeToggle.textContent = THEME_ICONS[theme] ?? '☀️';
 }
 
 function initTheme() {
   const saved = localStorage.getItem('theme');
-  const theme = saved === 'dark' ? 'dark' : 'warm';
+  const theme = saved === 'warm' || saved === 'dark' ? saved : 'day';
   applyTheme(theme);
 }
 
 function toggleTheme() {
-  const isDark = document.body.classList.contains('theme-dark');
-  const next = isDark ? 'warm' : 'dark';
+  const current = document.body.classList.contains('theme-dark')
+    ? 'dark'
+    : document.body.classList.contains('theme-warm')
+      ? 'warm'
+      : 'day';
+  const next = THEME_CYCLE[current];
   localStorage.setItem('theme', next);
   applyTheme(next);
 }
