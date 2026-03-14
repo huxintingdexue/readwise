@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-03-14 — 应用改名与 UI 调整（v1.9.0）
+
+### 已完成
+- ✅ App 名称与副标题改为“今日硅谷 / 直连硅谷，一手信息触手可及”，同步更新 `title` 与 manifest
+- ✅ Tab 导航移至底部固定栏，顶部移除切换按钮
+- ✅ 筛选改为右上角漏斗按钮弹出面板（状态/作者/排序）
+- ✅ 文章卡片优化：摘要两行截断、间距收紧、阅读状态改为右上角小字
+- ✅ 文案与展示修复：未读/已读文案统一中文、作者显示全名、日期格式改为“2月12日”
+- ✅ `docs/CONTEXT.md` 追加“未来优化清单”
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- frontend/js/reader.js
+- frontend/manifest.json
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-13 — 文档清理（v1.0.1）
 
 ### 已完成

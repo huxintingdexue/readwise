@@ -139,3 +139,15 @@ NEON_DATABASE_URL    # 带 ?sslmode=require，Vercel + GitHub Secrets
 API_SECRET           # 仅Vercel Dashboard，前端api.js硬编码，后端映射DEFAULT_USER_ID
 INITIAL_FETCH        # 仅首次手动触发时设为3
 ```
+
+## 未来优化清单
+
+- [ ] 分享功能：分享文章给朋友（链接/截图/划线内容）
+- [ ] 阅读状态栏整合：返回列表、夜间模式切换、字体设置整合到顶部同一行，沉浸模式时隐藏
+- [ ] 字体选择与本地托管：Noto Serif SC，只下载 weight 400 子集化版本
+- [ ] 夜间模式切换：并入状态栏
+- [ ] 投喂链接溯源：用户粘贴二手信息链接，AI 自动识别原文，抓取翻译后加入待读列表
+- [ ] AI 提问质量优化：改进上下文策略和 Prompt 结构
+- [ ] Paul Graham 适配：RSS 只有标题，需单独开发爬虫
+- [ ] 多用户支持：鉴权改为 Cookie/Token 方案
+- [ ] 文章列表增强：显示作者头像、点赞和分享按钮

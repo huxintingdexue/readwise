@@ -8,7 +8,14 @@ function formatDate(isoString) {
   if (!isoString) return '未知时间';
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return '未知时间';
-  return d.toLocaleString('zh-CN', { hour12: false });
+  return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+}
+
+function sourceName(sourceKey) {
+  if (sourceKey === 'sam') return 'Sam Altman';
+  if (sourceKey === 'andrej') return 'Andrej Karpathy';
+  if (sourceKey === 'peter') return 'Peter Steipete';
+  return sourceKey || 'Unknown';
 }
 
 function escapeHtml(text) {
@@ -171,7 +178,7 @@ export function renderReader(detail, nodes, initialProgress = null) {
   hideReferenceBanner();
 
   readerTitle.textContent = detail.title_zh || detail.title_en || '未命名文章';
-  readerMeta.textContent = `${detail.source_key || 'unknown'} · ${formatDate(detail.published_at)}`;
+  readerMeta.textContent = `${sourceName(detail.source_key)} · ${formatDate(detail.published_at)}`;
 
   if (detail.content_zh && detail.content_zh.trim()) {
     readerContent.innerHTML = renderTranslatedContent(detail);

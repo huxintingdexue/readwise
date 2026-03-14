@@ -5,53 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f1115" />
     <link rel="manifest" href="/manifest.json" />
-    <title>ReadWise</title>
+    <title>今日硅谷</title>
     <link rel="stylesheet" href="/css/reader.css" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
-        <h1>ReadWise</h1>
-        <p>沉浸式阅读</p>
+        <div class="topbar-title">
+          <h1>今日硅谷</h1>
+          <p>直连硅谷，一手信息触手可及</p>
+        </div>
+        <button id="filterToggle" class="icon-btn" type="button" aria-label="筛选">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M3 5h18l-7 8v5l-4 2v-7L3 5z"
+              fill="currentColor"
+            ></path>
+          </svg>
+        </button>
       </header>
 
-      <nav class="tabs" aria-label="主导航">
-        <button class="tab-btn is-active" data-tab="today" type="button">今日</button>
-        <button class="tab-btn" data-tab="notes" type="button">笔记</button>
-      </nav>
+      <div id="filterPanel" class="filter-panel hidden" aria-label="筛选面板">
+        <label>
+          状态
+          <select id="statusFilter">
+            <option value="">全部</option>
+            <option value="unread">未读</option>
+            <option value="read">已读</option>
+            <option value="archived">存档</option>
+          </select>
+        </label>
+
+        <label>
+          作者
+          <select id="authorFilter">
+            <option value="">全部</option>
+            <option value="sam">Sam Altman</option>
+            <option value="andrej">Andrej Karpathy</option>
+            <option value="peter">Peter Steipete</option>
+          </select>
+        </label>
+
+        <label>
+          排序
+          <select id="sortFilter">
+            <option value="date_desc">时间倒序</option>
+            <option value="date_asc">时间正序</option>
+          </select>
+        </label>
+      </div>
 
       <main>
         <section id="tab-today" class="tab-panel">
-          <div class="filters">
-            <label>
-              状态
-              <select id="statusFilter">
-                <option value="">全部</option>
-                <option value="unread">未读</option>
-                <option value="read">已读</option>
-                <option value="archived">存档</option>
-              </select>
-            </label>
-
-            <label>
-              作者
-              <select id="authorFilter">
-                <option value="">全部</option>
-                <option value="sam">Sam</option>
-                <option value="andrej">Andrej</option>
-                <option value="peter">Peter</option>
-              </select>
-            </label>
-
-            <label>
-              排序
-              <select id="sortFilter">
-                <option value="date_desc">时间倒序</option>
-                <option value="date_asc">时间正序</option>
-              </select>
-            </label>
-          </div>
-
           <div id="articlesState" class="state-text">加载中...</div>
           <ul id="articlesList" class="articles-list"></ul>
         </section>
@@ -88,6 +93,25 @@
           <article id="readerContent" class="reader-content"></article>
         </section>
       </main>
+      <nav class="bottom-nav" aria-label="主导航">
+        <button class="tab-btn is-active" data-tab="today" type="button">
+          <span class="tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-5v-5H10v5H5a1 1 0 0 1-1-1z" fill="currentColor"></path>
+            </svg>
+          </span>
+          <span class="tab-label">今日</span>
+        </button>
+        <button class="tab-btn" data-tab="notes" type="button">
+          <span class="tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 4h9l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm8 1v4h4" fill="currentColor"></path>
+              <path d="M8 12h8v2H8zm0 4h8v2H8z" fill="currentColor"></path>
+            </svg>
+          </span>
+          <span class="tab-label">笔记</span>
+        </button>
+      </nav>
     </div>
 
     <div id="longPressMenu" class="long-press-menu hidden">

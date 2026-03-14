@@ -36,6 +36,8 @@ const nodes = {
   notesList: document.querySelector('#notesList'),
   readingList: document.querySelector('#readingList'),
   backBtn: document.querySelector('#backBtn'),
+  filterToggle: document.querySelector('#filterToggle'),
+  filterPanel: document.querySelector('#filterPanel'),
   longPressMenu: document.querySelector('#longPressMenu'),
   toast: document.querySelector('#toast'),
   originSnippet: document.querySelector('#originSnippet'),
@@ -62,7 +64,7 @@ function formatDate(isoString) {
   if (!isoString) return '未知时间';
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return '未知时间';
-  return d.toLocaleDateString('zh-CN');
+  return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
 }
 
 function sourceName(sourceKey) {
@@ -70,6 +72,13 @@ function sourceName(sourceKey) {
   if (sourceKey === 'andrej') return 'Andrej Karpathy';
   if (sourceKey === 'peter') return 'Peter Steipete';
   return sourceKey || 'Unknown';
+}
+
+function readStatusLabel(status, progress) {
+  if (status === 'archived') return '存档';
+  if (status === 'read') return `已读 ${progress}%`;
+  if (progress > 0) return `已读 ${progress}%`;
+  return '未读';
 }
 
 function hideLongPressMenu() {
@@ -99,13 +108,15 @@ function renderArticles() {
   state.articles.forEach((item) => {
     const li = document.createElement('li');
     const progress = Math.max(0, Math.min(100, Number(item.read_progress || 0)));
+    const progressLabel = Math.round(progress);
     li.innerHTML = `
       <article class="article-card" data-id="${item.id}">
-        <h3>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
-        <div class="article-meta">${escapeHtml(sourceName(item.source_key))} · ${escapeHtml(formatDate(item.published_at))} · ${escapeHtml(item.read_status || 'unread')}</div>
+        <div class="article-card-head">
+          <h3>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
+          <span class="read-status">${escapeHtml(readStatusLabel(item.read_status, progressLabel))}</span>
+        </div>
+        <div class="article-meta">${escapeHtml(sourceName(item.source_key))} · ${escapeHtml(formatDate(item.published_at))}</div>
         <p class="article-summary">${escapeHtml(item.summary_zh || item.summary_en || '暂无摘要')}</p>
-        <div class="progress"><span style="width:${progress}%"></span></div>
-        <div class="progress-label">阅读进度 ${progress}%</div>
       </article>
     `;
 
@@ -204,6 +215,11 @@ function bindEvents() {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
+  nodes.filterToggle?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    nodes.filterPanel?.classList.toggle('hidden');
+  });
+
   nodes.statusFilter.addEventListener('change', () => {
     state.filters.status = nodes.statusFilter.value;
     loadArticles();
@@ -241,6 +257,8 @@ function bindEvents() {
     const insideMenu = event.target.closest('#longPressMenu');
     const insideCard = event.target.closest('.article-card');
     const insideOrigin = event.target.closest('#originSnippet');
+    const insideFilter = event.target.closest('#filterPanel');
+    const insideToggle = event.target.closest('#filterToggle');
     if (!insideMenu && !insideCard) {
       hideLongPressMenu();
     }
@@ -249,6 +267,9 @@ function bindEvents() {
         originSnippet: nodes.originSnippet,
         originSnippetText: nodes.originSnippetText
       });
+    }
+    if (!insideFilter && !insideToggle) {
+      nodes.filterPanel?.classList.add('hidden');
     }
   });
 
