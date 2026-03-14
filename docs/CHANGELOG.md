@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-03-14 — 划线面板全屏化（v2.1.1）
+
+### 已完成
+- ✅ **划线面板全屏化**：`.notes-panel` 从浮层（`right:16px; bottom:16px; width:min(420px,...); max-height:70vh; border-radius; box-shadow`）改为全屏固定层（`top:0; left:0; right:0; bottom:0; background:var(--bg)`），背景色使用纯色 `var(--bg)` 不再透明，文章正文不再透出
+- ✅ **面板头部重构**：关闭按钮改为左侧 `←` 返回箭头（复用 `.back-btn` 样式），标题"本文划线"居中靠左；使用 `gap + flex` 布局替换 `justify-content:space-between`
+- ✅ **卡片文字缩小**：`.note-item` 和 `.note-item-text` 的 `font-size` 从 `15px` 降至 `14px`
+- ✅ **面板内容区**：`.notes-panel-body` 添加 `flex:1` 使内容区撑满剩余空间，`padding` 增加至 `16px`
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+
+---
+
 ## 2026-03-14 — 阅读页状态栏重构 + 划线面板卡片化（v2.1.0）
 
 ### 已完成

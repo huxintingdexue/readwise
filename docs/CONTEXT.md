@@ -29,6 +29,7 @@
 - 最近变更：划线退出再进入持久化（applyHighlightsToDOM）+ 安卓 WebView touchend 检测重写 + QA 输入框 padding 垂直居中 + 预填文字自动撑高 + 弹出键盘 ✅
 - 最近变更：划线后气泡闪烁修复（clearTimeout+removeAllRanges）+ QA 输入框高度精修（height=1px）+ 输入时实时撑高（input 监听）✅
 - 最近变更：阅读页状态栏重构（← ............ [划线图标][☀️]）+ 划线面板卡片化（仅划线/微信读书风格卡片）✅
+- 最近变更：划线面板全屏化（全屏固定层 + 纯色背景 + ← 返回按钮 + 卡片文字缩至 14px）✅
 - 本地/部署是否可运行：✅ 可运行（Vercel 统一托管前端 + API）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅

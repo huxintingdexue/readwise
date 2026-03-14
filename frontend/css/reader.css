@@ -334,7 +334,7 @@ body {
   border-radius: 14px;
   background: var(--panel-soft);
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -364,7 +364,7 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
   color: var(--text);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -388,14 +388,11 @@ body {
 
 .notes-panel {
   position: fixed;
-  right: 16px;
-  bottom: 16px;
-  width: min(420px, calc(100vw - 32px));
-  max-height: 70vh;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
   z-index: 65;
   display: flex;
   flex-direction: column;
@@ -403,26 +400,32 @@ body {
 
 .notes-panel-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 14px;
+  gap: 12px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  flex-shrink: 0;
 }
 
-.notes-panel-head button {
+.notes-panel-head strong {
+  flex: 1;
+  font-size: 16px;
+}
+
+.notes-panel-head .back-btn {
   border: 1px solid var(--line);
-  background: transparent;
+  background: var(--panel-soft);
   color: var(--text);
-  border-radius: 8px;
-  padding: 4px 8px;
-  cursor: pointer;
 }
 
 .notes-panel-body {
-  padding: 12px 14px;
+  padding: 16px;
   overflow: auto;
+  flex: 1;
   display: grid;
   gap: 10px;
+  align-content: start;
 }
 
 .translated-paragraph {
