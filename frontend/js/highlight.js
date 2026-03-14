@@ -5,6 +5,7 @@ import { searchReference } from './reference.js';
 let currentSelection = null;
 let menuEl = null;
 let lastMenuShownAt = 0;
+let customMenuEnabled = true;
 
 function ensureMenu() {
   if (menuEl) return menuEl;
@@ -12,13 +13,35 @@ function ensureMenu() {
   menuEl = document.createElement('div');
   menuEl.className = 'selection-menu hidden';
   menuEl.innerHTML = `
-    <button type="button" data-action="copy">复制</button>
-    <button type="button" data-action="highlight">划线</button>
-    <button type="button" data-action="ask">提问</button>
-    <button type="button" data-action="reference">查引用</button>
-    <button type="button" data-action="origin">原文</button>
+    <button type="button" data-action="copy">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 3h9a2 2 0 0 1 2 2v12h-2V5H9V3z" fill="currentColor"></path>
+        <path d="M6 7h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" fill="currentColor"></path>
+      </svg>
+      复制
+    </button>
+    <button type="button" data-action="highlight">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 14l6-6 3 3-6 6H7v-3z" fill="currentColor"></path>
+        <path d="M5 19h14v2H5z" fill="currentColor"></path>
+      </svg>
+      划线
+    </button>
+    <button type="button" data-action="ask">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5h16v10H7l-3 3V5z" fill="currentColor"></path>
+      </svg>
+      提问
+    </button>
+    <button type="button" data-action="reference">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h6v2H7z" fill="currentColor"></path>
+      </svg>
+      查引用
+    </button>
   `;
   document.body.appendChild(menuEl);
+  document.body.classList.add('custom-selection');
   return menuEl;
 }
 
@@ -28,11 +51,25 @@ function hideMenu() {
 }
 
 function showMenu(x, y) {
-  const menu = ensureMenu();
-  menu.style.left = `${x}px`;
-  menu.style.top = `${y}px`;
-  menu.classList.remove('hidden');
-  lastMenuShownAt = Date.now();
+  if (!customMenuEnabled) return false;
+  try {
+    const menu = ensureMenu();
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    menu.classList.remove('hidden');
+    lastMenuShownAt = Date.now();
+    requestAnimationFrame(() => {
+      const rect = menu.getBoundingClientRect();
+      const targetX = x - rect.width / 2;
+      menu.style.left = `${Math.max(12, Math.min(window.innerWidth - rect.width - 12, targetX))}px`;
+    });
+    return true;
+  } catch (_) {
+    customMenuEnabled = false;
+    document.body.classList.add('no-custom-selection');
+    document.body.classList.remove('custom-selection');
+    return false;
+  }
 }
 
 function getPlainSelectionText(selection) {
@@ -138,14 +175,16 @@ export function initHighlightFeature({
       range
     };
 
-    const x = rect.left + window.scrollX;
-    const y = rect.top + window.scrollY - 46;
-    showMenu(x, Math.max(12, y));
+    const x = rect.left + window.scrollX + rect.width / 2;
+    const y = rect.top + window.scrollY - 52;
+    const menuShown = showMenu(x, Math.max(12, y));
 
     // Accuracy notice removed by product decision; tracking in docs.
 
     if (event?.type === 'touchend') {
-      event.preventDefault();
+      if (menuShown) {
+        event.preventDefault();
+      }
     }
     event?.stopPropagation?.();
   }
@@ -153,6 +192,8 @@ export function initHighlightFeature({
   readerContent.addEventListener('mouseup', onSelectionChange);
   readerContent.addEventListener('touchend', onSelectionChange, { passive: false });
   readerContent.addEventListener('contextmenu', (event) => {
+    if (!customMenuEnabled) return;
+    if (!currentSelection) return;
     event.preventDefault();
   });
 
@@ -169,12 +210,6 @@ export function initHighlightFeature({
       } catch (_) {
         showToast('复制失败，请重试');
       }
-      hideMenu();
-      return;
-    }
-
-    if (action === 'origin') {
-      openOriginSnippet(currentSelection.originText || currentSelection.text || '(暂无)');
       hideMenu();
       return;
     }

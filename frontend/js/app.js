@@ -188,6 +188,7 @@ async function openArticle(id, jumpTo = null) {
     const [detail, progress] = await Promise.all([getArticleById(id), getReadingProgress(id)]);
     state.currentArticle = detail;
     document.body.classList.add('reading-mode');
+    document.body.classList.add('reader-bar-hidden');
     renderReader(detail, {
       readerView: nodes.readerView,
       readerTitle: nodes.readerTitle,
@@ -212,6 +213,7 @@ function switchTab(nextTab) {
     btn.classList.toggle('is-active', btn.dataset.tab === nextTab);
   });
   document.body.classList.remove('reading-mode');
+  document.body.classList.remove('reader-bar-hidden');
   closeReader({
     readerView: nodes.readerView,
     listPanels: [nodes.todayTab, nodes.notesTab],
@@ -262,6 +264,7 @@ function bindEvents() {
   nodes.backBtn.addEventListener('click', () => {
     state.currentArticle = null;
     document.body.classList.remove('reading-mode');
+    document.body.classList.remove('reader-bar-hidden');
     closeReader({
       readerView: nodes.readerView,
       listPanels: [nodes.todayTab, nodes.notesTab],
@@ -317,6 +320,13 @@ function bindEvents() {
     }
 
     hideLongPressMenu();
+  });
+
+  nodes.readerContent.addEventListener('click', () => {
+    if (!document.body.classList.contains('reading-mode')) return;
+    const selectionText = window.getSelection()?.toString()?.trim();
+    if (selectionText) return;
+    document.body.classList.toggle('reader-bar-hidden');
   });
 }
 

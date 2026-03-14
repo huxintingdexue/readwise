@@ -1,4 +1,17 @@
 let modalNodes = null;
+let chatHistory = [];
+
+function trimHistory() {
+  if (chatHistory.length <= 10) return;
+  chatHistory = chatHistory.slice(chatHistory.length - 10);
+}
+
+function buildChatBubble(role, text, isThinking = false) {
+  const bubble = document.createElement('div');
+  bubble.className = `qa-bubble ${role}${isThinking ? ' thinking' : ''}`;
+  bubble.textContent = text;
+  return bubble;
+}
 
 function buildModal() {
   const modal = document.createElement('div');
@@ -7,23 +20,17 @@ function buildModal() {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
   modal.innerHTML = `
-    <div class="qa-card">
-      <div class="qa-card-head">
-        <strong>提问</strong>
-        <button id="qaCloseBtn" type="button">关闭</button>
+    <div class="qa-sheet">
+      <div class="qa-sheet-head">
+        <strong>AI 问答</strong>
+        <button id="qaCloseBtn" type="button" aria-label="关闭">✕</button>
       </div>
-      <div class="qa-card-body">
-        <p class="qa-label">选中文本</p>
-        <div id="qaContextPreview" class="qa-context"></div>
-        <label class="qa-label" for="qaQuestionInput">你的问题</label>
-        <textarea id="qaQuestionInput" rows="3" placeholder="输入你的问题..."></textarea>
-        <div id="qaError" class="qa-error"></div>
-        <p class="qa-label">回答</p>
-        <div id="qaAnswer" class="qa-answer"></div>
+      <div id="qaChatBody" class="qa-chat-body"></div>
+      <div class="qa-input-bar">
+        <textarea id="qaQuestionInput" rows="2" placeholder="输入你的问题..."></textarea>
+        <button id="qaSubmitBtn" type="button">发送</button>
       </div>
-      <div class="qa-card-actions">
-        <button id="qaSubmitBtn" type="button">提交</button>
-      </div>
+      <div id="qaError" class="qa-error"></div>
     </div>
   `;
   document.body.appendChild(modal);
@@ -41,24 +48,25 @@ function ensureModal() {
   const closeBtn = modal.querySelector('#qaCloseBtn');
   const submitBtn = modal.querySelector('#qaSubmitBtn');
   const questionInput = modal.querySelector('#qaQuestionInput');
-  const contextPreview = modal.querySelector('#qaContextPreview');
+  const chatBody = modal.querySelector('#qaChatBody');
   const errorText = modal.querySelector('#qaError');
-  const answerText = modal.querySelector('#qaAnswer');
 
-  modalNodes = { modal, closeBtn, submitBtn, questionInput, contextPreview, errorText, answerText };
+  modalNodes = { modal, closeBtn, submitBtn, questionInput, chatBody, errorText };
   return modalNodes;
 }
 
 export function openQaModal({ selectionText, contextText, onSubmit }) {
   const nodes = ensureModal();
-  nodes.contextPreview.textContent = selectionText || '';
   nodes.errorText.textContent = '';
-  nodes.answerText.textContent = '';
-  nodes.questionInput.value = '';
+  nodes.questionInput.value = selectionText || '';
+  nodes.chatBody.innerHTML = '';
+  chatHistory = [];
   nodes.modal.classList.remove('hidden');
 
   nodes.closeBtn.onclick = () => {
     nodes.modal.classList.add('hidden');
+    nodes.chatBody.innerHTML = '';
+    chatHistory = [];
   };
 
   nodes.submitBtn.onclick = async () => {
@@ -69,14 +77,41 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
     }
 
     nodes.errorText.textContent = '';
-    nodes.answerText.textContent = '生成中...';
+    nodes.questionInput.value = '';
     nodes.submitBtn.disabled = true;
+    let thinkingBubble = null;
     try {
-      const answer = await onSubmit(question, contextText);
-      nodes.answerText.textContent = answer || '（暂无回答）';
+      const userBubble = buildChatBubble('user', question);
+      nodes.chatBody.appendChild(userBubble);
+      chatHistory.push({ role: 'user', text: question });
+      trimHistory();
+
+      thinkingBubble = buildChatBubble('ai', '思考中', true);
+      nodes.chatBody.appendChild(thinkingBubble);
+      nodes.chatBody.scrollTop = nodes.chatBody.scrollHeight;
+
+      const historyText = chatHistory
+        .map((item) => `${item.role === 'user' ? '用户' : 'AI'}：${item.text}`)
+        .join('\n');
+      const combinedContext = [contextText, historyText].filter(Boolean).join('\n\n');
+      const answer = await onSubmit(question, combinedContext);
+      thinkingBubble.classList.remove('thinking');
+      thinkingBubble.textContent = answer || '（暂无回答）';
+      chatHistory.push({ role: 'ai', text: answer || '（暂无回答）' });
+      trimHistory();
+      if (chatHistory.length > 10) {
+        nodes.chatBody.innerHTML = '';
+        chatHistory.slice(-10).forEach((item) => {
+          nodes.chatBody.appendChild(buildChatBubble(item.role, item.text));
+        });
+      }
+      nodes.chatBody.scrollTop = nodes.chatBody.scrollHeight;
     } catch (err) {
       nodes.errorText.textContent = err?.message || '提交失败';
-      nodes.answerText.textContent = '';
+      if (thinkingBubble) {
+        thinkingBubble.classList.remove('thinking');
+        thinkingBubble.textContent = '（回答失败）';
+      }
     } finally {
       nodes.submitBtn.disabled = false;
     }

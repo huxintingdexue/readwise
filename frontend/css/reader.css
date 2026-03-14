@@ -201,6 +201,11 @@ body {
   gap: 12px;
   align-items: flex-start;
   margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  padding: 6px 0;
+  z-index: 5;
 }
 
 .reader-header-actions {
@@ -217,6 +222,10 @@ body {
   color: var(--text);
   padding: 7px 11px;
   cursor: pointer;
+}
+
+.reader-header-actions.right {
+  justify-content: flex-end;
 }
 
 .back-btn {
@@ -498,61 +507,109 @@ body {
   inset: 0;
   background: rgba(8, 10, 15, 0.55);
   display: grid;
-  place-items: center;
+  align-items: end;
   z-index: 60;
 }
 
-.qa-card {
-  width: min(90vw, 560px);
+.qa-sheet {
+  width: 100%;
+  max-width: 840px;
+  margin: 0 auto;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 16px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  border-radius: 18px 18px 0 0;
+  padding: 14px 14px 12px;
+  height: 85vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 10px;
+  box-shadow: 0 -20px 40px rgba(0, 0, 0, 0.35);
 }
 
-.qa-card-head {
+.qa-sheet-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
 }
 
-.qa-card-head button {
+.qa-sheet-head button {
   border: 1px solid var(--line);
-  background: transparent;
+  background: var(--panel-soft);
   color: var(--text);
-  border-radius: 8px;
-  padding: 4px 8px;
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
   cursor: pointer;
 }
 
-.qa-label {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 0 0 6px;
+.qa-chat-body {
+  overflow: auto;
+  padding: 8px 2px;
+  display: grid;
+  gap: 10px;
 }
 
-.qa-context {
-  background: var(--panel-soft);
+.qa-bubble {
+  max-width: 78%;
+  padding: 10px 12px;
+  border-radius: 14px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 10px;
+  background: var(--panel-soft);
   font-size: 14px;
-  color: #d6dff0;
-  margin-bottom: 12px;
-  max-height: 140px;
-  overflow: auto;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.qa-bubble.user {
+  justify-self: end;
+  background: color-mix(in srgb, var(--accent) 20%, var(--panel-soft));
+}
+
+.qa-bubble.ai {
+  justify-self: start;
+}
+
+.qa-bubble.thinking::after {
+  content: '...';
+  display: inline-block;
+  margin-left: 4px;
+  animation: qaDots 1.2s infinite;
+}
+
+@keyframes qaDots {
+  0% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.2;
+  }
+}
+
+.qa-input-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
 }
 
 #qaQuestionInput {
   width: 100%;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--panel-soft);
   color: var(--text);
   padding: 10px;
-  margin-bottom: 8px;
+}
+
+.qa-input-bar button {
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
 }
 
 .qa-error {
@@ -561,53 +618,38 @@ body {
   min-height: 16px;
 }
 
-.qa-answer {
-  background: var(--panel-soft);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 10px;
-  font-size: 14px;
-  color: #d6dff0;
-  min-height: 44px;
-  white-space: pre-wrap;
-}
-
-.qa-card-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.qa-card-actions button {
-  border: 1px solid var(--line);
-  background: var(--panel-soft);
-  color: var(--text);
-  padding: 8px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
 .selection-menu {
   position: absolute;
   z-index: 50;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  border-radius: 999px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
   display: flex;
-  overflow: hidden;
+  gap: 12px;
+  padding: 8px 12px;
+  align-items: center;
 }
 
 .selection-menu button {
   border: 0;
   background: transparent;
   color: var(--text);
-  padding: 8px 12px;
+  padding: 2px 4px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .selection-menu button:hover {
   background: var(--panel-soft);
+}
+
+.selection-menu svg {
+  width: 16px;
+  height: 16px;
 }
 
 .highlight-mark {
@@ -696,6 +738,26 @@ body {
 .reading-mode .reader-header p,
 .reading-mode #articleNotesBtn {
   display: none;
+}
+
+.reader-bar-hidden .reader-header {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+
+.reader-bar-hidden .reader-header + * {
+  margin-top: 0;
+}
+
+.custom-selection .reader-content {
+  -webkit-touch-callout: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.no-custom-selection .reader-content {
+  -webkit-touch-callout: default;
 }
 
 @media (max-width: 720px) {

@@ -143,23 +143,17 @@
     </aside>
 
     <div id="qaModal" class="qa-modal hidden" role="dialog" aria-modal="true">
-      <div class="qa-card">
-        <div class="qa-card-head">
-          <strong>提问</strong>
-          <button id="qaCloseBtn" type="button">关闭</button>
+      <div class="qa-sheet">
+        <div class="qa-sheet-head">
+          <strong>AI 问答</strong>
+          <button id="qaCloseBtn" type="button" aria-label="关闭">✕</button>
         </div>
-        <div class="qa-card-body">
-          <p class="qa-label">选中文本</p>
-          <div id="qaContextPreview" class="qa-context"></div>
-          <label class="qa-label" for="qaQuestionInput">你的问题</label>
-          <textarea id="qaQuestionInput" rows="3" placeholder="输入你的问题..."></textarea>
-          <div id="qaError" class="qa-error"></div>
-          <p class="qa-label">回答</p>
-          <div id="qaAnswer" class="qa-answer"></div>
+        <div id="qaChatBody" class="qa-chat-body"></div>
+        <div class="qa-input-bar">
+          <textarea id="qaQuestionInput" rows="2" placeholder="输入你的问题..."></textarea>
+          <button id="qaSubmitBtn" type="button">发送</button>
         </div>
-        <div class="qa-card-actions">
-          <button id="qaSubmitBtn" type="button">提交</button>
-        </div>
+        <div id="qaError" class="qa-error"></div>
       </div>
     </div>
 
