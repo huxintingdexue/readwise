@@ -658,7 +658,7 @@ body {
   margin-bottom: 8px;
 }
 
-.reading-mode .reader-header > div:last-child,
+.reading-mode .reader-header p,
 .reading-mode #articleNotesBtn {
   display: none;
 }
