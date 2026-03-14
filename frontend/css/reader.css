@@ -574,6 +574,7 @@ body {
   font-size: 14px;
   line-height: 1.6;
   white-space: pre-wrap;
+  min-height: 0;
 }
 
 .qa-bubble.user {
@@ -622,9 +623,14 @@ body {
   padding: 10px 14px;
 }
 
+#qaQuestionInput:focus {
+  outline: none;
+  border-color: #3c3c3c;
+}
+
 .qa-input-bar button {
   border: 0;
-  background: #2f6bff;
+  background: #3c3c3c;
   color: #ffffff;
   padding: 8px 16px;
   border-radius: 24px;
@@ -657,7 +663,7 @@ body {
   color: #ffffff;
   padding: 4px 2px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -671,8 +677,8 @@ body {
 }
 
 .selection-menu svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .selection-menu::after {

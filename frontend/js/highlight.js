@@ -244,6 +244,7 @@ export function initHighlightFeature({
       if (!selection) return;
       const contextText = buildContextText(article?.content_plain || '', selection.positionStart, selection.positionEnd);
       hideMenu();
+      window.getSelection()?.removeAllRanges();
       openQaModal({
         selectionText: selection.text,
         contextText,
