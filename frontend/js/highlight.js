@@ -211,12 +211,29 @@ export function initHighlightFeature({
     if (!action || !currentSelection) return;
 
     if (action === 'copy') {
+      const text = currentSelection.text;
+      let copied = false;
       try {
-        await navigator.clipboard.writeText(currentSelection.text);
-        showToast('已复制选中文本');
+        await navigator.clipboard.writeText(text);
+        copied = true;
       } catch (_) {
-        showToast('复制失败，请重试');
+        copied = false;
       }
+      if (!copied) {
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          copied = document.execCommand('copy');
+          document.body.removeChild(textarea);
+        } catch (_) {
+          copied = false;
+        }
+      }
+      showToast(copied ? '已复制' : '复制失败，请重试');
       hideMenu();
       return;
     }

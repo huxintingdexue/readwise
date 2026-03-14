@@ -128,7 +128,7 @@ function renderArticles() {
     return;
   }
 
-  nodes.articlesState.textContent = `共 ${state.articles.length} 篇`;
+  nodes.articlesState.textContent = '';
 
   state.articles.forEach((item) => {
     const li = document.createElement('li');
