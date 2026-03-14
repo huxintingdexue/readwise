@@ -128,6 +128,9 @@ export function initHighlightFeature({
   openOriginSnippet
 }) {
   const lastStartRef = { value: 0 };
+  customMenuEnabled = true;
+  document.body.classList.add('custom-selection');
+  document.body.classList.remove('no-custom-selection');
 
   function onSelectionChange(event) {
     const selection = window.getSelection();
