@@ -495,27 +495,38 @@ export function initHighlightFeature({
     }
 
     if (action === 'highlight') {
+      // Snapshot before hideMenu() nulls out currentSelection.
+      const sel = currentSelection;
+
+      // ① Cancel any in-flight selectionchange debounce timer immediately.
+      clearTimeout(_selectionChangeTimer);
+
+      // ② Wrap the selected text in the DOM (synchronous).
       try {
-        if (currentSelection.range) {
+        if (sel.range) {
           const mark = document.createElement('span');
           mark.className = 'highlight-mark';
-          currentSelection.range.surroundContents(mark);
+          sel.range.surroundContents(mark);
         }
-        await createHighlight({
-          article_id: currentSelection.articleId,
-          text: currentSelection.text,
-          position_start: currentSelection.positionStart,
-          position_end: currentSelection.positionEnd,
-          type: 'highlight'
-        });
-      } catch (err) {
-        showToast(`划线保存失败：${err.message}`);
-      }
-      // Cancel the selectionchange debounce timer and clear the selection so
-      // the menu does not re-appear after surroundContents triggers selectionchange.
-      clearTimeout(_selectionChangeTimer);
-      hideMenu();
+      } catch (_) {}
+
+      // ③ Clear selection and hide the bubble BEFORE the async API call.
+      //    surroundContents() and removeAllRanges() both fire selectionchange,
+      //    which would start a new 300ms timer. Doing this synchronously here
+      //    means by the time that timer fires the selection is already empty
+      //    and the menu is already hidden — no re-flash possible.
       window.getSelection()?.removeAllRanges();
+      hideMenu();
+
+      // ④ Persist to backend (non-blocking — not awaited so the menu cannot
+      //    re-appear while waiting for the network response).
+      createHighlight({
+        article_id: sel.articleId,
+        text: sel.text,
+        position_start: sel.positionStart,
+        position_end: sel.positionEnd,
+        type: 'highlight'
+      }).catch((err) => showToast(`划线保存失败：${err.message}`));
     }
   });
 
