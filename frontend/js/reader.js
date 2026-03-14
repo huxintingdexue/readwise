@@ -1,6 +1,7 @@
-import { postTranslateNext, saveReadingProgress, saveReadingProgressKeepalive } from './api.js';
+import { postTranslateNext, saveReadingProgress, saveReadingProgressKeepalive, getHighlights } from './api.js';
 import { hideReferenceBanner } from './reference.js';
 import { hideArticleNotesPanel } from './notes.js';
+import { applyHighlightsToDOM } from './highlight.js';
 
 let readingSession = null;
 
@@ -186,6 +187,13 @@ export function renderReader(detail, nodes, initialProgress = null) {
     readerContent.innerHTML = detail.content_en;
   } else {
     readerContent.innerHTML = `<p>${escapeHtml(detail.content_plain || '暂无内容').replace(/\n/g, '<br/>')}</p>`;
+  }
+
+  // Re-apply stored highlights after content renders
+  if (detail.id) {
+    getHighlights(detail.id)
+      .then((highlights) => applyHighlightsToDOM(readerContent, highlights))
+      .catch(() => {});
   }
 
   startReadingSession(detail, nodes, initialProgress);

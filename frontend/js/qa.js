@@ -86,6 +86,19 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
   // Lock background scroll while the modal is open
   document.body.style.overflow = 'hidden';
 
+  // Auto-size the textarea after the modal is rendered, then focus (shows keyboard)
+  // so the user can immediately continue typing after the pre-filled selection.
+  requestAnimationFrame(() => {
+    nodes.questionInput.style.height = 'auto';
+    nodes.questionInput.style.height = Math.max(40, nodes.questionInput.scrollHeight) + 'px';
+    if (selectionText) {
+      nodes.questionInput.focus();
+      // Move cursor to end of pre-filled text
+      const len = nodes.questionInput.value.length;
+      nodes.questionInput.setSelectionRange(len, len);
+    }
+  });
+
   nodes.closeBtn.onclick = () => {
     nodes.modal.classList.add('hidden');
     nodes.chatBody.innerHTML = '';
@@ -102,6 +115,7 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
 
     nodes.errorText.textContent = '';
     nodes.questionInput.value = '';
+    nodes.questionInput.style.height = '40px'; // reset to single-line height
     nodes.questionInput.blur(); // dismiss keyboard on Android after sending
     nodes.submitBtn.disabled = true;
     let thinkingBubble = null;

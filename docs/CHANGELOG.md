@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-03-14 — 已划线高亮持久化 + 触摸检测重写 + QA 输入框居中 + 预填自动展开（v2.0.7）
+
+### 已完成
+- ✅ **划线持久化**：文章渲染后调用 `getHighlights(articleId)` 重新获取历史划线记录，通过 `applyHighlightsToDOM()` 用 TreeWalker 定位文本节点并用 `.highlight-mark` span 重新包裹，退出再进入文章后划线高亮不再消失
+- ✅ **点击已划线触摸检测重写**：安卓 WebView 对 `user-select: text` 的文字节点 `click` 事件不可靠；改为监听 `touchend`，命中 `.highlight-mark` 时 `preventDefault()` 阻断后续 click，等 50ms 后检查 getSelection()：无选区则显示"删除划线"气泡（纯点击），有选区则走普通选文气泡逻辑（长按扩展选区）
+- ✅ **QA 输入框 placeholder 垂直居中**：`line-height: 40px` 对 textarea 无效（文字始终贴顶）；改为 `padding: 9px 14px` + `box-sizing: border-box`，利用上下等距内边距实现真正垂直居中；同步加 `overflow: hidden` 配合自动高度计算
+- ✅ **QA 预填文字自动展开 + 弹出键盘**：`openQaModal` 传入 `selectionText` 时，在 `requestAnimationFrame` 内 `height='auto'` → `scrollHeight` 动态撑高输入框，随后 `focus()` + `setSelectionRange(len, len)` 将光标定位到末尾并弹出输入法（豆包风格）
+- ✅ `highlight.js` 新增并导出 `applyHighlightsToDOM(readerContent, highlights)`
+- ✅ `reader.js` 新增 `getHighlights` 与 `applyHighlightsToDOM` 导入，在 `renderReader` 设置 innerHTML 后异步调用
+
+### 变更文件
+- frontend/js/highlight.js
+- frontend/js/reader.js
+- frontend/js/qa.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无（删除划线暂只做本地 DOM 操作，后端 deleteHighlight API 待日后补充）
+
+---
+
 ## 2026-03-14 — 划线高亮填充 + 气泡图标对齐 + 点击已划线弹窗 + QA 输入框精修（v2.0.6）
 
 ### 已完成

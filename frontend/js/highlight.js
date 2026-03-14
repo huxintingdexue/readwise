@@ -63,7 +63,6 @@ function hideMenu() {
 function showMenu(selRect, positionMode = 'above') {
   if (!customMenuEnabled) return;
   const menu = ensureMenu();
-  // Place off-screen first so we can measure the actual rendered dimensions
   menu.style.left = '-9999px';
   menu.style.top = '0px';
   menu.classList.toggle('menu-below', positionMode === 'below');
@@ -72,8 +71,8 @@ function showMenu(selRect, positionMode = 'above') {
   requestAnimationFrame(() => {
     const menuW = menu.offsetWidth;
     const menuH = menu.offsetHeight;
-    const ABOVE_GAP = 48; // gap below menu → reveals ~half a previous line above selection
-    const BELOW_GAP = 48; // gap above menu → reveals ~one line below selection end
+    const ABOVE_GAP = 48;
+    const BELOW_GAP = 48;
 
     let finalMode = positionMode;
     let menuTop;
@@ -149,6 +148,77 @@ function inferApproximatePosition(contentPlain, contentZh, selectedText) {
   const approxLen = Math.max(1, Math.floor(selectedText.length * lengthRatio));
   const approxEnd = Math.min(plain.length, approxStart + approxLen);
   return { start: approxStart, end: approxEnd, approximate: true };
+}
+
+/**
+ * Re-apply stored highlight marks to the DOM after article content is rendered.
+ * Called by reader.js after setting readerContent.innerHTML.
+ */
+export function applyHighlightsToDOM(readerContent, highlights) {
+  if (!highlights?.length) return;
+
+  for (const hl of highlights) {
+    if (hl.type !== 'highlight') continue;
+    if (!hl.text) continue;
+    try {
+      applyHighlightMark(readerContent, hl.text);
+    } catch (e) {
+      // Skip highlights that can't be placed (e.g. text no longer in DOM)
+    }
+  }
+}
+
+/**
+ * Locate `text` inside readerContent using TreeWalker and wrap it in a
+ * .highlight-mark span.  Works for single-node ranges (typical case); skips
+ * highlights that span element boundaries (surroundContents restriction).
+ */
+function applyHighlightMark(readerContent, text) {
+  const walker = document.createTreeWalker(readerContent, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  let node;
+  while ((node = walker.nextNode())) {
+    // Skip text inside an already-applied highlight
+    if (!node.parentElement?.classList?.contains('highlight-mark')) {
+      textNodes.push(node);
+    }
+  }
+
+  // Build combined plain text to locate the highlight
+  const parts = textNodes.map((n) => n.textContent);
+  const combined = parts.join('');
+  const idx = combined.indexOf(text);
+  if (idx < 0) return;
+
+  const endIdx = idx + text.length;
+  let pos = 0;
+  let rangeStartNode = null;
+  let rangeStartOffset = 0;
+  let rangeEndNode = null;
+  let rangeEndOffset = 0;
+
+  for (const tn of textNodes) {
+    const nodeEnd = pos + tn.textContent.length;
+    if (rangeStartNode === null && pos <= idx && nodeEnd > idx) {
+      rangeStartNode = tn;
+      rangeStartOffset = idx - pos;
+    }
+    if (rangeEndNode === null && pos < endIdx && nodeEnd >= endIdx) {
+      rangeEndNode = tn;
+      rangeEndOffset = endIdx - pos;
+      break;
+    }
+    pos = nodeEnd;
+  }
+
+  if (!rangeStartNode || !rangeEndNode) return;
+
+  const range = document.createRange();
+  range.setStart(rangeStartNode, rangeStartOffset);
+  range.setEnd(rangeEndNode, rangeEndOffset);
+  const mark = document.createElement('span');
+  mark.className = 'highlight-mark';
+  range.surroundContents(mark); // throws if range crosses element boundary
 }
 
 export function initHighlightFeature({
@@ -242,7 +312,6 @@ export function initHighlightFeature({
       range
     };
 
-    // Delegate all positioning math to showMenu (uses actual rendered height)
     showMenu(rect, positionMode);
 
     if (event?.type === 'touchend') {
@@ -252,36 +321,57 @@ export function initHighlightFeature({
   }
 
   readerContent.addEventListener('mouseup', (e) => onSelectionChange(e, 'above'));
-  readerContent.addEventListener('touchend', (e) => onSelectionChange(e, 'above'), { passive: false });
+
+  // Three-state menu positioning via selectionchange:
+  //   1. Initial long-press (currentSelection null) → show ABOVE after 300ms
+  //   2. While dragging handles                     → hide immediately
+  //   3. Drag settled (300ms silence)               → show BELOW
+  let _selectionChangeTimer = null;
+
+  // On Android, tapping a .highlight-mark sometimes selects text via the WebView's
+  // built-in selection mechanism, making the `click` event unreliable. We intercept
+  // `touchend` directly: if the touch ended on a highlight mark, we preventDefault
+  // (suppresses the click) and check selection state after a short delay. If no text
+  // was selected it was a pure tap → show "删除划线". Otherwise treat as regular text
+  // selection → show the normal bubble.
+  readerContent.addEventListener('touchend', (e) => {
+    const mark = e.target.closest('.highlight-mark');
+    if (mark) {
+      e.preventDefault(); // suppress the resulting click event
+      setTimeout(() => {
+        const txt = window.getSelection()?.toString()?.trim() || '';
+        clearTimeout(_selectionChangeTimer);
+        if (txt) {
+          // The user long-pressed to start a text selection on/around the mark
+          onSelectionChange(null, 'above');
+        } else {
+          // Pure tap: show the "删除划线" bubble
+          showMenuOnHighlight(mark);
+        }
+      }, 50);
+      return;
+    }
+    onSelectionChange(e, 'above');
+  }, { passive: false });
+
+  // Desktop fallback: click on existing highlight mark shows "删除划线" bubble.
+  // (On mobile, touchend + preventDefault above suppresses the click, so this
+  // handler only fires for mouse users.)
+  readerContent.addEventListener('click', (e) => {
+    const mark = e.target.closest('.highlight-mark');
+    if (!mark) return;
+    if (window.getSelection()?.toString()?.trim()) return;
+    e.stopPropagation();
+    showMenuOnHighlight(mark);
+  });
+
   readerContent.addEventListener('contextmenu', (event) => {
     event.preventDefault();
   });
 
-  // Tap on an existing highlight mark (without dragging to select text) → show bubble
-  // with "删除划线". We use click (fires after touchend) so it runs after onSelectionChange
-  // has already checked for text selection and found nothing.
-  readerContent.addEventListener('click', (e) => {
-    const mark = e.target.closest('.highlight-mark');
-    if (!mark) return;
-    // If user was selecting text (long-press drag), don't intercept
-    if (window.getSelection()?.toString()?.trim()) return;
-    e.stopPropagation(); // prevent document click handler from immediately hiding the menu
-    showMenuOnHighlight(mark);
-  });
-
-  // Three-state menu positioning via selectionchange:
-  //   1. Initial long-press (menu hidden, currentSelection null) → show ABOVE after 300 ms
-  //   2. While dragging handles (events firing)                  → hide menu immediately
-  //   3. Drag settled (300 ms silence)                           → show BELOW after debounce
-  // Also fixes Android WebView where touchend fires before getSelection() is ready.
-  // NOTE: use `currentSelection !== null` (not a visibility flag) to detect state,
-  // because after the first selectionchange the menu is already hidden and a naive
-  // visibility check would always see "hidden" → always show above (the original bug).
-  let _selectionChangeTimer = null;
   document.addEventListener('selectionchange', () => {
     const menu = ensureMenu();
     if (!menu.classList.contains('hidden')) {
-      // User is dragging handles — hide immediately (keep currentSelection intact)
       menu.classList.add('hidden');
     }
     clearTimeout(_selectionChangeTimer);
@@ -291,8 +381,6 @@ export function initHighlightFeature({
       if (!getPlainSelectionText(sel)) return;
       const range = sel.getRangeAt(0);
       if (!readerContent.contains(range.commonAncestorContainer)) return;
-      // currentSelection set → previous selection existed → drag adjustment → show below
-      // currentSelection null → brand-new selection (initial long-press) → show above
       onSelectionChange(null, currentSelection !== null ? 'below' : 'above');
     }, 300);
   });
@@ -310,9 +398,7 @@ export function initHighlightFeature({
       try {
         await navigator.clipboard.writeText(text);
         copied = true;
-      } catch (_) {
-        copied = false;
-      }
+      } catch (_) {}
       if (!copied) {
         try {
           const textarea = document.createElement('textarea');
@@ -323,16 +409,13 @@ export function initHighlightFeature({
           textarea.select();
           copied = document.execCommand('copy');
           document.body.removeChild(textarea);
-        } catch (_) {
-          copied = false;
-        }
+        } catch (_) {}
       }
       showToast(copied ? '已复制' : '复制失败，请重试');
       hideMenu();
       return;
     }
 
-    // Remove an existing highlight mark from the DOM
     if (action === 'remove-highlight') {
       const el = currentHighlightEl;
       if (el) {
@@ -342,7 +425,7 @@ export function initHighlightFeature({
         }
         parent.removeChild(el);
         showToast('已删除划线');
-        // TODO: call deleteHighlight(highlightId) once backend endpoint is added
+        // TODO: call deleteHighlight API when backend endpoint is added
       }
       hideMenu();
       return;
@@ -359,7 +442,6 @@ export function initHighlightFeature({
         selectionText: selection.text,
         contextText,
         onSubmit: async (question, context) => {
-          // Only create a new highlight record when this is a fresh selection
           let highlightId = null;
           if (!selection.isExistingHighlight) {
             const highlight = await createHighlight({
@@ -435,9 +517,7 @@ export function initHighlightFeature({
 
   document.addEventListener('scroll', hideMenu, { passive: true });
   document.addEventListener('click', (event) => {
-    if (Date.now() - lastMenuShownAt < 250) {
-      return;
-    }
+    if (Date.now() - lastMenuShownAt < 250) return;
     if (!event.target.closest('.selection-menu')) {
       hideMenu();
     }
