@@ -102,6 +102,7 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
 
     nodes.errorText.textContent = '';
     nodes.questionInput.value = '';
+    nodes.questionInput.blur(); // dismiss keyboard on Android after sending
     nodes.submitBtn.disabled = true;
     let thinkingBubble = null;
     try {

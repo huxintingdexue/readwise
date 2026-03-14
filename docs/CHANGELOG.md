@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-03-14 — 划线高亮填充 + 气泡图标对齐 + 点击已划线弹窗 + QA 输入框精修（v2.0.6）
+
+### 已完成
+- ✅ `.highlight-mark`：`padding: 0 2px` → `4px 3px`，加 `box-decoration-break: clone`，高亮背景上下各溢出约 4px，多行划线每行均完整显示
+- ✅ 气泡图标垂直对齐：`.selection-menu` 改为 `align-items: stretch`，按钮内部加 `justify-content: space-between`，所有图标上对齐、所有文字标签下对齐，视觉统一
+- ✅ 点击已划线文字弹出专属气泡：`highlight.js` 新增 `showMenuOnHighlight()` 及 `readerContent.click` 委托监听；气泡将"划线"按钮换成"删除划线"（data-action="remove-highlight"），点击后解包 `.highlight-mark` span 还原纯文本并提示"已删除划线"；关闭菜单时自动恢复按钮状态
+- ✅ 菜单 click 委托改为 `.closest('[data-action]')`，`<span class="btn-label">` 包裹文字标签，解决子元素点击无法识别 data-action 的问题
+- ✅ QA 输入框：`height: 40px; line-height: 40px; padding: 0 14px`，不依赖 rows 控制高度，placeholder 随 line-height 自然垂直居中；发送按钮同为 `height: 40px`，两者精确等高
+- ✅ QA 发送后 `questionInput.blur()`，主动收起键盘，不再弹回输入法
+
+### 变更文件
+- frontend/js/highlight.js
+- frontend/js/qa.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无（删除划线暂只做本地 DOM 操作，后端 deleteHighlight API 待日后补充）
+
+---
+
 ## 2026-03-14 — 气泡文字换行修复 + QA 输入框居中收紧 + 聊天气泡留白缩减（v2.0.5）
 
 ### 已完成

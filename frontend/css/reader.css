@@ -621,11 +621,13 @@ body {
 
 #qaQuestionInput {
   width: 100%;
+  height: 40px;
+  line-height: 40px;
   border-radius: 24px;
   border: 1px solid #e5e5e5;
   background: #ffffff;
   color: #1a1a1a;
-  padding: 8px 14px;
+  padding: 0 14px;
   resize: none;
 }
 
@@ -638,10 +640,10 @@ body {
   border: 0;
   background: #3c3c3c;
   color: #ffffff;
-  padding: 8px 18px;
+  height: 40px;
+  padding: 0 18px;
   border-radius: 24px;
   cursor: pointer;
-  align-self: center;
 }
 
 .qa-error {
@@ -660,7 +662,7 @@ body {
   display: flex;
   gap: 4px;
   padding: 8px 6px;
-  align-items: center;
+  align-items: stretch;
 }
 
 .selection-menu button {
@@ -672,7 +674,7 @@ body {
   font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: space-between;
   flex-direction: column;
   text-align: center;
   white-space: nowrap;
@@ -728,7 +730,9 @@ body {
   background: rgba(255, 193, 80, 0.35);
   box-shadow: 0 0 0 2px rgba(255, 193, 80, 0.2);
   border-radius: 4px;
-  padding: 0 2px;
+  padding: 4px 3px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .hidden {

@@ -3,6 +3,7 @@ import { openQaModal } from './qa.js';
 import { searchReference } from './reference.js';
 
 let currentSelection = null;
+let currentHighlightEl = null; // the .highlight-mark span currently being interacted with
 let menuEl = null;
 let lastMenuShownAt = 0;
 let customMenuEnabled = true;
@@ -18,26 +19,26 @@ function ensureMenu() {
         <path d="M9 3h9a2 2 0 0 1 2 2v12h-2V5H9V3z" fill="currentColor"></path>
         <path d="M6 7h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" fill="currentColor"></path>
       </svg>
-      复制
+      <span class="btn-label">复制</span>
     </button>
     <button type="button" data-action="highlight">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 14l6-6 3 3-6 6H7v-3z" fill="currentColor"></path>
         <path d="M5 19h14v2H5z" fill="currentColor"></path>
       </svg>
-      划线
+      <span class="btn-label">划线</span>
     </button>
     <button type="button" data-action="ask">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 5h16v10H7l-3 3V5z" fill="currentColor"></path>
       </svg>
-      提问
+      <span class="btn-label">提问</span>
     </button>
     <button type="button" data-action="reference">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h6v2H7z" fill="currentColor"></path>
       </svg>
-      查引用
+      <span class="btn-label">查引用</span>
     </button>
   `;
   document.body.appendChild(menuEl);
@@ -46,7 +47,16 @@ function ensureMenu() {
 }
 
 function hideMenu() {
-  ensureMenu().classList.add('hidden');
+  const menu = ensureMenu();
+  menu.classList.add('hidden');
+  // Restore "删除划线" → "划线" if it was swapped
+  const removeBtn = menu.querySelector('[data-action="remove-highlight"]');
+  if (removeBtn) {
+    removeBtn.dataset.action = 'highlight';
+    const label = removeBtn.querySelector('.btn-label');
+    if (label) label.textContent = '划线';
+  }
+  currentHighlightEl = null;
   currentSelection = null;
 }
 
@@ -151,6 +161,41 @@ export function initHighlightFeature({
   customMenuEnabled = true;
   document.body.classList.add('custom-selection');
 
+  // Show the selection bubble for an existing .highlight-mark the user tapped
+  function showMenuOnHighlight(markEl) {
+    if (!customMenuEnabled) return;
+    const text = markEl.textContent.trim();
+    const article = getCurrentArticle();
+    if (!article) return;
+
+    let pos = inferPosition(article.content_plain || '', article.content_zh || '', text, lastStartRef);
+    if (pos.start < 0 || pos.end <= pos.start) {
+      pos = inferApproximatePosition(article.content_plain || '', article.content_zh || '', text);
+    }
+
+    currentHighlightEl = markEl;
+    currentSelection = {
+      isExistingHighlight: true,
+      articleId: article.id,
+      text,
+      positionStart: pos.start >= 0 ? pos.start : 0,
+      positionEnd: pos.end > pos.start ? pos.end : text.length,
+      range: null,
+    };
+
+    // Swap "划线" → "删除划线" in the bubble
+    const menu = ensureMenu();
+    const hlBtn = menu.querySelector('[data-action="highlight"]');
+    if (hlBtn) {
+      hlBtn.dataset.action = 'remove-highlight';
+      const label = hlBtn.querySelector('.btn-label');
+      if (label) label.textContent = '删除划线';
+    }
+
+    const rect = markEl.getBoundingClientRect();
+    showMenu(rect, 'below');
+  }
+
   function onSelectionChange(event, positionMode = 'above') {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
@@ -212,6 +257,18 @@ export function initHighlightFeature({
     event.preventDefault();
   });
 
+  // Tap on an existing highlight mark (without dragging to select text) → show bubble
+  // with "删除划线". We use click (fires after touchend) so it runs after onSelectionChange
+  // has already checked for text selection and found nothing.
+  readerContent.addEventListener('click', (e) => {
+    const mark = e.target.closest('.highlight-mark');
+    if (!mark) return;
+    // If user was selecting text (long-press drag), don't intercept
+    if (window.getSelection()?.toString()?.trim()) return;
+    e.stopPropagation(); // prevent document click handler from immediately hiding the menu
+    showMenuOnHighlight(mark);
+  });
+
   // Three-state menu positioning via selectionchange:
   //   1. Initial long-press (menu hidden, currentSelection null) → show ABOVE after 300 ms
   //   2. While dragging handles (events firing)                  → hide menu immediately
@@ -243,7 +300,8 @@ export function initHighlightFeature({
   const menu = ensureMenu();
   menu.addEventListener('click', async (event) => {
     event.stopPropagation();
-    const action = event.target?.dataset?.action;
+    const btn = event.target.closest('[data-action]');
+    const action = btn?.dataset?.action;
     if (!action || !currentSelection) return;
 
     if (action === 'copy') {
@@ -274,6 +332,22 @@ export function initHighlightFeature({
       return;
     }
 
+    // Remove an existing highlight mark from the DOM
+    if (action === 'remove-highlight') {
+      const el = currentHighlightEl;
+      if (el) {
+        const parent = el.parentNode;
+        while (el.firstChild) {
+          parent.insertBefore(el.firstChild, el);
+        }
+        parent.removeChild(el);
+        showToast('已删除划线');
+        // TODO: call deleteHighlight(highlightId) once backend endpoint is added
+      }
+      hideMenu();
+      return;
+    }
+
     if (action === 'ask') {
       const article = getCurrentArticle();
       const selection = currentSelection;
@@ -285,15 +359,20 @@ export function initHighlightFeature({
         selectionText: selection.text,
         contextText,
         onSubmit: async (question, context) => {
-          const highlight = await createHighlight({
-            article_id: selection.articleId,
-            text: selection.text,
-            position_start: selection.positionStart,
-            position_end: selection.positionEnd,
-            type: 'highlight'
-          });
+          // Only create a new highlight record when this is a fresh selection
+          let highlightId = null;
+          if (!selection.isExistingHighlight) {
+            const highlight = await createHighlight({
+              article_id: selection.articleId,
+              text: selection.text,
+              position_start: selection.positionStart,
+              position_end: selection.positionEnd,
+              type: 'highlight'
+            });
+            highlightId = highlight?.id || null;
+          }
           const result = await postQa({
-            highlight_id: highlight?.id || null,
+            highlight_id: highlightId,
             article_id: selection.articleId,
             question,
             context
@@ -310,17 +389,21 @@ export function initHighlightFeature({
       if (!selection) return;
       hideMenu();
       try {
-        const highlight = await createHighlight({
-          article_id: selection.articleId,
-          text: selection.text,
-          position_start: selection.positionStart,
-          position_end: selection.positionEnd,
-          type: 'reference'
-        });
+        let highlightId = null;
+        if (!selection.isExistingHighlight) {
+          const highlight = await createHighlight({
+            article_id: selection.articleId,
+            text: selection.text,
+            position_start: selection.positionStart,
+            position_end: selection.positionEnd,
+            type: 'reference'
+          });
+          highlightId = highlight?.id || null;
+        }
         await searchReference({
           text: selection.text,
           articleId: selection.articleId,
-          highlightId: highlight?.id || null,
+          highlightId,
           showToast
         });
       } catch (err) {
