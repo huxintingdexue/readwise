@@ -1,4 +1,4 @@
-import { postTranslateNext, saveReadingProgress, saveReadingProgressKeepalive, getHighlights } from './api.js';
+import { postTranslateNext, saveReadingProgress, saveReadingProgressKeepalive, getHighlights, getArticleById } from './api.js';
 import { hideReferenceBanner } from './reference.js';
 import { hideArticleNotesPanel } from './notes.js';
 import { applyHighlightsToDOM } from './highlight.js';
@@ -16,6 +16,8 @@ function sourceName(sourceKey) {
   if (sourceKey === 'sam') return 'Sam Altman';
   if (sourceKey === 'andrej') return 'Andrej Karpathy';
   if (sourceKey === 'peter') return 'Peter Steipete';
+  if (sourceKey === 'lenny') return 'Lenny Rachitsky';
+  if (sourceKey === 'naval') return 'Naval Ravikant';
   return sourceKey || 'Unknown';
 }
 
@@ -47,8 +49,33 @@ function restoreScrollByPlainLength(scrollPosition, contentPlainLength) {
   requestAnimationFrame(() => window.scrollTo({ top: targetY, behavior: 'auto' }));
 }
 
-function renderTranslatedContent(detail) {
-  return `<p>${escapeHtml(detail.content_zh || '').replace(/\n/g, '<br/>')}</p>`;
+// Build the HTML shown in the reader.
+// - Fully translated → Chinese only
+// - Partially translated → Chinese portion + divider + full English HTML (so the article is always complete)
+// - No Chinese → full English HTML
+function renderContent(detail) {
+  const zhText = (detail.content_zh || '').trim();
+  const enHtml = (detail.content_en || '').trim();
+  const plainText = detail.content_plain || '';
+  const isFullyTranslated = detail.translation_status === 'full';
+
+  if (!zhText) {
+    // No translation yet – show full English or plain fallback
+    if (enHtml) return enHtml;
+    return `<p>${escapeHtml(plainText || '暂无内容').replace(/\n/g, '<br/>')}</p>`;
+  }
+
+  // Wrap zh text in proper paragraphs
+  const zhHtml = `<p>${escapeHtml(zhText).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`;
+
+  if (isFullyTranslated || !enHtml) {
+    // Fully translated (or no English available): Chinese only
+    return zhHtml;
+  }
+
+  // Partially translated: Chinese prefix + original English below
+  const divider = `<div class="reader-original-label">英文原文</div>`;
+  return `${zhHtml}${divider}${enHtml}`;
 }
 
 function maybeTriggerTranslate(session) {
@@ -65,9 +92,25 @@ function maybeTriggerTranslate(session) {
 
   const fromChar = Math.max(0, session.translatedChars || 0);
   postTranslateNext(session.articleId, fromChar)
-    .then((ret) => {
+    .then(async (ret) => {
+      const prevStatus = session.translationStatus;
       session.translatedChars = Number(ret?.translated_chars || session.translatedChars || 0);
       session.translationStatus = ret?.status || session.translationStatus;
+
+      // Article just became fully translated: re-render to show Chinese-only view
+      if (prevStatus !== 'full' && session.translationStatus === 'full' && session.readerContent) {
+        try {
+          const updated = await getArticleById(session.articleId);
+          const scrollY = currentScrollTop();
+          session.readerContent.innerHTML = renderContent(updated);
+          if (updated.id) {
+            getHighlights(updated.id)
+              .then((highlights) => applyHighlightsToDOM(session.readerContent, highlights))
+              .catch(() => {});
+          }
+          window.scrollTo({ top: scrollY });
+        } catch (_) {}
+      }
     })
     .catch(() => {})
     .finally(() => {
@@ -153,6 +196,7 @@ function startReadingSession(detail, nodes, initialProgress) {
   readingSession = {
     articleId,
     contentPlainLength,
+    readerContent: nodes.readerContent || null,
     debounceTimer: null,
     onScroll,
     onVisibilityChange,
@@ -181,13 +225,7 @@ export function renderReader(detail, nodes, initialProgress = null) {
   readerTitle.textContent = detail.title_zh || detail.title_en || '未命名文章';
   readerMeta.textContent = `${sourceName(detail.source_key)} · ${formatDate(detail.published_at)}`;
 
-  if (detail.content_zh && detail.content_zh.trim()) {
-    readerContent.innerHTML = renderTranslatedContent(detail);
-  } else if (detail.content_en && detail.content_en.trim()) {
-    readerContent.innerHTML = detail.content_en;
-  } else {
-    readerContent.innerHTML = `<p>${escapeHtml(detail.content_plain || '暂无内容').replace(/\n/g, '<br/>')}</p>`;
-  }
+  readerContent.innerHTML = renderContent(detail);
 
   // Re-apply stored highlights after content renders
   if (detail.id) {

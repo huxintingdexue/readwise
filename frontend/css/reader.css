@@ -293,6 +293,25 @@ body {
   padding: 0 8px;
 }
 
+/* Divider between Chinese translation and English original */
+.reader-original-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 32px 0 20px;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.reader-original-label::before,
+.reader-original-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
 .reader-content p {
   margin: 0 0 1.5em;
 }

@@ -280,6 +280,12 @@ async function fetchAndCleanArticleHtml(url, fallbackHintHtml, articleTitle = ''
   }
 }
 
+// Remove any leaked prompt prefix like 【待翻译标题】 that DeepSeek occasionally echoes back
+function stripPromptPrefix(text) {
+  if (!text) return text;
+  return text.replace(/^【待翻译[^】]*】\s*/m, '').trim() || text;
+}
+
 async function deepseekTranslateSegment(apiKey, text, label) {
   if (!apiKey || !text) {
     return '';
@@ -310,7 +316,7 @@ async function deepseekTranslateSegment(apiKey, text, label) {
   }
 
   const data = await res.json();
-  return data?.choices?.[0]?.message?.content?.trim() || '';
+  return stripPromptPrefix(data?.choices?.[0]?.message?.content?.trim() || '');
 }
 
 async function translateArticleParts(apiKey, article) {
