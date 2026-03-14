@@ -291,7 +291,7 @@ body {
   user-select: text;
   -webkit-user-select: text;
   -webkit-touch-callout: none;
-  padding: 0 16px;
+  padding: 0 8px;
 }
 
 .reader-content p {
@@ -526,7 +526,7 @@ body {
   border: 1px solid #e7e7e7;
   border-radius: 18px 18px 0 0;
   padding: 14px 14px 12px;
-  max-height: 85vh;
+  height: 85vh;
   display: flex;
   flex-direction: column;
   gap: 10px;

@@ -51,6 +51,14 @@ function ensureModal() {
   const chatBody = modal.querySelector('#qaChatBody');
   const errorText = modal.querySelector('#qaError');
 
+  // On Android, tapping the send button while the keyboard is open causes the
+  // textarea to blur first (keyboard closes, layout shifts), so the click lands
+  // in empty space and a second tap is needed. Preventing pointerdown stops the
+  // blur, keeps the keyboard open, and lets the click fire normally.
+  submitBtn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+  });
+
   modalNodes = { modal, closeBtn, submitBtn, questionInput, chatBody, errorText };
   return modalNodes;
 }

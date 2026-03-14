@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-03-14 — 气泡定位精修 + QA 面板与排版优化（v2.0.3）
+
+### 已完成
+- ✅ 重构 `showMenu`：改为在 `requestAnimationFrame` 内用 `offsetHeight` 测量真实菜单高度，彻底消除估算偏差导致的位置错误
+- ✅ 上方 gap 从 24px 增至 48px，下方 gap 也设为 48px，两侧各露出约半行文字
+- ✅ 修复拖动后气泡仍显示在上方的 bug：将 `_wasMenuVisible` flag 改为 `currentSelection !== null` 判断（首次选区 → null → 上方；拖动调整 → 非 null → 下方）
+- ✅ QA 面板高度改回 `height: 85vh`（固定不变）
+- ✅ QA 发送按钮加 `pointerdown` + `preventDefault()`，阻止 textarea 失焦/键盘收起，一次点击即可发送
+- ✅ 正文左右 padding 从 16px 缩至 8px，文字更加横铺屏幕
+
+### 变更文件
+- frontend/js/highlight.js
+- frontend/js/qa.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-14 — 选文气泡三态定位与阅读体验优化（v2.0.2）
 
 ### 已完成

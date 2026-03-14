@@ -50,19 +50,45 @@ function hideMenu() {
   currentSelection = null;
 }
 
-function showMenu(x, y, positionMode = 'above') {
+function showMenu(selRect, positionMode = 'above') {
   if (!customMenuEnabled) return;
   const menu = ensureMenu();
-  // Toggle arrow direction: pointing down (above selection) or up (below selection)
+  // Place off-screen first so we can measure the actual rendered dimensions
+  menu.style.left = '-9999px';
+  menu.style.top = '0px';
   menu.classList.toggle('menu-below', positionMode === 'below');
-  menu.style.left = `${x}px`;
-  menu.style.top = `${y}px`;
   menu.classList.remove('hidden');
-  lastMenuShownAt = Date.now();
+
   requestAnimationFrame(() => {
-    const rect = menu.getBoundingClientRect();
-    const targetX = x - rect.width / 2;
-    menu.style.left = `${Math.max(12, Math.min(window.innerWidth - rect.width - 12, targetX))}px`;
+    const menuW = menu.offsetWidth;
+    const menuH = menu.offsetHeight;
+    const ABOVE_GAP = 48; // gap below menu → reveals ~half a previous line above selection
+    const BELOW_GAP = 48; // gap above menu → reveals ~one line below selection end
+
+    let finalMode = positionMode;
+    let menuTop;
+    if (positionMode === 'above') {
+      if (selRect.top - menuH - ABOVE_GAP < 0) {
+        finalMode = 'below';
+        menuTop = selRect.bottom + window.scrollY + BELOW_GAP;
+      } else {
+        menuTop = selRect.top + window.scrollY - menuH - ABOVE_GAP;
+      }
+    } else {
+      if (selRect.bottom + BELOW_GAP + menuH > window.innerHeight) {
+        finalMode = 'above';
+        menuTop = selRect.top + window.scrollY - menuH - ABOVE_GAP;
+      } else {
+        menuTop = selRect.bottom + window.scrollY + BELOW_GAP;
+      }
+    }
+
+    menu.classList.toggle('menu-below', finalMode === 'below');
+    const centerX = selRect.left + window.scrollX + selRect.width / 2;
+    const targetX = centerX - menuW / 2;
+    menu.style.left = `${Math.max(12, Math.min(window.innerWidth - menuW - 12, targetX))}px`;
+    menu.style.top = `${Math.max(window.scrollY + 8, menuTop)}px`;
+    lastMenuShownAt = Date.now();
   });
 }
 
@@ -171,33 +197,8 @@ export function initHighlightFeature({
       range
     };
 
-    // Positioning: approximate menu height for boundary checks
-    const MENU_H = 60;
-    const ABOVE_GAP = 24; // gap between menu bottom and selection top
-    const BELOW_GAP = 40; // gap between selection bottom and menu top
-    const selCenterX = rect.left + window.scrollX + rect.width / 2;
-
-    let finalMode = positionMode;
-    let menuTop;
-    if (positionMode === 'above') {
-      if (rect.top - MENU_H - ABOVE_GAP < 0) {
-        // Not enough space above — flip to below
-        finalMode = 'below';
-        menuTop = rect.bottom + window.scrollY + BELOW_GAP;
-      } else {
-        menuTop = rect.top + window.scrollY - MENU_H - ABOVE_GAP;
-      }
-    } else {
-      if (rect.bottom + BELOW_GAP + MENU_H > window.innerHeight) {
-        // Not enough space below — flip to above
-        finalMode = 'above';
-        menuTop = rect.top + window.scrollY - MENU_H - ABOVE_GAP;
-      } else {
-        menuTop = rect.bottom + window.scrollY + BELOW_GAP;
-      }
-    }
-
-    showMenu(selCenterX, Math.max(window.scrollY + 8, menuTop), finalMode);
+    // Delegate all positioning math to showMenu (uses actual rendered height)
+    showMenu(rect, positionMode);
 
     if (event?.type === 'touchend') {
       event.preventDefault();
@@ -212,17 +213,18 @@ export function initHighlightFeature({
   });
 
   // Three-state menu positioning via selectionchange:
-  //   1. Initial long-press (menu hidden)  → show ABOVE after 300 ms debounce
-  //   2. While dragging handles (firing)   → hide menu immediately
-  //   3. Drag settled (300 ms silence)     → show BELOW after debounce
+  //   1. Initial long-press (menu hidden, currentSelection null) → show ABOVE after 300 ms
+  //   2. While dragging handles (events firing)                  → hide menu immediately
+  //   3. Drag settled (300 ms silence)                           → show BELOW after debounce
   // Also fixes Android WebView where touchend fires before getSelection() is ready.
+  // NOTE: use `currentSelection !== null` (not a visibility flag) to detect state,
+  // because after the first selectionchange the menu is already hidden and a naive
+  // visibility check would always see "hidden" → always show above (the original bug).
   let _selectionChangeTimer = null;
-  let _wasMenuVisible = false;
   document.addEventListener('selectionchange', () => {
     const menu = ensureMenu();
-    _wasMenuVisible = !menu.classList.contains('hidden');
-    if (_wasMenuVisible) {
-      // User is dragging handles — hide immediately
+    if (!menu.classList.contains('hidden')) {
+      // User is dragging handles — hide immediately (keep currentSelection intact)
       menu.classList.add('hidden');
     }
     clearTimeout(_selectionChangeTimer);
@@ -232,8 +234,9 @@ export function initHighlightFeature({
       if (!getPlainSelectionText(sel)) return;
       const range = sel.getRangeAt(0);
       if (!readerContent.contains(range.commonAncestorContainer)) return;
-      // Menu was visible → user dragged → show below; otherwise initial → show above
-      onSelectionChange(null, _wasMenuVisible ? 'below' : 'above');
+      // currentSelection set → previous selection existed → drag adjustment → show below
+      // currentSelection null → brand-new selection (initial long-press) → show above
+      onSelectionChange(null, currentSelection !== null ? 'below' : 'above');
     }, 300);
   });
 
