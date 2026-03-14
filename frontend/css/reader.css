@@ -736,7 +736,7 @@ body {
   background: rgba(255, 193, 80, 0.35);
   box-shadow: 0 0 0 2px rgba(255, 193, 80, 0.2);
   border-radius: 4px;
-  padding: 4px 3px;
+  padding: 4px 0;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }

@@ -424,7 +424,6 @@ export function initHighlightFeature({
           parent.insertBefore(el.firstChild, el);
         }
         parent.removeChild(el);
-        showToast('已删除划线');
         // TODO: call deleteHighlight API when backend endpoint is added
       }
       hideMenu();
@@ -522,14 +521,14 @@ export function initHighlightFeature({
       window.getSelection()?.removeAllRanges();
       hideMenu();
 
-      // ⑤ Persist to backend (non-blocking).
+      // ⑤ Persist to backend (non-blocking, silent on error).
       createHighlight({
         article_id: sel.articleId,
         text: sel.text,
         position_start: sel.positionStart,
         position_end: sel.positionEnd,
         type: 'highlight'
-      }).catch((err) => showToast(`划线保存失败：${err.message}`));
+      }).catch(() => {});
     }
   });
 
