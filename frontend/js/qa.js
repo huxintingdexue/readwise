@@ -1,6 +1,14 @@
 let modalNodes = null;
 let chatHistory = [];
 
+// Resize a textarea to fit its content.
+// Setting height to '1px' first forces the browser to recalculate scrollHeight
+// from scratch (avoids stale values from a previous larger height).
+function autoResize(el, minH = 40) {
+  el.style.height = '1px';
+  el.style.height = Math.max(minH, el.scrollHeight) + 'px';
+}
+
 function trimHistory() {
   if (chatHistory.length <= 10) return;
   chatHistory = chatHistory.slice(chatHistory.length - 10);
@@ -72,6 +80,9 @@ function ensureModal() {
     }
   }, { passive: false });
 
+  // Auto-resize as the user types so the textarea always fits its content.
+  questionInput.addEventListener('input', () => autoResize(questionInput));
+
   modalNodes = { modal, closeBtn, submitBtn, questionInput, chatBody, errorText, _submitFn: null };
   return modalNodes;
 }
@@ -89,8 +100,7 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
   // Auto-size the textarea after the modal is rendered, then focus (shows keyboard)
   // so the user can immediately continue typing after the pre-filled selection.
   requestAnimationFrame(() => {
-    nodes.questionInput.style.height = 'auto';
-    nodes.questionInput.style.height = Math.max(40, nodes.questionInput.scrollHeight) + 'px';
+    autoResize(nodes.questionInput);
     if (selectionText) {
       nodes.questionInput.focus();
       // Move cursor to end of pre-filled text

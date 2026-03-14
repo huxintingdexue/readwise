@@ -511,7 +511,11 @@ export function initHighlightFeature({
       } catch (err) {
         showToast(`划线保存失败：${err.message}`);
       }
+      // Cancel the selectionchange debounce timer and clear the selection so
+      // the menu does not re-appear after surroundContents triggers selectionchange.
+      clearTimeout(_selectionChangeTimer);
       hideMenu();
+      window.getSelection()?.removeAllRanges();
     }
   });
 

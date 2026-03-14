@@ -27,6 +27,7 @@
 - 最近变更：气泡按钮 white-space:nowrap 防换行 + 按钮宽度自适应 + QA textarea rows=1 垂直居中 + 聊天气泡留白缩减 ✅
 - 最近变更：划线高亮上下扩展 + 气泡图标对齐（stretch+space-between）+ 点击已划线弹"删除划线"气泡 + QA 输入框精确等高 + 发送后收键盘 ✅
 - 最近变更：划线退出再进入持久化（applyHighlightsToDOM）+ 安卓 WebView touchend 检测重写 + QA 输入框 padding 垂直居中 + 预填文字自动撑高 + 弹出键盘 ✅
+- 最近变更：划线后气泡闪烁修复（clearTimeout+removeAllRanges）+ QA 输入框高度精修（height=1px）+ 输入时实时撑高（input 监听）✅
 - 本地/部署是否可运行：✅ 可运行（Vercel 统一托管前端 + API）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅

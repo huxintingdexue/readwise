@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-03-14 — 划线后气泡闪烁修复 + QA 输入框自动撑高精修（v2.0.8）
+
+### 已完成
+- ✅ **划线后气泡闪烁**：`surroundContents()` 修改 DOM 时会触发 `selectionchange`，300ms 防抖结束后 `onSelectionChange` 重新读到残留选区，菜单重新弹出。修复：在 `action === 'highlight'` 完成后先 `clearTimeout(_selectionChangeTimer)` 取消防抖定时器，再 `hideMenu()`，最后 `window.getSelection()?.removeAllRanges()` 清除选区，防止任何后续 selectionchange 触发
+- ✅ **QA 输入框预填高度多一行空白**：`height = 'auto'` 在安卓 WebView 上因 `rows="1"` 属性影响，scrollHeight 计算结果偏大。改为 `height = '1px'`（强制压到最小），再读 scrollHeight，确保返回"刚好容纳内容"的最小高度
+- ✅ **QA 输入框用户输入不自动展开**：之前 autoResize 只在 openQaModal 时执行一次。在 `ensureModal()` 里给 textarea 加 `input` 事件监听，实时调用 `autoResize()`，用户每次击键输入都会触发高度更新；提取 `autoResize(el, minH=40)` 为模块级辅助函数复用
+
+### 变更文件
+- frontend/js/highlight.js
+- frontend/js/qa.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-14 — 已划线高亮持久化 + 触摸检测重写 + QA 输入框居中 + 预填自动展开（v2.0.7）
 
 ### 已完成
