@@ -27,7 +27,7 @@ function buildModal() {
       </div>
       <div id="qaChatBody" class="qa-chat-body"></div>
       <div class="qa-input-bar">
-        <textarea id="qaQuestionInput" rows="2" placeholder="输入你的问题..."></textarea>
+        <textarea id="qaQuestionInput" rows="1" placeholder="输入你的问题..."></textarea>
         <button id="qaSubmitBtn" type="button">发送</button>
       </div>
       <div id="qaError" class="qa-error"></div>

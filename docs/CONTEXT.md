@@ -24,6 +24,7 @@
 - 最近变更：选文气泡三态定位（初始上方/拖动隐藏/结束下方）+ QA 气泡高度自适应 + 正文 padding 收窄 + 选区颜色 ✅
 - 最近变更：修复气泡定位用实际高度/间距修正 + QA 面板固定85vh + 发送无需二次点击 + 正文 padding 缩至 8px ✅
 - 最近变更：QA 发送改用 touchend 直接调用 + 背景滚动锁定 + 气泡图标大小修正（划线/查引用 28px）+ 气泡背景收紧 ✅
+- 最近变更：气泡按钮 white-space:nowrap 防换行 + 按钮宽度自适应 + QA textarea rows=1 垂直居中 + 聊天气泡留白缩减 ✅
 - 本地/部署是否可运行：✅ 可运行（Vercel 统一托管前端 + API）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅

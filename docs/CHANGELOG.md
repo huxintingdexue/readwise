@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-03-14 — 气泡文字换行修复 + QA 输入框居中收紧 + 聊天气泡留白缩减（v2.0.5）
+
+### 已完成
+- ✅ 选文气泡按钮：加 `white-space: nowrap` 防止"查引用"文字换两行；去掉 `flex: 1`，每个按钮按内容自然撑宽；`padding: 4px 2px` → `6px 10px`，视觉更舒展；图标到文字 gap 从 6px 缩至 4px
+- ✅ QA textarea 改为 `rows="1"`，`padding: 10px 14px` → `8px 14px`，占位符文字自然垂直居中；输入栏整体高度减少约 30%（原两行高 ~60px → 单行高 ~42px）；加 `resize: none` 禁用拖拽
+- ✅ QA 发送按钮加 `align-self: center`，与单行输入框上下对齐更美观
+- ✅ QA 聊天气泡 `padding: 12px 16px` → `8px 12px`，文字之外留白缩减约 30%
+
+### 变更文件
+- frontend/js/qa.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-14 — QA 发送修复 + 背景滚动锁定 + 气泡图标与收紧（v2.0.4）
 
 ### 已完成
