@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-14 — 新增 Lenny & Naval 内容源（v2.3.0）
+
+### 已完成
+- ✅ **新增 Lenny Rachitsky**：`source_key: lenny`，RSS `https://www.lennysnewsletter.com/feed`（Substack）
+- ✅ **新增 Naval Ravikant**：`source_key: naval`，RSS `https://nav.al/feed`
+- ✅ **作者筛选下拉新增两项**：`lenny → Lenny Rachitsky`、`naval → Naval Ravikant`
+- ✅ **`sourceName()` 辅助函数同步更新**：文章卡片元数据正确显示作者名
+
+### 变更文件
+- scripts/fetch-articles.js
+- frontend/index.html
+- frontend/js/app.js
+
+---
+
 ## 2026-03-14 — 三档主题切换 + 按钮移至列表页（v2.2.0）
 
 ### 已完成

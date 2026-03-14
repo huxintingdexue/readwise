@@ -101,6 +101,8 @@ function sourceName(sourceKey) {
   if (sourceKey === 'sam') return 'Sam Altman';
   if (sourceKey === 'andrej') return 'Andrej Karpathy';
   if (sourceKey === 'peter') return 'Peter Steipete';
+  if (sourceKey === 'lenny') return 'Lenny Rachitsky';
+  if (sourceKey === 'naval') return 'Naval Ravikant';
   return sourceKey || 'Unknown';
 }
 

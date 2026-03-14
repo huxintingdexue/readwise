@@ -14,7 +14,9 @@ const FEEDS = [
       'https://steipete.me/index.xml',
       'https://steipete.me/atom.xml'
     ]
-  }
+  },
+  { key: 'lenny', urls: ['https://www.lennysnewsletter.com/feed'] },
+  { key: 'naval', urls: ['https://nav.al/feed'] }
 ];
 
 const TRANSLATE_PROMPT =
