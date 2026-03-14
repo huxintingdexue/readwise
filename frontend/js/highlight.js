@@ -51,25 +51,17 @@ function hideMenu() {
 }
 
 function showMenu(x, y) {
-  if (!customMenuEnabled) return false;
-  try {
-    const menu = ensureMenu();
-    menu.style.left = `${x}px`;
-    menu.style.top = `${y}px`;
-    menu.classList.remove('hidden');
-    lastMenuShownAt = Date.now();
-    requestAnimationFrame(() => {
-      const rect = menu.getBoundingClientRect();
-      const targetX = x - rect.width / 2;
-      menu.style.left = `${Math.max(12, Math.min(window.innerWidth - rect.width - 12, targetX))}px`;
-    });
-    return true;
-  } catch (_) {
-    customMenuEnabled = false;
-    document.body.classList.add('no-custom-selection');
-    document.body.classList.remove('custom-selection');
-    return false;
-  }
+  if (!customMenuEnabled) return;
+  const menu = ensureMenu();
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+  menu.classList.remove('hidden');
+  lastMenuShownAt = Date.now();
+  requestAnimationFrame(() => {
+    const rect = menu.getBoundingClientRect();
+    const targetX = x - rect.width / 2;
+    menu.style.left = `${Math.max(12, Math.min(window.innerWidth - rect.width - 12, targetX))}px`;
+  });
 }
 
 function getPlainSelectionText(selection) {
@@ -130,7 +122,6 @@ export function initHighlightFeature({
   const lastStartRef = { value: 0 };
   customMenuEnabled = true;
   document.body.classList.add('custom-selection');
-  document.body.classList.remove('no-custom-selection');
 
   function onSelectionChange(event) {
     const selection = window.getSelection();
@@ -180,14 +171,12 @@ export function initHighlightFeature({
 
     const x = rect.left + window.scrollX + rect.width / 2;
     const y = rect.top + window.scrollY - 52;
-    const menuShown = showMenu(x, Math.max(12, y));
+    showMenu(x, Math.max(12, y));
 
     // Accuracy notice removed by product decision; tracking in docs.
 
     if (event?.type === 'touchend') {
-      if (menuShown) {
-        event.preventDefault();
-      }
+      event.preventDefault();
     }
     event?.stopPropagation?.();
   }
@@ -195,8 +184,6 @@ export function initHighlightFeature({
   readerContent.addEventListener('mouseup', onSelectionChange);
   readerContent.addEventListener('touchend', onSelectionChange, { passive: false });
   readerContent.addEventListener('contextmenu', (event) => {
-    if (!customMenuEnabled) return;
-    if (!currentSelection) return;
     event.preventDefault();
   });
 
