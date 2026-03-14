@@ -1,4 +1,15 @@
 :root {
+  --bg: #f2f3f5;
+  --panel: #ffffff;
+  --panel-soft: #f7f7f7;
+  --line: #e4e4e4;
+  --text: #2f2f2f;
+  --muted: #8a8a8a;
+  --accent: #88d6b5;
+  --danger: #ff7b7b;
+}
+
+.reading-mode {
   --bg: #f5e6c8;
   --panel: rgba(255, 255, 255, 0.6);
   --panel-soft: rgba(255, 255, 255, 0.8);
@@ -6,10 +17,9 @@
   --text: #3c3c3c;
   --muted: #888888;
   --accent: #88d6b5;
-  --danger: #ff7b7b;
 }
 
-body.theme-dark {
+.reading-mode.theme-dark {
   --bg: #1a1a1a;
   --panel: #181c23;
   --panel-soft: #202733;
@@ -29,10 +39,6 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Noto Serif SC', 'PingFang SC', Georgia, serif;
-}
-
-body.theme-dark {
-  background: var(--bg);
 }
 
 .app-shell {
@@ -620,7 +626,7 @@ body.theme-dark {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(245, 230, 200, 0.92);
+  background: rgba(242, 243, 245, 0.92);
   display: flex;
   justify-content: center;
   gap: 28px;
@@ -656,7 +662,7 @@ body.theme-dark {
   color: var(--accent);
 }
 
-body.theme-dark .bottom-nav {
+.reading-mode.theme-dark .bottom-nav {
   background: rgba(26, 26, 26, 0.92);
 }
 
