@@ -144,48 +144,30 @@ export function initArticleNotesPanel({
     body.innerHTML = '<p class="state-text">加载中...</p>';
 
     try {
-      const [highlights, qaRecords] = await Promise.all([
-        getHighlights(article.id),
-        getQaRecords(article.id)
-      ]);
-
-      const highlightById = new Map();
-      highlights.forEach((item) => highlightById.set(item.id, item));
-
-      const items = [
-        ...highlights.map((h) => ({ type: 'highlight', data: h })),
-        ...qaRecords.map((q) => ({ type: 'qa', data: q }))
-      ];
+      const highlights = await getHighlights(article.id);
 
       body.innerHTML = '';
-      if (items.length === 0) {
-        body.innerHTML = '<p class="state-text">暂无内容</p>';
+      if (!highlights.length) {
+        body.innerHTML = '<p class="state-text">暂无划线</p>';
         return;
       }
 
-      items.forEach((item) => {
+      highlights.forEach((hl) => {
         const el = document.createElement('div');
         el.className = 'note-item';
-        if (item.type === 'highlight') {
-          el.innerHTML = `
-            <span>划线 · ${escapeHtml(formatDate(item.data.created_at))}</span>
-            <div>${escapeHtml(item.data.text || '')}</div>
-          `;
-          el.addEventListener('click', () => {
-            scrollToPosition(article.content_plain?.length || 0, item.data.position_start || 0);
-          });
-        } else {
-          const highlight = highlightById.get(item.data.highlight_id);
-          el.innerHTML = `
-            <span>问答 · ${escapeHtml(formatDate(item.data.created_at))}</span>
-            <div>${escapeHtml(item.data.question || '')}</div>
-            <div>${escapeHtml(item.data.answer_summary || '')}</div>
-          `;
-          el.addEventListener('click', () => {
-            const pos = highlight?.position_start ?? 0;
-            scrollToPosition(article.content_plain?.length || 0, pos);
-          });
-        }
+        el.innerHTML = `
+          <span class="note-item-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="currentColor">
+              <path d="M7 14l6-6 3 3-6 6H7v-3z"/>
+              <path d="M5 19h14v2H5z"/>
+            </svg>
+          </span>
+          <p class="note-item-text">${escapeHtml(hl.text || '')}</p>
+        `;
+        el.addEventListener('click', () => {
+          scrollToPosition(article.content_plain?.length || 0, hl.position_start || 0);
+          panel.classList.add('hidden');
+        });
         body.appendChild(el);
       });
     } catch (err) {

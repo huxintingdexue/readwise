@@ -198,10 +198,10 @@ body {
 }
 
 .reader-header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  align-items: flex-start;
   margin-bottom: 16px;
   position: sticky;
   top: 0;
@@ -210,7 +210,8 @@ body {
   z-index: 5;
 }
 
-.reader-header-actions {
+/* Right-side button group (highlights + theme toggle) */
+.reader-header-right {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -226,10 +227,6 @@ body {
   cursor: pointer;
 }
 
-.reader-header-actions.right {
-  justify-content: flex-end;
-}
-
 .back-btn {
   width: 36px;
   height: 36px;
@@ -240,15 +237,14 @@ body {
   place-items: center;
 }
 
-.reader-header h2 {
-  margin: 0;
-  font-size: 20px;
-}
-
-.reader-header p {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font-size: 13px;
+/* Icon-only buttons in the header right group */
+.header-icon-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
 }
 
 .reference-banner {
@@ -331,13 +327,14 @@ body {
 }
 
 .note-item {
-  padding: 8px 10px;
-  border-radius: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
   background: var(--panel-soft);
-  border: 1px solid var(--line);
-  margin-bottom: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
 }
 
@@ -345,11 +342,30 @@ body {
   margin-bottom: 0;
 }
 
-.note-item span {
-  color: var(--muted);
-  font-size: 12px;
-  display: block;
-  margin-bottom: 4px;
+/* Icon bubble on the left of each highlight card */
+.note-item-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: rgba(255, 193, 80, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(160, 110, 10, 0.85);
+}
+
+/* Text content — max 3 lines then ellipsis */
+.note-item-text {
+  flex: 1;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .reading-item {
@@ -817,8 +833,7 @@ body {
   margin-bottom: 8px;
 }
 
-.reading-mode .reader-header p,
-.reading-mode #articleNotesBtn {
+.reading-mode .reader-header p {
   display: none;
 }
 

@@ -73,18 +73,20 @@
         </section>
 
         <section id="readerView" class="reader hidden" aria-live="polite">
+          <!-- title/meta kept in DOM (used by JS) but not shown in header -->
+          <h2 id="readerTitle" style="display:none">阅读中</h2>
+          <p id="readerMeta" style="display:none"></p>
           <header class="reader-header">
-            <div class="reader-header-actions">
-              <button id="backBtn" class="back-btn" type="button" aria-label="返回">
-                <span aria-hidden="true">←</span>
+            <button id="backBtn" class="back-btn" type="button" aria-label="返回">
+              <span aria-hidden="true">←</span>
+            </button>
+            <div class="reader-header-right">
+              <button id="articleNotesBtn" class="header-icon-btn" type="button" aria-label="本文划线">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+                  <path d="M7 14l6-6 3 3-6 6H7v-3z"/>
+                  <path d="M5 19h14v2H5z"/>
+                </svg>
               </button>
-              <button id="articleNotesBtn" type="button">本文划线</button>
-            </div>
-            <div>
-              <h2 id="readerTitle">阅读中</h2>
-              <p id="readerMeta"></p>
-            </div>
-            <div class="reader-header-actions right">
               <button id="themeToggle" class="theme-toggle" type="button" aria-label="切换主题">☀️</button>
             </div>
           </header>
@@ -136,7 +138,7 @@
 
     <aside id="articleNotesPanel" class="notes-panel hidden" aria-live="polite">
       <div class="notes-panel-head">
-        <strong>本文划线与问答</strong>
+        <strong>本文划线</strong>
         <button id="closeArticleNotes" type="button">关闭</button>
       </div>
       <div id="articleNotesBody" class="notes-panel-body"></div>

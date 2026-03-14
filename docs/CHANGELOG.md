@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-03-14 — 阅读页状态栏重构 + 划线面板卡片化（v2.1.0）
+
+### 已完成
+- ✅ **状态栏布局重构**：移除标题区域，改为 `← ............ [划线图标] [☀️]`；返回按钮独立靠左，划线按钮与日夜切换靠右并排；`#readerTitle`/`#readerMeta` 保留在 DOM 供 JS 使用但 `display:none` 不展示
+- ✅ **划线按钮改为图标**：`#articleNotesBtn` 从文字"本文划线"改为 SVG 高亮笔图标（与选文气泡保持一致），样式与主题切换按钮统一（36×36 圆形）
+- ✅ **划线面板卡片化**：`notes.js` `initArticleNotesPanel` 改为只显示划线（不含问答），每条划线渲染为 WeChat Reading 卡片风格：左侧暖黄图标圆角方块 + 右侧正文最多 3 行省略；点击卡片跳转到对应段落并关闭面板
+- ✅ **面板标题**："本文划线与问答" → "本文划线"
+- ✅ `reading-mode #articleNotesBtn { display: none }` 规则已移除，划线按钮在阅读模式下正常显示
+- ✅ `.reader-header` 从 `grid-template-columns: auto 1fr auto` 改为 `flex + space-between`，新增 `.reader-header-right` 右侧按钮组，新增 `.header-icon-btn` 图标按钮样式，新增 `.note-item-icon` 和 `.note-item-text` 卡片子元素样式
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/notes.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-14 — 划线后气泡闪烁彻底修复 + QA 输入框自动撑高精修（v2.0.8）
 
 ### 已完成
