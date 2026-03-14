@@ -198,6 +198,16 @@ body {
   cursor: pointer;
 }
 
+.back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  padding: 0;
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+}
+
 .reader-header h2 {
   margin: 0;
   font-size: 20px;
@@ -595,14 +605,12 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(14, 18, 25, 0.95);
-  border-top: 1px solid var(--line);
+  background: rgba(15, 17, 21, 0.92);
   display: flex;
   justify-content: center;
   gap: 28px;
   padding: 10px 18px 12px;
   z-index: 25;
-  backdrop-filter: blur(8px);
 }
 
 .bottom-nav .tab-btn {
@@ -631,6 +639,28 @@ body {
 
 .bottom-nav .tab-btn.is-active {
   color: var(--accent);
+}
+
+.reading-mode .topbar,
+.reading-mode .filter-panel,
+.reading-mode .bottom-nav {
+  display: none !important;
+}
+
+.reading-mode .reader {
+  margin-top: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.reading-mode .reader-header {
+  margin-bottom: 8px;
+}
+
+.reading-mode .reader-header > div:last-child,
+.reading-mode #articleNotesBtn {
+  display: none;
 }
 
 @media (max-width: 720px) {

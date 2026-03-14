@@ -163,6 +163,7 @@ async function openArticle(id, jumpTo = null) {
   try {
     const [detail, progress] = await Promise.all([getArticleById(id), getReadingProgress(id)]);
     state.currentArticle = detail;
+    document.body.classList.add('reading-mode');
     renderReader(detail, {
       readerView: nodes.readerView,
       readerTitle: nodes.readerTitle,
@@ -186,6 +187,7 @@ function switchTab(nextTab) {
   nodes.tabButtons.forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.tab === nextTab);
   });
+  document.body.classList.remove('reading-mode');
   closeReader({
     readerView: nodes.readerView,
     listPanels: [nodes.todayTab, nodes.notesTab],
@@ -235,6 +237,7 @@ function bindEvents() {
 
   nodes.backBtn.addEventListener('click', () => {
     state.currentArticle = null;
+    document.body.classList.remove('reading-mode');
     closeReader({
       readerView: nodes.readerView,
       listPanels: [nodes.todayTab, nodes.notesTab],
