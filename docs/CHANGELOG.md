@@ -12,6 +12,16 @@
 - ✅ **作者筛选下拉新增两项**：`lenny → Lenny Rachitsky`、`naval → Naval Ravikant`
 - ✅ **`sourceName()` 辅助函数同步更新**：文章卡片元数据正确显示作者名
 
+### 首次抓取结果（INITIAL_FETCH=3，本地执行）
+| 源 | 抓取结果 |
+|----|----------|
+| sam | 2 篇新增（1 篇已存在跳过；1 篇 fallback-summary） |
+| andrej | 2 篇新增（1 篇已存在跳过；1 篇 fallback-summary） |
+| peter | ❌ 全部 feed URL 返回 404（已知问题，暂未修复） |
+| lenny | ✅ 3 篇全部新增 |
+| naval | ✅ 3 篇全部新增 |
+| **合计** | **10 篇新增** |
+
 ### 变更文件
 - scripts/fetch-articles.js
 - frontend/index.html
