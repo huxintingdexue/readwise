@@ -42,7 +42,8 @@ const nodes = {
   toast: document.querySelector('#toast'),
   originSnippet: document.querySelector('#originSnippet'),
   originSnippetText: document.querySelector('#originSnippetText'),
-  closeOriginSnippet: document.querySelector('#closeOriginSnippet')
+  closeOriginSnippet: document.querySelector('#closeOriginSnippet'),
+  themeToggle: document.querySelector('#themeToggle')
 };
 
 function escapeHtml(text) {
@@ -58,6 +59,29 @@ function showToast(message, duration = 2200) {
   nodes.toast.textContent = message;
   nodes.toast.classList.remove('hidden');
   setTimeout(() => nodes.toast.classList.add('hidden'), duration);
+}
+
+function applyTheme(theme) {
+  if (theme === 'dark') {
+    document.body.classList.add('theme-dark');
+    if (nodes.themeToggle) nodes.themeToggle.textContent = '🌙';
+    return;
+  }
+  document.body.classList.remove('theme-dark');
+  if (nodes.themeToggle) nodes.themeToggle.textContent = '☀️';
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+  const theme = saved === 'dark' ? 'dark' : 'warm';
+  applyTheme(theme);
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.contains('theme-dark');
+  const next = isDark ? 'warm' : 'dark';
+  localStorage.setItem('theme', next);
+  applyTheme(next);
 }
 
 function formatDate(isoString) {
@@ -256,6 +280,10 @@ function bindEvents() {
     });
   });
 
+  nodes.themeToggle?.addEventListener('click', () => {
+    toggleTheme();
+  });
+
   document.addEventListener('click', (event) => {
     const insideMenu = event.target.closest('#longPressMenu');
     const insideCard = event.target.closest('.article-card');
@@ -299,6 +327,7 @@ function init() {
     });
   }
 
+  initTheme();
   bindEvents();
   const openArticleNotes = initArticleNotesPanel({
     panel: nodes.articleNotesPanel,
