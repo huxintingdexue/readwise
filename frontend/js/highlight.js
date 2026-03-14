@@ -187,6 +187,23 @@ export function initHighlightFeature({
     event.preventDefault();
   });
 
+  // Android WebView: touchend fires before the OS populates window.getSelection()
+  // on long-press, so the first touchend always sees an empty selection.
+  // selectionchange is fired after the OS actually sets the selection, making it
+  // the reliable trigger for showing the menu on Android without an extra tap.
+  let _selectionChangeTimer = null;
+  document.addEventListener('selectionchange', () => {
+    clearTimeout(_selectionChangeTimer);
+    _selectionChangeTimer = setTimeout(() => {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      if (!getPlainSelectionText(sel)) return;
+      const range = sel.getRangeAt(0);
+      if (!readerContent.contains(range.commonAncestorContainer)) return;
+      onSelectionChange(null);
+    }, 300);
+  });
+
   const menu = ensureMenu();
   menu.addEventListener('click', async (event) => {
     event.stopPropagation();

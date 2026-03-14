@@ -4,6 +4,23 @@
 
 ---
 
+## 2026-03-14 — 修复安卓 WebView 选文气泡二次点击问题（v1.9.8）
+
+### 已完成
+- ✅ 修复安卓 WebView 长按选文后需再点击一次才弹出自定义操作气泡的问题
+- ✅ 根因：安卓 `touchend` 在 OS 填充 `window.getSelection()` 之前触发，导致首次 `onSelectionChange` 读到空选区直接返回
+- ✅ 新增 `document.selectionchange` 监听（300ms 防抖），在选区真正就绪后触发菜单，无需额外点击
+
+### 变更文件
+- frontend/js/highlight.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-14 — 阅读沉浸与底部 Tab 优化（v1.9.2）
 
 ### 已完成
