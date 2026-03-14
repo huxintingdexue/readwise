@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-03-14 — QA 发送修复 + 背景滚动锁定 + 气泡图标与收紧（v2.0.4）
+
+### 已完成
+- ✅ QA 发送按钮改用 `touchend` + `preventDefault()` 直接调用提取的 `handleSubmit` 函数，彻底解决安卓 WebView 键盘收起后需二次点击的问题（`pointerdown` 方案无效，换用 `touchend` 绕过 blur/layout-shift 循环）
+- ✅ QA 弹窗打开时执行 `document.body.style.overflow = 'hidden'`，关闭时恢复，防止背景文章被滑动
+- ✅ QA 弹窗内添加 `touchmove` 监听：仅允许 `.qa-chat-body` 内部滚动，其余区域 `preventDefault()`，防止聊天区滚动穿透到正文
+- ✅ `.qa-chat-body` 增加 `overscroll-behavior: contain`，阻止橡皮筋滚动溢出
+- ✅ 气泡图标大小修正：`划线`/`查引用` SVG 改为 28px（线条较细视觉偏小），`复制`/`提问` 保持 20px
+- ✅ 气泡背景收紧：移除固定 `width: 280px`，`padding` 从 `12px 8px` 缩至 `8px 6px`，`gap` 从 `6px` 缩至 `4px`，气泡随内容宽度自适应
+
+### 变更文件
+- frontend/js/qa.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-14 — 气泡定位精修 + QA 面板与排版优化（v2.0.3）
 
 ### 已完成

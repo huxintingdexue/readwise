@@ -563,6 +563,7 @@ body {
   flex: 1;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 8px 2px;
   display: flex;
   flex-direction: column;
@@ -655,10 +656,9 @@ body {
   border-radius: 10px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   display: flex;
-  gap: 6px;
-  padding: 12px 8px;
+  gap: 4px;
+  padding: 8px 6px;
   align-items: center;
-  width: 280px;
 }
 
 .selection-menu button {
@@ -684,6 +684,13 @@ body {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
+}
+
+/* 划线和查引用的 SVG 笔画较细，视觉上偏小，放大到 28px 与其他图标平衡 */
+.selection-menu button[data-action="highlight"] svg,
+.selection-menu button[data-action="reference"] svg {
+  width: 28px;
+  height: 28px;
 }
 
 .selection-menu::after {

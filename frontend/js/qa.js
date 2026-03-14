@@ -51,15 +51,28 @@ function ensureModal() {
   const chatBody = modal.querySelector('#qaChatBody');
   const errorText = modal.querySelector('#qaError');
 
-  // On Android, tapping the send button while the keyboard is open causes the
-  // textarea to blur first (keyboard closes, layout shifts), so the click lands
-  // in empty space and a second tap is needed. Preventing pointerdown stops the
-  // blur, keeps the keyboard open, and lets the click fire normally.
-  submitBtn.addEventListener('pointerdown', (e) => {
+  // On Android WebView, tapping the send button while the keyboard is open causes:
+  //   textarea blur → keyboard closes → viewport/layout shifts → click misses the button.
+  // Using touchend + preventDefault bypasses the entire blur/layout-shift cycle:
+  // the button receives touchend before the keyboard has a chance to dismiss,
+  // and we call the submit handler directly without waiting for a click event.
+  submitBtn.addEventListener('touchend', (e) => {
     e.preventDefault();
-  });
+    if (!submitBtn.disabled && modalNodes?._submitFn) {
+      modalNodes._submitFn();
+    }
+  }, { passive: false });
 
-  modalNodes = { modal, closeBtn, submitBtn, questionInput, chatBody, errorText };
+  // Prevent the QA chat scroll from bleeding into the background article.
+  // Touches inside the chat body scroll the chat; everywhere else (sheet header,
+  // input bar, backdrop) is locked down.
+  modal.addEventListener('touchmove', (e) => {
+    if (!e.target.closest('.qa-chat-body')) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  modalNodes = { modal, closeBtn, submitBtn, questionInput, chatBody, errorText, _submitFn: null };
   return modalNodes;
 }
 
@@ -70,14 +83,17 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
   nodes.chatBody.innerHTML = '';
   chatHistory = [];
   nodes.modal.classList.remove('hidden');
+  // Lock background scroll while the modal is open
+  document.body.style.overflow = 'hidden';
 
   nodes.closeBtn.onclick = () => {
     nodes.modal.classList.add('hidden');
     nodes.chatBody.innerHTML = '';
     chatHistory = [];
+    document.body.style.overflow = '';
   };
 
-  nodes.submitBtn.onclick = async () => {
+  async function handleSubmit() {
     const question = nodes.questionInput.value.trim();
     if (!question) {
       nodes.errorText.textContent = '请输入问题';
@@ -123,5 +139,8 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
     } finally {
       nodes.submitBtn.disabled = false;
     }
-  };
+  }
+
+  nodes._submitFn = handleSubmit;
+  nodes.submitBtn.onclick = handleSubmit;
 }
