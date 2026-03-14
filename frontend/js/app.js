@@ -13,7 +13,8 @@ const state = {
   articles: [],
   currentArticle: null,
   longPressTimer: null,
-  longPressTargetId: null
+  longPressTargetId: null,
+  historyBound: false
 };
 
 const nodes = {
@@ -185,6 +186,9 @@ async function loadArticles() {
 
 async function openArticle(id, jumpTo = null) {
   try {
+    if (!history.state || history.state.view !== 'reader' || history.state.articleId !== id) {
+      history.pushState({ view: 'reader', articleId: id }, '', `?article=${id}`);
+    }
     const [detail, progress] = await Promise.all([getArticleById(id), getReadingProgress(id)]);
     state.currentArticle = detail;
     document.body.classList.add('reading-mode');
@@ -328,6 +332,26 @@ function bindEvents() {
     if (selectionText) return;
     document.body.classList.toggle('reader-bar-hidden');
   });
+
+  if (!state.historyBound) {
+    window.addEventListener('popstate', () => {
+      if (document.body.classList.contains('reading-mode')) {
+        state.currentArticle = null;
+        document.body.classList.remove('reading-mode');
+        document.body.classList.remove('reader-bar-hidden');
+        closeReader({
+          readerView: nodes.readerView,
+          listPanels: [nodes.todayTab, nodes.notesTab],
+          readerContent: nodes.readerContent,
+          originSnippet: nodes.originSnippet,
+          originSnippetText: nodes.originSnippetText
+        });
+        nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
+        nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
+      }
+    });
+    state.historyBound = true;
+  }
 }
 
 function init() {
