@@ -5,7 +5,7 @@ dotenv.config({ path: '.env.local' });
 
 const DEFAULT_USER_ID = 'default_user';
 const VALID_STATUS = new Set(['unread', 'read', 'archived']);
-const VALID_AUTHOR = new Set(['sam', 'andrej', 'peter']);
+const VALID_AUTHOR = new Set(['sam', 'andrej', 'peter', 'lenny', 'naval']);
 const VALID_SORT = new Set(['date_desc', 'date_asc']);
 
 let pool;
@@ -61,7 +61,7 @@ function normalizeFilters(query) {
     return { error: 'Invalid status, expected unread/read/archived' };
   }
   if (author && !VALID_AUTHOR.has(author)) {
-    return { error: 'Invalid author, expected sam/andrej/peter' };
+    return { error: 'Invalid author, expected sam/andrej/peter/lenny/naval' };
   }
   if (!VALID_SORT.has(sort)) {
     return { error: 'Invalid sort, expected date_desc/date_asc' };
