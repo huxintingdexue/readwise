@@ -50,9 +50,11 @@ function hideMenu() {
   currentSelection = null;
 }
 
-function showMenu(x, y) {
+function showMenu(x, y, positionMode = 'above') {
   if (!customMenuEnabled) return;
   const menu = ensureMenu();
+  // Toggle arrow direction: pointing down (above selection) or up (below selection)
+  menu.classList.toggle('menu-below', positionMode === 'below');
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
   menu.classList.remove('hidden');
@@ -123,7 +125,7 @@ export function initHighlightFeature({
   customMenuEnabled = true;
   document.body.classList.add('custom-selection');
 
-  function onSelectionChange(event) {
+  function onSelectionChange(event, positionMode = 'above') {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
       hideMenu();
@@ -169,11 +171,33 @@ export function initHighlightFeature({
       range
     };
 
-    const x = rect.left + window.scrollX + rect.width / 2;
-    const y = rect.top + window.scrollY - 52;
-    showMenu(x, Math.max(12, y));
+    // Positioning: approximate menu height for boundary checks
+    const MENU_H = 60;
+    const ABOVE_GAP = 24; // gap between menu bottom and selection top
+    const BELOW_GAP = 40; // gap between selection bottom and menu top
+    const selCenterX = rect.left + window.scrollX + rect.width / 2;
 
-    // Accuracy notice removed by product decision; tracking in docs.
+    let finalMode = positionMode;
+    let menuTop;
+    if (positionMode === 'above') {
+      if (rect.top - MENU_H - ABOVE_GAP < 0) {
+        // Not enough space above — flip to below
+        finalMode = 'below';
+        menuTop = rect.bottom + window.scrollY + BELOW_GAP;
+      } else {
+        menuTop = rect.top + window.scrollY - MENU_H - ABOVE_GAP;
+      }
+    } else {
+      if (rect.bottom + BELOW_GAP + MENU_H > window.innerHeight) {
+        // Not enough space below — flip to above
+        finalMode = 'above';
+        menuTop = rect.top + window.scrollY - MENU_H - ABOVE_GAP;
+      } else {
+        menuTop = rect.bottom + window.scrollY + BELOW_GAP;
+      }
+    }
+
+    showMenu(selCenterX, Math.max(window.scrollY + 8, menuTop), finalMode);
 
     if (event?.type === 'touchend') {
       event.preventDefault();
@@ -181,18 +205,26 @@ export function initHighlightFeature({
     event?.stopPropagation?.();
   }
 
-  readerContent.addEventListener('mouseup', onSelectionChange);
-  readerContent.addEventListener('touchend', onSelectionChange, { passive: false });
+  readerContent.addEventListener('mouseup', (e) => onSelectionChange(e, 'above'));
+  readerContent.addEventListener('touchend', (e) => onSelectionChange(e, 'above'), { passive: false });
   readerContent.addEventListener('contextmenu', (event) => {
     event.preventDefault();
   });
 
-  // Android WebView: touchend fires before the OS populates window.getSelection()
-  // on long-press, so the first touchend always sees an empty selection.
-  // selectionchange is fired after the OS actually sets the selection, making it
-  // the reliable trigger for showing the menu on Android without an extra tap.
+  // Three-state menu positioning via selectionchange:
+  //   1. Initial long-press (menu hidden)  → show ABOVE after 300 ms debounce
+  //   2. While dragging handles (firing)   → hide menu immediately
+  //   3. Drag settled (300 ms silence)     → show BELOW after debounce
+  // Also fixes Android WebView where touchend fires before getSelection() is ready.
   let _selectionChangeTimer = null;
+  let _wasMenuVisible = false;
   document.addEventListener('selectionchange', () => {
+    const menu = ensureMenu();
+    _wasMenuVisible = !menu.classList.contains('hidden');
+    if (_wasMenuVisible) {
+      // User is dragging handles — hide immediately
+      menu.classList.add('hidden');
+    }
     clearTimeout(_selectionChangeTimer);
     _selectionChangeTimer = setTimeout(() => {
       const sel = window.getSelection();
@@ -200,7 +232,8 @@ export function initHighlightFeature({
       if (!getPlainSelectionText(sel)) return;
       const range = sel.getRangeAt(0);
       if (!readerContent.contains(range.commonAncestorContainer)) return;
-      onSelectionChange(null);
+      // Menu was visible → user dragged → show below; otherwise initial → show above
+      onSelectionChange(null, _wasMenuVisible ? 'below' : 'above');
     }, 300);
   });
 

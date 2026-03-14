@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-03-14 — 选文气泡三态定位与阅读体验优化（v2.0.2）
+
+### 已完成
+- ✅ 选文气泡三态定位逻辑（参考微信读书）：
+  - 初始长按选中 → 气泡出现在选区上方（底部距选区顶部 24px）
+  - 用户拖动调整选区 → selectionchange 触发时立即隐藏气泡
+  - 拖动结束（300ms 无事件）→ 气泡出现在选区下方（顶部距选区底部 40px）
+  - 边界处理：上方不足则翻转至下方，下方不足则翻转至上方
+- ✅ 气泡箭头方向随位置自动切换（上方：向下三角；下方：向上三角），新增 `.menu-below` CSS 类
+- ✅ 图标一致性：`.selection-menu svg` 增加 `flex-shrink: 0`，防止不同路径设计导致视觉大小不一
+- ✅ QA 对话气泡高度自适应：`.qa-sheet` 改用 `max-height: 85vh` + flex 布局，`.qa-chat-body` 改用 flex column + `align-items: flex-start`，"思考中..."气泡不再撑开大空白
+- ✅ 正文左右 padding 从 24px 收窄至 16px，文字横铺屏幕，贴近微信读书排版
+- ✅ 新增 `::selection` / `::-webkit-selection` 规则，选区高亮色改为暖黄 rgba(255,180,60,0.4)
+
+### 变更文件
+- frontend/js/highlight.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-14 — 修复安卓 WebView 选文气泡二次点击问题（v1.9.8）
 
 ### 已完成

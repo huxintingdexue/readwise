@@ -291,7 +291,7 @@ body {
   user-select: text;
   -webkit-user-select: text;
   -webkit-touch-callout: none;
-  padding: 0 24px;
+  padding: 0 16px;
 }
 
 .reader-content p {
@@ -526,9 +526,9 @@ body {
   border: 1px solid #e7e7e7;
   border-radius: 18px 18px 0 0;
   padding: 14px 14px 12px;
-  height: 85vh;
-  display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   box-shadow: 0 -20px 40px rgba(0, 0, 0, 0.35);
 }
@@ -560,10 +560,14 @@ body {
 }
 
 .qa-chat-body {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 8px 2px;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+  align-items: flex-start;
 }
 
 .qa-bubble {
@@ -574,17 +578,17 @@ body {
   font-size: 14px;
   line-height: 1.6;
   white-space: pre-wrap;
-  min-height: 0;
+  height: auto;
 }
 
 .qa-bubble.user {
-  justify-self: end;
+  align-self: flex-end;
   background: #3c3c3c;
   color: #ffffff;
 }
 
 .qa-bubble.ai {
-  justify-self: start;
+  align-self: flex-start;
   background: #f5f5f5;
   color: #1a1a1a;
 }
@@ -679,6 +683,7 @@ body {
 .selection-menu svg {
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
 }
 
 .selection-menu::after {
@@ -692,6 +697,22 @@ body {
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
   border-top: 8px solid #2c2c2c;
+}
+
+/* When menu is positioned below the selection, arrow points upward */
+.selection-menu.menu-below::after {
+  top: -8px;
+  bottom: auto;
+  border-top: none;
+  border-bottom: 8px solid #2c2c2c;
+}
+
+::selection {
+  background: rgba(255, 180, 60, 0.4);
+}
+
+::-webkit-selection {
+  background: rgba(255, 180, 60, 0.4);
 }
 
 .highlight-mark {
