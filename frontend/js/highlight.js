@@ -305,6 +305,13 @@ export function initHighlightFeature({
       hideMenu();
     }
   });
+
+  document.addEventListener('pointerdown', (event) => {
+    if (!event.target.closest('.selection-menu')) {
+      window.getSelection()?.removeAllRanges();
+      hideMenu();
+    }
+  });
 }
 
 function buildContextText(contentPlain, start, end) {

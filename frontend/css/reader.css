@@ -10,11 +10,11 @@
 }
 
 .reading-mode {
-  --bg: #f5e6c8;
+  --bg: #f5ecd7;
   --panel: rgba(255, 255, 255, 0.6);
   --panel-soft: rgba(255, 255, 255, 0.8);
   --line: rgba(60, 60, 60, 0.18);
-  --text: #3c3c3c;
+  --text: #1a1a1a;
   --muted: #888888;
   --accent: #88d6b5;
 }
@@ -621,20 +621,20 @@ body {
 .selection-menu {
   position: absolute;
   z-index: 50;
-  background: var(--panel);
+  background: #2c2c2c;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   display: flex;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   align-items: center;
 }
 
 .selection-menu button {
   border: 0;
   background: transparent;
-  color: var(--text);
+  color: #ffffff;
   padding: 2px 4px;
   cursor: pointer;
   font-size: 12px;
@@ -644,7 +644,7 @@ body {
 }
 
 .selection-menu button:hover {
-  background: var(--panel-soft);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .selection-menu svg {
@@ -652,9 +652,22 @@ body {
   height: 16px;
 }
 
+.selection-menu::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 8px solid #2c2c2c;
+}
+
 .highlight-mark {
-  background: rgba(255, 232, 138, 0.28);
-  box-shadow: 0 0 0 2px rgba(255, 232, 138, 0.15);
+  background: rgba(255, 180, 60, 0.3);
+  box-shadow: 0 0 0 2px rgba(255, 180, 60, 0.18);
   border-radius: 4px;
   padding: 0 2px;
 }
