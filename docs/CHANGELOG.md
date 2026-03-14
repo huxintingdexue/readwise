@@ -4,6 +4,23 @@
 
 ---
 
+## 2026-03-14 — PWA 秒刷新策略（v1.9.1）
+
+### 已完成
+- ✅ Service Worker 立即接管（`skipWaiting + clientsClaim` 已存在），新增导航/静态资源 Network First
+- ✅ `sw.js` 版本升级为 `v2`，触发缓存更新
+- ✅ `index.html` 与 `/` 增加 `Cache-Control: no-cache` 响应头
+
+### 变更文件
+- frontend/sw.js
+- vercel.json
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-14 — 应用改名与 UI 调整（v1.9.0）
 
 ### 已完成

@@ -1,4 +1,4 @@
-const SW_VERSION = 'v1';
+const SW_VERSION = 'v2';
 const STATIC_CACHE = `readwise-static-${SW_VERSION}`;
 const LIST_CACHE = `readwise-list-${SW_VERSION}`;
 const ARTICLE_CACHE = `readwise-article-${SW_VERSION}`;
@@ -41,6 +41,10 @@ function isArticleDetailRequest(url) {
 
 function isImageRequest(request) {
   return request.destination === 'image';
+}
+
+function isStaticAsset(url) {
+  return url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/') || url.pathname === '/manifest.json';
 }
 
 async function networkFirst(request, cacheName) {
@@ -112,6 +116,16 @@ self.addEventListener('fetch', (event) => {
 
   if (isArticleDetailRequest(url)) {
     event.respondWith(cacheFirstWithBackgroundUpdate(request, ARTICLE_CACHE));
+    return;
+  }
+
+  if (request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html') {
+    event.respondWith(networkFirst(request, STATIC_CACHE));
+    return;
+  }
+
+  if (isStaticAsset(url)) {
+    event.respondWith(networkFirst(request, STATIC_CACHE));
     return;
   }
 
