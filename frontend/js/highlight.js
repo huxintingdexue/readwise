@@ -498,10 +498,18 @@ export function initHighlightFeature({
       // Snapshot before hideMenu() nulls out currentSelection.
       const sel = currentSelection;
 
-      // ① Cancel any in-flight selectionchange debounce timer immediately.
+      // ① Temporarily disable showMenu() for 600ms so that ANY re-triggering
+      //    path (selectionchange timer, touchend→onSelectionChange, etc.) is
+      //    blocked at the gate — regardless of event ordering on the device.
+      //    showMenu() already checks `if (!customMenuEnabled) return`, so this
+      //    is the single choke-point that covers all paths.
+      customMenuEnabled = false;
+      setTimeout(() => { customMenuEnabled = true; }, 600);
+
+      // ② Cancel any in-flight selectionchange debounce timer.
       clearTimeout(_selectionChangeTimer);
 
-      // ② Wrap the selected text in the DOM (synchronous).
+      // ③ Wrap the selected text in the DOM (synchronous).
       try {
         if (sel.range) {
           const mark = document.createElement('span');
@@ -510,16 +518,11 @@ export function initHighlightFeature({
         }
       } catch (_) {}
 
-      // ③ Clear selection and hide the bubble BEFORE the async API call.
-      //    surroundContents() and removeAllRanges() both fire selectionchange,
-      //    which would start a new 300ms timer. Doing this synchronously here
-      //    means by the time that timer fires the selection is already empty
-      //    and the menu is already hidden — no re-flash possible.
+      // ④ Clear selection and hide the bubble.
       window.getSelection()?.removeAllRanges();
       hideMenu();
 
-      // ④ Persist to backend (non-blocking — not awaited so the menu cannot
-      //    re-appear while waiting for the network response).
+      // ⑤ Persist to backend (non-blocking).
       createHighlight({
         article_id: sel.articleId,
         text: sel.text,
