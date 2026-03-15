@@ -12,6 +12,7 @@
 - 最近变更：底部导航栏背景改为不透明并跟随主题 ✅
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
 - 待执行：Neon 迁移 reading_progress 唯一键为 (article_id, user_id)
+- 最近变更："我的"页 + 反馈/管理员入口 ✅
 - 最近变更：PWA 秒刷新策略（SW v2 + index.html no-cache）✅
 - 最近变更：阅读页沉浸模式 + 底部 Tab 轻量样式 ✅
 - 最近变更：沉浸模式保留文章标题 ✅
@@ -94,7 +95,8 @@ Vercel Serverless Functions（/api/*）
 | api/reading-progress.js | GET/POST /api/reading-progress | ✅ 已完成 |
 | api/search-reference.js | POST /api/search-reference（每日限流） | ✅ 已完成 |
 | api/auth/verify.js | POST /api/auth/verify（邀请码校验） | ✅ 已完成 |
-| api/_utils/auth.js | 邀请码解析工具 | ✅ 已完成 |
+| api/feedback.js | GET/POST /api/feedback（用户反馈） | ✅ 已完成 |
+| api/_utils/auth.js | 邀请码解析工具（含 isAdmin） | ✅ 已完成 |
 | api/_utils/rateLimit.js | 限流统计工具 | ✅ 已完成 |
 | api/translate-next.js | POST /api/translate-next（保留接口，前端已不再调用） | ✅ 已完成 |
 | api/export.js | GET /api/export | ✅ 已完成 |
@@ -105,6 +107,7 @@ Vercel Serverless Functions（/api/*）
 | frontend/js/reference.js | 查引用、Banner、失败提示"未找到来源" | ✅ 已完成 |
 | frontend/js/notes.js | 笔记 Tab、本文划线面板 | ✅ 已完成 |
 | frontend/js/api.js | 所有fetch封装，自动带 X-Invite-Code | ✅ 已完成 |
+| frontend/js/app.js | “我的”页 + 反馈/管理员面板 | ✅ 已完成 |
 | frontend/sw.js | 列表NetworkFirst，详情CacheFirst，图片不缓存 | ✅ 已完成 |
 | frontend/manifest.json | PWA 配置 | ✅ 已完成 |
 

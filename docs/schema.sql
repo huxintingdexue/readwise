@@ -70,6 +70,14 @@ CREATE TABLE IF NOT EXISTS reading_progress (
   user_id           TEXT NULL
 );
 
+-- 用户反馈表
+CREATE TABLE IF NOT EXISTS feedback (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(50),
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- 索引（提升常用查询性能）
 CREATE INDEX IF NOT EXISTS idx_articles_source_key ON articles(source_key);
 CREATE INDEX IF NOT EXISTS idx_articles_read_status ON articles(read_status);

@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-03-15 — 底部导航优化 + 我的页 + 反馈（v2.6.0）
+
+### 已完成
+- ✅ **底部导航均分**：两个 tab 各占 50% 宽度居中对齐
+- ✅ **副标题更新**："直连硅谷，一手信息触手可及" → "全球一手信息触手可及"
+- ✅ **“我的”页**：账号邀请码展示、导出入口、反馈入口
+- ✅ **反馈接口**：新增 `POST /api/feedback` 写入 feedback 表
+- ✅ **管理员入口**：`zhaodagua:admin` + 反馈查看面板与 GET /api/feedback
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- frontend/js/api.js
+- api/feedback.js
+- api/_utils/auth.js
+- docs/schema.sql
+- .env.example
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 多用户阅读进度唯一键修复（v2.5.2）
 
 ### 已完成

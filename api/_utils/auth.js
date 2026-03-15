@@ -28,3 +28,7 @@ export function getUserIdFromInviteCode(inviteCode) {
   if (!code) return null;
   return cachedInviteMap.get(code) || null;
 }
+
+export function isAdmin(userId) {
+  return userId === 'admin';
+}

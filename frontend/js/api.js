@@ -172,3 +172,15 @@ export async function getReadingList(status) {
   const data = await requestJson(url);
   return data.items || [];
 }
+
+export async function postFeedback(content) {
+  return requestJson('/api/feedback', {
+    method: 'POST',
+    body: { content }
+  });
+}
+
+export async function getFeedback() {
+  const data = await requestJson('/api/feedback');
+  return data.items || [];
+}

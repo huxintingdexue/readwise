@@ -1,7 +1,7 @@
-import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout } from './api.js';
+import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback } from './api.js';
 import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, scrollToPlainPosition } from './reader.js';
-import { initArticleNotesPanel, loadNotesTab } from './notes.js';
+import { initArticleNotesPanel } from './notes.js';
 
 const state = {
   tab: 'today',
@@ -36,8 +36,11 @@ const nodes = {
   articleNotesPanel: document.querySelector('#articleNotesPanel'),
   articleNotesBody: document.querySelector('#articleNotesBody'),
   closeArticleNotes: document.querySelector('#closeArticleNotes'),
-  notesList: document.querySelector('#notesList'),
-  readingList: document.querySelector('#readingList'),
+  inviteCodeDisplay: document.querySelector('#inviteCodeDisplay'),
+  exportEntry: document.querySelector('#exportEntry'),
+  feedbackEntry: document.querySelector('#feedbackEntry'),
+  adminSection: document.querySelector('#adminSection'),
+  adminFeedbackEntry: document.querySelector('#adminFeedbackEntry'),
   backBtn: document.querySelector('#backBtn'),
   filterToggle: document.querySelector('#filterToggle'),
   filterPanel: document.querySelector('#filterPanel'),
@@ -51,7 +54,14 @@ const nodes = {
   loginInput: document.querySelector('#loginInput'),
   loginButton: document.querySelector('#loginButton'),
   loginError: document.querySelector('#loginError'),
-  logoutBtn: document.querySelector('#logoutBtn')
+  logoutBtn: document.querySelector('#logoutBtn'),
+  feedbackModal: document.querySelector('#feedbackModal'),
+  feedbackInput: document.querySelector('#feedbackInput'),
+  feedbackSubmitBtn: document.querySelector('#feedbackSubmitBtn'),
+  feedbackCloseBtn: document.querySelector('#feedbackCloseBtn'),
+  adminFeedbackModal: document.querySelector('#adminFeedbackModal'),
+  adminFeedbackBody: document.querySelector('#adminFeedbackBody'),
+  adminFeedbackCloseBtn: document.querySelector('#adminFeedbackCloseBtn')
 };
 
 function escapeHtml(text) {
@@ -252,12 +262,7 @@ function switchTab(nextTab) {
   hideLongPressMenu();
 
   if (nextTab === 'notes') {
-    loadNotesTab({
-      notesRoot: nodes.notesList,
-      readingRoot: nodes.readingList,
-      onJump: (articleId, position) => openArticle(articleId, position),
-      showToast
-    });
+    refreshMeTab();
   }
 }
 
@@ -331,6 +336,41 @@ function bindEvents() {
     logout();
   });
 
+  nodes.exportEntry?.addEventListener('click', () => {
+    showToast('功能开发中，敬请期待～着急可微信联系 Guang', 2000);
+  });
+
+  nodes.feedbackEntry?.addEventListener('click', () => {
+    openFeedbackModal();
+  });
+
+  nodes.feedbackCloseBtn?.addEventListener('click', () => {
+    closeFeedbackModal();
+  });
+
+  nodes.feedbackSubmitBtn?.addEventListener('click', async () => {
+    const content = String(nodes.feedbackInput?.value || '').trim();
+    if (!content) {
+      showToast('请输入反馈内容', 2000);
+      return;
+    }
+    try {
+      await postFeedback(content);
+      closeFeedbackModal();
+      showToast('已收到，谢谢！', 2000);
+    } catch (_) {
+      showToast('发送失败，请重试', 2000);
+    }
+  });
+
+  nodes.adminFeedbackEntry?.addEventListener('click', async () => {
+    await openAdminFeedback();
+  });
+
+  nodes.adminFeedbackCloseBtn?.addEventListener('click', () => {
+    closeAdminFeedback();
+  });
+
   document.addEventListener('click', (event) => {
     const insideMenu = event.target.closest('#longPressMenu');
     const insideCard = event.target.closest('.article-card');
@@ -391,6 +431,78 @@ function bindEvents() {
       }
     });
     state.historyBound = true;
+  }
+}
+
+function getInviteCodeLabel() {
+  const inviteCode = localStorage.getItem('inviteCode') || '-';
+  return `邀请码：${inviteCode}`;
+}
+
+function getUserId() {
+  return localStorage.getItem('userId') || '';
+}
+
+function refreshMeTab() {
+  if (nodes.inviteCodeDisplay) {
+    nodes.inviteCodeDisplay.textContent = getInviteCodeLabel();
+  }
+  const userId = getUserId();
+  if (nodes.adminSection) {
+    nodes.adminSection.classList.toggle('hidden', userId !== 'admin');
+  }
+}
+
+function openFeedbackModal() {
+  nodes.feedbackModal?.classList.remove('hidden');
+  if (nodes.feedbackInput) {
+    nodes.feedbackInput.value = '';
+    nodes.feedbackInput.focus();
+  }
+}
+
+function closeFeedbackModal() {
+  nodes.feedbackModal?.classList.add('hidden');
+}
+
+function formatAdminTime(isoString) {
+  const d = new Date(isoString);
+  if (Number.isNaN(d.getTime())) return '未知时间';
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${mm}/${dd} ${hh}:${mi}`;
+}
+
+function closeAdminFeedback() {
+  nodes.adminFeedbackModal?.classList.add('hidden');
+}
+
+async function openAdminFeedback() {
+  if (!nodes.adminFeedbackModal || !nodes.adminFeedbackBody) return;
+  nodes.adminFeedbackBody.innerHTML = '';
+  nodes.adminFeedbackModal.classList.remove('hidden');
+  try {
+    const items = await getFeedback();
+    if (!items.length) {
+      nodes.adminFeedbackBody.innerHTML = '<div class="state-text">暂无反馈</div>';
+      return;
+    }
+    items.forEach((item) => {
+      const div = document.createElement('div');
+      div.className = 'me-feedback-item';
+      div.innerHTML = `
+        <div class="me-feedback-meta">
+          <span>${escapeHtml(item.user_id || 'unknown')}</span>
+          <span>${escapeHtml(formatAdminTime(item.created_at))}</span>
+        </div>
+        <div>${escapeHtml(item.content || '')}</div>
+      `;
+      nodes.adminFeedbackBody.appendChild(div);
+    });
+  } catch (_) {
+    nodes.adminFeedbackBody.innerHTML = '<div class="state-text">加载失败</div>';
   }
 }
 

@@ -13,7 +13,7 @@
       <header class="topbar">
         <div class="topbar-title">
           <h1>今日硅谷</h1>
-          <p>直连硅谷，一手信息触手可及</p>
+          <p>全球一手信息触手可及</p>
         </div>
         <div class="topbar-actions">
           <button id="themeToggle" class="icon-btn theme-toggle" type="button" aria-label="切换主题">☀️</button>
@@ -65,13 +65,32 @@
         </section>
 
         <section id="tab-notes" class="tab-panel hidden">
-          <div class="notes-section">
-            <h2>划线与问答</h2>
-            <div id="notesList" class="notes-list"></div>
+          <div class="me-section">
+            <h2>账号</h2>
+            <div class="me-item">
+              <span class="me-value" id="inviteCodeDisplay">邀请码：-</span>
+            </div>
           </div>
-          <div class="notes-section">
-            <h2>书单</h2>
-            <div id="readingList" class="reading-list"></div>
+          <div class="me-section">
+            <h2>导出</h2>
+            <div class="me-item" id="exportEntry">
+              <div>导出划线和问答记录</div>
+              <span>></span>
+            </div>
+          </div>
+          <div class="me-section">
+            <h2>反馈与建议</h2>
+            <div class="me-item" id="feedbackEntry">
+              <div>提交建议</div>
+              <span>></span>
+            </div>
+          </div>
+          <div class="me-section hidden" id="adminSection">
+            <h2>管理员</h2>
+            <div class="me-item" id="adminFeedbackEntry">
+              <div>查看用户反馈</div>
+              <span>></span>
+            </div>
           </div>
         </section>
 
@@ -114,11 +133,10 @@
         <button class="tab-btn" data-tab="notes" type="button">
           <span class="tab-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <path d="M6 4h9l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm8 1v4h4" fill="currentColor"></path>
-              <path d="M8 12h8v2H8zm0 4h8v2H8z" fill="currentColor"></path>
+              <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z" fill="currentColor"></path>
             </svg>
           </span>
-          <span class="tab-label">笔记</span>
+          <span class="tab-label">我的</span>
         </button>
       </nav>
     </div>
@@ -168,6 +186,27 @@
           <button id="qaSubmitBtn" type="button">发送</button>
         </div>
         <div id="qaError" class="qa-error"></div>
+      </div>
+    </div>
+
+    <div id="feedbackModal" class="qa-modal hidden" role="dialog" aria-modal="true">
+      <div class="me-panel">
+        <div class="me-panel-head">
+          <strong>反馈与建议</strong>
+          <button id="feedbackCloseBtn" type="button" aria-label="关闭">✕</button>
+        </div>
+        <textarea id="feedbackInput" class="feedback-input" placeholder="非常欢迎提出改进建议！大家的每条建议我都会认真读的！也欢迎微信跟我讨论！"></textarea>
+        <button id="feedbackSubmitBtn" class="feedback-submit" type="button">发送</button>
+      </div>
+    </div>
+
+    <div id="adminFeedbackModal" class="qa-modal hidden" role="dialog" aria-modal="true">
+      <div class="me-panel">
+        <div class="me-panel-head">
+          <strong>用户反馈</strong>
+          <button id="adminFeedbackCloseBtn" type="button" aria-label="关闭">✕</button>
+        </div>
+        <div id="adminFeedbackBody" class="me-panel-body"></div>
       </div>
     </div>
 
