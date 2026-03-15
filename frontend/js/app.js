@@ -391,7 +391,21 @@ function bindEvents() {
       await navigator.clipboard.writeText(text);
       showToast('已复制调试信息', 2000);
     } catch (_) {
-      showToast('复制失败，请重试', 2000);
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.setAttribute('readonly', 'readonly');
+      textArea.style.position = 'fixed';
+      textArea.style.top = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        const ok = document.execCommand('copy');
+        showToast(ok ? '已复制调试信息' : '复制失败，请重试', 2000);
+      } catch (err) {
+        showToast('复制失败，请重试', 2000);
+      } finally {
+        document.body.removeChild(textArea);
+      }
     }
   });
 
