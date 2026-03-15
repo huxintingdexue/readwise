@@ -69,6 +69,18 @@ function renderContent(detail) {
   return zhHtml;
 }
 
+export function renderReaderLoading(nodes, title = '加载中...') {
+  const { readerView, readerTitle, readerMeta, readerContent, listPanels } = nodes;
+  listPanels.forEach((el) => el.classList.add('hidden'));
+  readerView.classList.remove('hidden');
+  hideOriginSnippet(nodes);
+  hideReferenceBanner();
+
+  readerTitle.textContent = title;
+  readerMeta.textContent = '';
+  readerContent.innerHTML = '<p class="reader-loading">正在加载文章内容...</p>';
+}
+
 function hideOriginSnippet(nodes) {
   if (!nodes?.originSnippet) return;
   nodes.originSnippet.classList.add('hidden');

@@ -594,6 +594,11 @@ body {
   padding: 16px;
 }
 
+.reader-loading {
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .reader-header {
   display: flex;
   align-items: center;

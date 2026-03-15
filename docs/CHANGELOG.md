@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-03-15 — 阅读页加载态优化（v2.9.5）
+
+### 已完成
+- ✅ **立即进入阅读页**：点击卡片后先展示加载态，再渲染正文
+- ✅ **失败回退**：加载失败自动返回列表并提示
+
+### 变更文件
+- frontend/js/app.js
+- frontend/js/reader.js
+- frontend/css/reader.css
+- frontend/index.html
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 投喂翻译元信息 + 标签可见性（v2.9.4）
 
 ### 已完成

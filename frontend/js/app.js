@@ -1,6 +1,6 @@
 import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, ingestUrl, translateIngestStep, trackEvent } from './api.js';
 import { initHighlightFeature } from './highlight.js';
-import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, scrollToPlainPosition } from './reader.js';
+import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition } from './reader.js';
 import { initArticleNotesPanel } from './notes.js';
 
 const state = {
@@ -242,6 +242,15 @@ async function openArticle(id, jumpTo = null) {
     if (!history.state || history.state.view !== 'reader' || history.state.articleId !== id) {
       history.pushState({ view: 'reader', articleId: id }, '', `?article=${id}`);
     }
+    renderReaderLoading({
+      readerView: nodes.readerView,
+      readerTitle: nodes.readerTitle,
+      readerMeta: nodes.readerMeta,
+      readerContent: nodes.readerContent,
+      listPanels: [nodes.todayTab, nodes.notesTab],
+      originSnippet: nodes.originSnippet,
+      originSnippetText: nodes.originSnippetText
+    });
     const [detail, progress] = await Promise.all([getArticleById(id), getReadingProgress(id)]);
     state.currentArticle = detail;
     document.body.classList.add('reading-mode');
@@ -261,6 +270,15 @@ async function openArticle(id, jumpTo = null) {
     }
   } catch (err) {
     showToast(`打开文章失败：${err.message}`);
+    document.body.classList.remove('reading-mode');
+    document.body.classList.remove('reader-bar-hidden');
+    closeReader({
+      readerView: nodes.readerView,
+      listPanels: [nodes.todayTab, nodes.notesTab],
+      readerContent: nodes.readerContent,
+      originSnippet: nodes.originSnippet,
+      originSnippetText: nodes.originSnippetText
+    });
   }
 }
 
