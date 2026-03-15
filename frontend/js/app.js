@@ -197,8 +197,9 @@ function renderArticles() {
     const isOwner = item.submitted_by && item.submitted_by === getUserId();
     const showBadge = item.status !== 'translating' && isOwner;
     const isManual = Boolean(item.submitted_by || item.source_key === 'manual');
+    const isManualTranslating = isManual && isTranslating;
     li.innerHTML = `
-      <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManual ? ' is-recommend' : ''}" data-id="${item.id}">
+      <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManualTranslating ? ' is-recommend' : ''}" data-id="${item.id}">
         <div class="article-card-head">
           <div class="article-card-title">
             <h3>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
@@ -242,18 +243,26 @@ async function openArticle(id, jumpTo = null) {
     if (!history.state || history.state.view !== 'reader' || history.state.articleId !== id) {
       history.pushState({ view: 'reader', articleId: id }, '', `?article=${id}`);
     }
-    renderReaderLoading({
-      readerView: nodes.readerView,
-      readerTitle: nodes.readerTitle,
-      readerMeta: nodes.readerMeta,
-      readerContent: nodes.readerContent,
-      listPanels: [nodes.todayTab, nodes.notesTab],
-      originSnippet: nodes.originSnippet,
-      originSnippetText: nodes.originSnippetText
-    });
+    let loadingShown = false;
+    const loadingTimer = setTimeout(() => {
+      loadingShown = true;
+      document.body.classList.add('reading-mode');
+      renderReaderLoading({
+        readerView: nodes.readerView,
+        readerTitle: nodes.readerTitle,
+        readerMeta: nodes.readerMeta,
+        readerContent: nodes.readerContent,
+        listPanels: [nodes.todayTab, nodes.notesTab],
+        originSnippet: nodes.originSnippet,
+        originSnippetText: nodes.originSnippetText
+      });
+    }, 180);
     const [detail, progress] = await Promise.all([getArticleById(id), getReadingProgress(id)]);
+    clearTimeout(loadingTimer);
     state.currentArticle = detail;
-    document.body.classList.add('reading-mode');
+    if (!loadingShown) {
+      document.body.classList.add('reading-mode');
+    }
     document.body.classList.add('reader-bar-hidden');
     renderReader(detail, {
       readerView: nodes.readerView,

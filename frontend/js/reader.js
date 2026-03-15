@@ -78,7 +78,13 @@ export function renderReaderLoading(nodes, title = '加载中...') {
 
   readerTitle.textContent = title;
   readerMeta.textContent = '';
-  readerContent.innerHTML = '<p class="reader-loading">正在加载文章内容...</p>';
+  readerContent.innerHTML = `
+    <div class="reader-skeleton">
+      <div class="skeleton-line w-70"></div>
+      <div class="skeleton-line w-90"></div>
+      <div class="skeleton-line w-60"></div>
+    </div>
+  `;
 }
 
 function hideOriginSnippet(nodes) {

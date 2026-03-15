@@ -102,11 +102,11 @@ function showMenu(selRect, positionMode = 'above') {
 }
 
 function getPlainSelectionText(selection) {
-  return selection?.toString()?.replace(/\s+/g, ' ').trim() || '';
+  return selection?.toString()?.trim() || '';
 }
 
-function inferPosition(contentPlain, contentZh, selectedText, lastStartRef) {
-  const plain = contentPlain || '';
+function inferPosition(content, selectedText, lastStartRef) {
+  const plain = content || '';
   if (!plain || !selectedText) return { start: -1, end: -1 };
 
   const escaped = selectedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -134,20 +134,10 @@ function inferPosition(contentPlain, contentZh, selectedText, lastStartRef) {
   return { start: best.start, end: best.end, approximate: false };
 }
 
-function inferApproximatePosition(contentPlain, contentZh, selectedText) {
-  const plain = contentPlain || '';
-  const zh = contentZh || '';
-  if (!plain || !zh || !selectedText) return { start: -1, end: -1, approximate: true };
-
-  const zhIndex = zh.indexOf(selectedText);
-  if (zhIndex < 0) return { start: -1, end: -1, approximate: true };
-
-  const ratio = zhIndex / Math.max(1, zh.length);
-  const approxStart = Math.floor(plain.length * ratio);
-  const lengthRatio = plain.length / Math.max(1, zh.length);
-  const approxLen = Math.max(1, Math.floor(selectedText.length * lengthRatio));
-  const approxEnd = Math.min(plain.length, approxStart + approxLen);
-  return { start: approxStart, end: approxEnd, approximate: true };
+function getPositionBaseText(article, readerContent) {
+  if (article?.content_zh) return article.content_zh;
+  if (readerContent?.textContent) return readerContent.textContent;
+  return article?.content_plain || '';
 }
 
 /**
@@ -238,10 +228,8 @@ export function initHighlightFeature({
     const article = getCurrentArticle();
     if (!article) return;
 
-    let pos = inferPosition(article.content_plain || '', article.content_zh || '', text, lastStartRef);
-    if (pos.start < 0 || pos.end <= pos.start) {
-      pos = inferApproximatePosition(article.content_plain || '', article.content_zh || '', text);
-    }
+    const baseText = getPositionBaseText(article, readerContent);
+    let pos = inferPosition(baseText, text, lastStartRef);
 
     currentHighlightEl = markEl;
     currentSelection = {
@@ -291,12 +279,10 @@ export function initHighlightFeature({
       return;
     }
 
-    let pos = inferPosition(article.content_plain || '', article.content_zh || '', text, lastStartRef);
+    const baseText = getPositionBaseText(article, readerContent);
+    let pos = inferPosition(baseText, text, lastStartRef);
     if (pos.start < 0 || pos.end <= pos.start) {
-      pos = inferApproximatePosition(article.content_plain || '', article.content_zh || '', text);
-    }
-    if (pos.start < 0 || pos.end <= pos.start) {
-      showToast('无法定位到原文位置，请调整选区后重试');
+      showToast('无法定位到文本位置，请调整选区后重试');
       hideMenu();
       return;
     }
@@ -307,7 +293,7 @@ export function initHighlightFeature({
       text,
       positionStart: pos.start,
       positionEnd: pos.end,
-      originText: (article.content_plain || '').slice(pos.start, pos.end),
+      originText: baseText.slice(pos.start, pos.end),
       approximate: pos.approximate === true,
       range
     };
@@ -434,7 +420,8 @@ export function initHighlightFeature({
       const article = getCurrentArticle();
       const selection = currentSelection;
       if (!selection) return;
-      const contextText = buildContextText(article?.content_plain || '', selection.positionStart, selection.positionEnd);
+      const baseText = article?.content_zh || article?.content_plain || '';
+      const contextText = buildContextText(baseText, selection.positionStart, selection.positionEnd);
       hideMenu();
       window.getSelection()?.removeAllRanges();
       openQaModal({

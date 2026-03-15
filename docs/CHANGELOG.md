@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-15 — 选中文本定位 + 阅读页骨架屏（v2.9.6）
+
+### 已完成
+- ✅ **选中文本定位**：划线/提问改用中文内容定位，不再提示“原文位置”
+- ✅ **读友投喂置灰规则**：仅翻译中置灰，完成后恢复正常
+- ✅ **阅读页加载态优化**：延迟 180ms 再显示骨架屏，避免闪烁
+
+### 变更文件
+- frontend/js/highlight.js
+- frontend/js/app.js
+- frontend/js/reader.js
+- frontend/css/reader.css
+- frontend/index.html
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 阅读页加载态优化（v2.9.5）
 
 ### 已完成
