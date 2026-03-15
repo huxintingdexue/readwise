@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-15 — 我的页版本号提示（v2.7.1）
+
+### 已完成
+- ✅ **版本号提示**：我的页底部展示版本号，便于确认更新
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — MVP 用户行为监控（v2.7.0）
 
 ### 已完成
