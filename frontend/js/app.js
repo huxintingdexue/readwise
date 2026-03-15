@@ -194,14 +194,15 @@ function renderArticles() {
     const progressLabel = Math.round(progress);
     const isTranslating = item.status === 'translating';
     const statusLabel = isTranslating ? '翻译中...' : readStatusLabel(item.read_status, progressLabel);
-    const showBadge = item.status !== 'translating' && item.submitted_by;
+    const isOwner = item.submitted_by && item.submitted_by === getUserId();
+    const showBadge = item.status !== 'translating' && isOwner;
     const isManual = Boolean(item.submitted_by || item.source_key === 'manual');
     li.innerHTML = `
       <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManual ? ' is-recommend' : ''}" data-id="${item.id}">
         <div class="article-card-head">
           <div class="article-card-title">
             <h3>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
-            ${showBadge ? '<span class="article-badge">读友推荐</span>' : ''}
+            ${showBadge ? '<span class="article-badge">我添加的</span>' : ''}
           </div>
           <span class="${isTranslating ? 'article-status' : 'read-status'}">${escapeHtml(statusLabel)}</span>
         </div>

@@ -89,6 +89,27 @@ async function translateNextSegment(apiKey, articleId, contentPlain, contentZh, 
   };
 }
 
+async function translateMetaIfNeeded(apiKey, article) {
+  if (!apiKey) return { titleZh: article.title_zh || '', summaryZh: article.summary_zh || '' };
+  let titleZh = article.title_zh || '';
+  let summaryZh = article.summary_zh || '';
+  if (!titleZh && article.title_en) {
+    try {
+      titleZh = await deepseekTranslateSegment(apiKey, article.title_en, '标题');
+    } catch (err) {
+      console.error(`[ingest-translate] title failed for ${article.id}: ${err.message}`);
+    }
+  }
+  if (!summaryZh && article.summary_en) {
+    try {
+      summaryZh = await deepseekTranslateSegment(apiKey, article.summary_en, '摘要');
+    } catch (err) {
+      console.error(`[ingest-translate] summary failed for ${article.id}: ${err.message}`);
+    }
+  }
+  return { titleZh, summaryZh };
+}
+
 async function main() {
   const dbUrl = requiredEnv('NEON_DATABASE_URL');
   const apiKey = requiredEnv('DEEPSEEK_API_KEY');
@@ -97,7 +118,7 @@ async function main() {
   try {
     const { rows } = await pool.query(
       `
-        SELECT id, content_plain, content_zh, translated_chars, translation_status
+        SELECT id, title_en, title_zh, summary_en, summary_zh, content_plain, content_zh, translated_chars, translation_status
         FROM articles
         WHERE status = 'translating'
         ORDER BY fetched_at ASC
@@ -122,6 +143,7 @@ async function main() {
         continue;
       }
 
+      const meta = await translateMetaIfNeeded(apiKey, article);
       let contentZh = article.content_zh || '';
       let translatedChars = Math.max(0, Number.parseInt(String(article.translated_chars || 0), 10) || 0);
       const totalLen = contentPlain.length;
@@ -148,13 +170,23 @@ async function main() {
       await pool.query(
         `
           UPDATE articles
-          SET content_zh = $2,
-              translated_chars = $3,
-              status = $4,
-              translation_status = $5
+          SET title_zh = COALESCE($2, title_zh),
+              summary_zh = COALESCE($3, summary_zh),
+              content_zh = $4,
+              translated_chars = $5,
+              status = $6,
+              translation_status = $7
           WHERE id = $1
         `,
-        [article.id, contentZh, Math.min(translatedChars, totalLen), nextStatus, nextTranslationStatus]
+        [
+          article.id,
+          meta.titleZh || null,
+          meta.summaryZh || null,
+          contentZh,
+          Math.min(translatedChars, totalLen),
+          nextStatus,
+          nextTranslationStatus
+        ]
       );
 
       console.log(

@@ -312,6 +312,27 @@ async function translateNextSegment(apiKey, articleId, contentPlain, contentZh, 
   };
 }
 
+async function translateMetaIfNeeded(apiKey, article) {
+  if (!apiKey) return { titleZh: article.title_zh || '', summaryZh: article.summary_zh || '' };
+  let titleZh = article.title_zh || '';
+  let summaryZh = article.summary_zh || '';
+  if (!titleZh && article.title_en) {
+    try {
+      titleZh = await deepseekTranslateSegment(apiKey, article.title_en, '标题');
+    } catch (err) {
+      console.error(`[ingest] title translate failed for ${article.id}: ${err.message}`);
+    }
+  }
+  if (!summaryZh && article.summary_en) {
+    try {
+      summaryZh = await deepseekTranslateSegment(apiKey, article.summary_en, '摘要');
+    } catch (err) {
+      console.error(`[ingest] summary translate failed for ${article.id}: ${err.message}`);
+    }
+  }
+  return { titleZh, summaryZh };
+}
+
 async function hasAuthorsTable(poolClient) {
   if (cachedAuthorsTable !== null) {
     return cachedAuthorsTable;
@@ -452,7 +473,7 @@ async function handleTranslateStep(req, res, userId) {
   const poolClient = getPool();
   const { rows } = await poolClient.query(
     `
-      SELECT id, content_plain, content_zh, translated_chars, status, submitted_by, translation_status
+      SELECT id, title_en, title_zh, summary_en, summary_zh, content_plain, content_zh, translated_chars, status, submitted_by, translation_status
       FROM articles
       WHERE id = $1
       LIMIT 1
@@ -485,6 +506,7 @@ async function handleTranslateStep(req, res, userId) {
     return;
   }
 
+  const meta = await translateMetaIfNeeded(apiKey, article);
   const step = await translateNextSegment(
     apiKey,
     article.id,
@@ -501,13 +523,23 @@ async function handleTranslateStep(req, res, userId) {
   await poolClient.query(
     `
       UPDATE articles
-      SET content_zh = $2,
-          translated_chars = $3,
-          status = $4,
-          translation_status = $5
+      SET title_zh = COALESCE($2, title_zh),
+          summary_zh = COALESCE($3, summary_zh),
+          content_zh = $4,
+          translated_chars = $5,
+          status = $6,
+          translation_status = $7
       WHERE id = $1
     `,
-    [article.id, step.contentZh, step.translatedChars, nextStatus, nextTranslationStatus]
+    [
+      article.id,
+      meta.titleZh || null,
+      meta.summaryZh || null,
+      step.contentZh,
+      step.translatedChars,
+      nextStatus,
+      nextTranslationStatus
+    ]
   );
 
   res.status(200).json({ success: true, status: nextStatus });
