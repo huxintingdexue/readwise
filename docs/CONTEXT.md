@@ -22,6 +22,7 @@
 - 最近变更：管理员控制台整合 + 邀请码管理 ✅
 - 最近变更：移除普通用户诊断模块 ✅
 - 最近变更：手动投喂链接（翻译中可见、完成后全员可见）✅
+- 最近变更：手动投喂翻译由 GitHub Actions 每 5 分钟推进 ✅
 - 最近变更：合并 API 入口以适配 Vercel Hobby 限制 ✅
 - 最近变更：我的页底部版本号提示 ✅
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
@@ -104,6 +105,7 @@ Vercel Serverless Functions（/api/*）
 | 文件 | 职责 | 状态 |
 |------|------|------|
 | scripts/fetch-articles.js | 抓取RSS、爬全文、生成content_plain、全量分段翻译、写入数据库 | ✅ 已完成 |
+| scripts/ingest-translate.js | 手动投喂翻译推进（5 分钟定时） | ✅ 已完成 |
 | scripts/retranslate.js | 扫描未全量翻译文章并补齐全文翻译 | ✅ 已完成 |
 | .github/workflows/fetch.yml | cron UTC 14:00，支持 INITIAL_FETCH | ✅ 已完成 |
 | api/articles.js | GET /api/articles（join进度表返回百分比）| ✅ 已完成 |

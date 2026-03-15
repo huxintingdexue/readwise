@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-15 — 手动投喂自动翻译（v2.9.1）
+
+### 已完成
+- ✅ **定时翻译推进**：新增 GitHub Actions 每 5 分钟推进翻译
+- ✅ **后台脚本**：`scripts/ingest-translate.js` 每次推进多段，缩短等待
+
+### 变更文件
+- .github/workflows/ingest-translate.yml
+- scripts/ingest-translate.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 手动投喂链接（v2.9.0）
 
 ### 已完成
