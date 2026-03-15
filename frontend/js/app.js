@@ -272,6 +272,9 @@ function switchTab(nextTab) {
   });
   nodes.todayTab.classList.toggle('hidden', nextTab !== 'today');
   nodes.notesTab.classList.toggle('hidden', nextTab !== 'notes');
+  if (nodes.ingestToggle) {
+    nodes.ingestToggle.classList.toggle('hidden', nextTab !== 'today');
+  }
   if (nextTab !== 'today') {
     state.currentArticle = null;
   }
