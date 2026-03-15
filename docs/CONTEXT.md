@@ -13,6 +13,7 @@
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
 - 待执行：Neon 迁移 reading_progress 唯一键为 (article_id, user_id)
 - 最近变更："我的"页 + 反馈/管理员入口 ✅
+- 最近变更：反馈发送成功提示文案优化 ✅
 - 最近变更：PWA 秒刷新策略（SW v2 + index.html no-cache）✅
 - 最近变更：阅读页沉浸模式 + 底部 Tab 轻量样式 ✅
 - 最近变更：沉浸模式保留文章标题 ✅

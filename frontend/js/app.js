@@ -357,7 +357,7 @@ function bindEvents() {
     try {
       await postFeedback(content);
       closeFeedbackModal();
-      showToast('已收到，谢谢！', 2000);
+      showToast('发送成功，感谢反馈！', 2000);
     } catch (_) {
       showToast('发送失败，请重试', 2000);
     }
