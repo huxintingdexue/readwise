@@ -178,15 +178,26 @@ function renderArticles() {
 
   nodes.articlesState.textContent = '';
 
-  state.articles.forEach((item) => {
+  const ordered = state.articles
+    .map((item, idx) => ({ item, idx }))
+    .sort((a, b) => {
+      const aManual = Boolean(a.item.submitted_by || a.item.source_key === 'manual');
+      const bManual = Boolean(b.item.submitted_by || b.item.source_key === 'manual');
+      if (aManual === bManual) return a.idx - b.idx;
+      return aManual ? -1 : 1;
+    })
+    .map((row) => row.item);
+
+  ordered.forEach((item) => {
     const li = document.createElement('li');
     const progress = Math.max(0, Math.min(100, Number(item.read_progress || 0)));
     const progressLabel = Math.round(progress);
     const isTranslating = item.status === 'translating';
     const statusLabel = isTranslating ? '翻译中...' : readStatusLabel(item.read_status, progressLabel);
     const showBadge = item.status !== 'translating' && item.submitted_by;
+    const isManual = Boolean(item.submitted_by || item.source_key === 'manual');
     li.innerHTML = `
-      <article class="article-card${isTranslating ? ' is-disabled' : ''}" data-id="${item.id}">
+      <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManual ? ' is-recommend' : ''}" data-id="${item.id}">
         <div class="article-card-head">
           <div class="article-card-title">
             <h3>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>

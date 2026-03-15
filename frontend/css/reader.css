@@ -567,6 +567,18 @@ body {
   opacity: 0.85;
 }
 
+.article-card.is-recommend {
+  background: var(--panel-soft);
+}
+
+.article-card.is-recommend h3,
+.article-card.is-recommend .article-meta,
+.article-card.is-recommend .article-summary,
+.article-card.is-recommend .read-status,
+.article-card.is-recommend .article-status {
+  color: var(--muted);
+}
+
 .notes-placeholder {
   border: 1px dashed var(--line);
   border-radius: 14px;
