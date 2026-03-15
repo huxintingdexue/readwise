@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS reading_list (
 -- 阅读进度表
 CREATE TABLE IF NOT EXISTS reading_progress (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  article_id        UUID REFERENCES articles(id) ON DELETE CASCADE UNIQUE,
+  article_id        UUID REFERENCES articles(id) ON DELETE CASCADE,
   scroll_position   INT DEFAULT 0,                          -- 字符位置，基于 content_plain，与划线方案一致
   last_read_at      TIMESTAMP DEFAULT NOW(),
   user_id           TEXT NULL
@@ -77,3 +77,5 @@ CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at DE
 CREATE INDEX IF NOT EXISTS idx_highlights_article_id ON highlights(article_id);
 CREATE INDEX IF NOT EXISTS idx_qa_records_article_id ON qa_records(article_id);
 CREATE INDEX IF NOT EXISTS idx_reading_list_status ON reading_list(status);
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_reading_progress_article_user
+  ON reading_progress(article_id, user_id);

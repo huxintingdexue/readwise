@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-15 — 多用户阅读进度唯一键修复（v2.5.2）
+
+### 已完成
+- ✅ **reading_progress 唯一键调整**：由 `article_id` 改为 `(article_id, user_id)`，避免多用户进度互相覆盖
+- ✅ **upsert 逻辑同步**：进度写入使用 `(article_id, user_id)` 冲突键
+
+### 变更文件
+- api/reading-progress.js
+- docs/schema.sql
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 底部导航栏不透明背景（v2.5.1）
 
 ### 已完成

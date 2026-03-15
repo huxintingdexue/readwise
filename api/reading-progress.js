@@ -73,7 +73,7 @@ async function upsertProgress(req, res, userId) {
   const sql = `
     INSERT INTO reading_progress (article_id, scroll_position, last_read_at, user_id)
     VALUES ($1, $2, NOW(), $3)
-    ON CONFLICT (article_id) DO UPDATE SET
+    ON CONFLICT (article_id, user_id) DO UPDATE SET
       scroll_position = EXCLUDED.scroll_position,
       last_read_at = NOW(),
       user_id = EXCLUDED.user_id

@@ -10,6 +10,8 @@
 - 最后完成步骤：PRD 第十一节第 12 步：数据导出 ✅
 - 最近变更：邀请码白名单多用户 + 每日限流 ✅
 - 最近变更：底部导航栏背景改为不透明并跟随主题 ✅
+- 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
+- 待执行：Neon 迁移 reading_progress 唯一键为 (article_id, user_id)
 - 最近变更：PWA 秒刷新策略（SW v2 + index.html no-cache）✅
 - 最近变更：阅读页沉浸模式 + 底部 Tab 轻量样式 ✅
 - 最近变更：沉浸模式保留文章标题 ✅
@@ -152,6 +154,7 @@ Vercel Serverless Functions（/api/*）
 | 多用户预留 | user_id保留，API层按邀请码映射真实 user_id | 字段有意义不是摆设 |
 | 内容不可覆盖 | ON CONFLICT DO NOTHING | 保护划线位置 |
 | DeepSeek降级 | 翻译失败显英文，问答失败提示重试 | 不白屏 |
+| 进度唯一键 | (article_id, user_id) | 支持多用户独立阅读进度 |
 
 ## 已知问题 / 技术债
 
