@@ -11,6 +11,7 @@
 - ✅ **邀请码管理接口**：新增 `GET/POST /api/admin/invite-codes`
 - ✅ **邀请码迁移**：auth 优先 env，后查 invite_codes 表
 - ✅ **管理员入口整合**：我的页仅保留“管理员控制台”
+- ✅ **移除诊断模块**：普通用户“我的”页不再显示调试入口
 
 ### 变更文件
 - api/_utils/auth.js
