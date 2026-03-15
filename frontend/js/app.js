@@ -39,6 +39,7 @@ const nodes = {
   inviteCodeDisplay: document.querySelector('#inviteCodeDisplay'),
   exportEntry: document.querySelector('#exportEntry'),
   feedbackEntry: document.querySelector('#feedbackEntry'),
+  themeDebugCopy: document.querySelector('#themeDebugCopy'),
   adminSection: document.querySelector('#adminSection'),
   adminFeedbackEntry: document.querySelector('#adminFeedbackEntry'),
   backBtn: document.querySelector('#backBtn'),
@@ -389,6 +390,22 @@ function bindEvents() {
 
   nodes.feedbackEntry?.addEventListener('click', () => {
     openFeedbackModal();
+  });
+
+  nodes.themeDebugCopy?.addEventListener('click', async () => {
+    const payload = {
+      theme: localStorage.getItem('theme') || '',
+      systemDark: window.matchMedia('(prefers-color-scheme: dark)').matches,
+      bodyClass: document.body.className,
+      userAgent: navigator.userAgent
+    };
+    const text = JSON.stringify(payload);
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('已复制调试信息', 2000);
+    } catch (_) {
+      showToast('复制失败，请重试', 2000);
+    }
   });
 
   nodes.feedbackCloseBtn?.addEventListener('click', () => {
