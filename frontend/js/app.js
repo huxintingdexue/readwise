@@ -348,7 +348,7 @@ function bindEvents() {
     closeFeedbackModal();
   });
 
-  nodes.feedbackSubmitBtn?.addEventListener('click', async () => {
+  const handleFeedbackSubmit = async () => {
     const content = String(nodes.feedbackInput?.value || '').trim();
     if (!content) {
       showToast('请输入反馈内容', 2000);
@@ -361,6 +361,14 @@ function bindEvents() {
     } catch (_) {
       showToast('发送失败，请重试', 2000);
     }
+  };
+
+  nodes.feedbackSubmitBtn?.addEventListener('touchend', (event) => {
+    event.preventDefault();
+    handleFeedbackSubmit();
+  });
+  nodes.feedbackSubmitBtn?.addEventListener('click', () => {
+    handleFeedbackSubmit();
   });
 
   nodes.adminFeedbackEntry?.addEventListener('click', async () => {

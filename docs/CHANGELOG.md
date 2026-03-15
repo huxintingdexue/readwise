@@ -13,6 +13,7 @@
 - ✅ **反馈接口**：新增 `POST /api/feedback` 写入 feedback 表
 - ✅ **管理员入口**：`zhaodagua:admin` + 反馈查看面板与 GET /api/feedback
 - ✅ **反馈提示优化**：发送成功提示“发送成功，感谢反馈！”并关闭弹窗
+- ✅ **反馈发送一击提交**：改用 `touchend` 防止需二次点击
 
 ### 变更文件
 - frontend/index.html
