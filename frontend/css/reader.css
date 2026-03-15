@@ -136,7 +136,7 @@ body {
 }
 
 .me-ghost-btn {
-  border: 1px solid var(--line);
+  border: none;
   background: transparent;
   color: var(--muted);
   font-size: 12px;
