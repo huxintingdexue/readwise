@@ -1161,8 +1161,10 @@ body {
   font-size: 12px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   flex-direction: column;
+  gap: 6px;
+  min-height: 54px;
   text-align: center;
   white-space: nowrap;
 }
@@ -1175,6 +1177,11 @@ body {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
+  display: block;
+}
+
+.selection-menu .btn-label {
+  line-height: 1;
 }
 
 /* 划线/删除划线/查引用的 SVG 笔画较细，视觉上偏小，放大到 28px 与其他图标平衡 */
