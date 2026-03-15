@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-03-15 — 移除 Lenny 数据源（v2.9.8）
+
+### 已完成
+- ✅ **抓取配置移除**：不再抓取 Lenny RSS
+- ✅ **筛选移除**：列表筛选与作者显示移除 Lenny
+
+### 变更文件
+- scripts/fetch-articles.js
+- api/articles.js
+- frontend/index.html
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 气泡图标对齐（v2.9.7）
 
 ### 已完成

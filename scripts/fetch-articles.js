@@ -8,7 +8,6 @@ const FEEDS = [
   { key: 'sam', urls: ['https://blog.samaltman.com/posts.atom'] },
   { key: 'andrej', urls: ['https://karpathy.github.io/feed.xml'] },
   // Peter feed removed due to persistent 404s.
-  { key: 'lenny', urls: ['https://www.lennysnewsletter.com/feed'] },
   { key: 'naval', urls: ['https://nav.al/feed'] }
 ];
 

@@ -5,7 +5,7 @@ import { getUserIdFromInviteCode } from './_utils/auth.js';
 dotenv.config({ path: '.env.local' });
 
 const VALID_STATUS = new Set(['unread', 'read', 'archived']);
-const VALID_AUTHOR = new Set(['sam', 'andrej', 'peter', 'lenny', 'naval', 'manual']);
+const VALID_AUTHOR = new Set(['sam', 'andrej', 'peter', 'naval', 'manual']);
 const VALID_SORT = new Set(['date_desc', 'date_asc']);
 
 let pool;

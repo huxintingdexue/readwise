@@ -28,6 +28,7 @@
 - 最近变更：阅读页加载态优化（点击即进入）✅
 - 最近变更：中文选区定位 + 阅读页骨架屏优化 ✅
 - 最近变更：选区气泡图标对齐 ✅
+- 最近变更：移除 Lenny 数据源 ✅
 - 最近变更：合并 API 入口以适配 Vercel Hobby 限制 ✅
 - 最近变更：我的页底部版本号提示 ✅
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
@@ -61,8 +62,8 @@
 - 最近变更：划线后气泡闪烁修复（clearTimeout+removeAllRanges）+ QA 输入框高度精修（height=1px）+ 输入时实时撑高（input 监听）✅
 - 最近变更：阅读页状态栏重构（← ............ [划线图标][☀️]）+ 划线面板卡片化（仅划线/微信读书风格卡片）✅
 - 最近变更：划线面板全屏化（全屏固定层 + 纯色背景 + ← 返回按钮 + 卡片文字缩至 14px）✅
-- 最近变更：主题选择（跟随系统/标准/护眼/深色）+ 全站生效 + 设置在“我的”页 ✅
-- 最近变更：新增 Lenny Rachitsky（lenny）+ Naval Ravikant（naval）两个内容源 ✅
+- 最近变更：主题选择（标准/护眼/深色）+ 全站生效 + 设置在“我的”页 ✅
+- 最近变更：新增 Naval Ravikant（naval）内容源 ✅
 - 本地/部署是否可运行：✅ 可运行（Vercel 统一托管前端 + API）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
 - 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅ / INVITE_CODES ✅（仅 admin 兜底）
@@ -79,7 +80,7 @@
 
 ## 项目概述
 
-ReadWise 是一个个人沉浸式阅读器，聚合 AI 领域大佬博客（Sam Altman、Andrej Karpathy、Lenny Rachitsky、Naval Ravikant），支持划线、AI 提问、引用追踪、离线阅读。前端为 PWA，后端为 Vercel Serverless Functions，数据库为 Neon PostgreSQL。
+ReadWise 是一个个人沉浸式阅读器，聚合 AI 领域大佬博客（Sam Altman、Andrej Karpathy、Naval Ravikant），支持划线、AI 提问、引用追踪、离线阅读。前端为 PWA，后端为 Vercel Serverless Functions，数据库为 Neon PostgreSQL。
 
 ## 架构图
 
