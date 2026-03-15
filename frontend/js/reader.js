@@ -1,4 +1,4 @@
-import { postTranslateNext, saveReadingProgress, saveReadingProgressKeepalive, getHighlights, getArticleById } from './api.js';
+import { saveReadingProgress, saveReadingProgressKeepalive, getHighlights } from './api.js';
 import { hideReferenceBanner } from './reference.js';
 import { hideArticleNotesPanel } from './notes.js';
 import { applyHighlightsToDOM } from './highlight.js';
@@ -50,14 +50,12 @@ function restoreScrollByPlainLength(scrollPosition, contentPlainLength) {
 }
 
 // Build the HTML shown in the reader.
-// - Fully translated → Chinese only
-// - Partially translated → Chinese portion + divider + full English HTML (so the article is always complete)
-// - No Chinese → full English HTML
+// - Prefer Chinese translation if available
+// - Otherwise fall back to full English HTML or plain text
 function renderContent(detail) {
   const zhText = (detail.content_zh || '').trim();
   const enHtml = (detail.content_en || '').trim();
   const plainText = detail.content_plain || '';
-  const isFullyTranslated = detail.translation_status === 'full';
 
   if (!zhText) {
     // No translation yet – show full English or plain fallback
@@ -67,59 +65,8 @@ function renderContent(detail) {
 
   // Wrap zh text in proper paragraphs
   const zhHtml = `<p>${escapeHtml(zhText).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`;
-
-  if (isFullyTranslated || !enHtml) {
-    // Fully translated (or no English available): Chinese only
-    return zhHtml;
-  }
-
-  // Partially translated: Chinese prefix + original English below
-  const divider = `<div class="reader-original-label">英文原文</div>`;
-  return `${zhHtml}${divider}${enHtml}`;
-}
-
-function maybeTriggerTranslate(session) {
-  if (!session || session.translationStatus === 'full') return;
-
-  const currentChar = calcScrollPositionByPlainLength(session.contentPlainLength);
-  if (currentChar < session.nextTriggerChar) return;
-
-  const now = Date.now();
-  if (session.translateInFlight || now - session.lastTranslateAt < 5000) return;
-
-  session.translateInFlight = true;
-  session.lastTranslateAt = now;
-
-  const fromChar = Math.max(0, session.translatedChars || 0);
-  postTranslateNext(session.articleId, fromChar)
-    .then(async (ret) => {
-      const prevStatus = session.translationStatus;
-      session.translatedChars = Number(ret?.translated_chars || session.translatedChars || 0);
-      session.translationStatus = ret?.status || session.translationStatus;
-
-      // Article just became fully translated: re-render to show Chinese-only view
-      if (prevStatus !== 'full' && session.translationStatus === 'full' && session.readerContent) {
-        try {
-          const updated = await getArticleById(session.articleId);
-          const scrollY = currentScrollTop();
-          session.readerContent.innerHTML = renderContent(updated);
-          if (updated.id) {
-            getHighlights(updated.id)
-              .then((highlights) => applyHighlightsToDOM(session.readerContent, highlights))
-              .catch(() => {});
-          }
-          window.scrollTo({ top: scrollY });
-        } catch (_) {}
-      }
-    })
-    .catch(() => {})
-    .finally(() => {
-      session.translateInFlight = false;
-    });
-
-  while (session.nextTriggerChar <= currentChar) {
-    session.nextTriggerChar += 1500;
-  }
+  if (!enHtml) return zhHtml;
+  return zhHtml;
 }
 
 function hideOriginSnippet(nodes) {
@@ -172,8 +119,6 @@ function startReadingSession(detail, nodes, initialProgress) {
   const onScroll = () => {
     if (!readingSession) return;
 
-    maybeTriggerTranslate(readingSession);
-
     if (readingSession.debounceTimer) {
       clearTimeout(readingSession.debounceTimer);
     }
@@ -200,19 +145,13 @@ function startReadingSession(detail, nodes, initialProgress) {
     debounceTimer: null,
     onScroll,
     onVisibilityChange,
-    onBeforeUnload,
-    translatedChars: Number(detail.translated_chars || 0),
-    translationStatus: detail.translation_status || 'partial',
-    nextTriggerChar: 500,
-    translateInFlight: false,
-    lastTranslateAt: 0
+    onBeforeUnload
   };
 
   window.addEventListener('scroll', onScroll, { passive: true });
   document.addEventListener('visibilitychange', onVisibilityChange);
   window.addEventListener('beforeunload', onBeforeUnload);
   restoreScrollByPlainLength(initialProgress?.scroll_position || 0, contentPlainLength);
-  maybeTriggerTranslate(readingSession);
 }
 
 export function renderReader(detail, nodes, initialProgress = null) {

@@ -7,14 +7,7 @@ dotenv.config({ path: '.env.local' });
 const FEEDS = [
   { key: 'sam', urls: ['https://blog.samaltman.com/posts.atom'] },
   { key: 'andrej', urls: ['https://karpathy.github.io/feed.xml'] },
-  {
-    key: 'peter',
-    urls: [
-      'https://steipete.me/feed.xml',
-      'https://steipete.me/index.xml',
-      'https://steipete.me/atom.xml'
-    ]
-  },
+  // Peter feed removed due to persistent 404s.
   { key: 'lenny', urls: ['https://www.lennysnewsletter.com/feed'] },
   { key: 'naval', urls: ['https://nav.al/feed'] }
 ];
@@ -23,7 +16,7 @@ const TRANSLATE_PROMPT =
   '你是一个技术文章翻译专家。请将以下英文翻译成中文，要求：保留所有专有名词英文原文（如 Transformer、Attention、LLM），人名不翻译，翻译风格自然流畅，不要逐字直译。以下【上文参考】部分仅供理解上下文，不需要翻译。';
 
 const DEFAULT_FETCH_PER_SOURCE = 1;
-const MAX_TRANSLATE_CHARS = 2000;
+const TRANSLATE_SEGMENT_CHARS = 1500;
 
 function requiredEnv(name) {
   const value = process.env[name];
@@ -161,28 +154,13 @@ function summarizeText(text, maxLen = 500) {
   return `${text.slice(0, maxLen - 1)}…`;
 }
 
-function pickBySentenceBoundary(text, maxChars) {
-  if (!text) {
-    return '';
+function splitByLength(text, maxChars) {
+  if (!text) return [];
+  const segments = [];
+  for (let i = 0; i < text.length; i += maxChars) {
+    segments.push(text.slice(i, i + maxChars));
   }
-  if (text.length <= maxChars) {
-    return text;
-  }
-
-  const boundaryRe = /[^.!?。！？\n]+[.!?。！？\n]*/g;
-  const parts = text.match(boundaryRe) || [text];
-  let acc = '';
-  for (const part of parts) {
-    if ((acc + part).length > maxChars) {
-      break;
-    }
-    acc += part;
-  }
-
-  if (!acc) {
-    return text.slice(0, maxChars);
-  }
-  return acc.trim();
+  return segments;
 }
 
 async function safeFetch(url, timeoutMs = 15000) {
@@ -319,6 +297,27 @@ async function deepseekTranslateSegment(apiKey, text, label) {
   return stripPromptPrefix(data?.choices?.[0]?.message?.content?.trim() || '');
 }
 
+async function translateFullContent(apiKey, contentPlain, metaLabel) {
+  if (!apiKey || !contentPlain) return '';
+  const segments = splitByLength(contentPlain, TRANSLATE_SEGMENT_CHARS);
+  const translatedSegments = [];
+  for (let i = 0; i < segments.length; i += 1) {
+    const segment = segments[i];
+    try {
+      const translated = await deepseekTranslateSegment(
+        apiKey,
+        segment,
+        `${metaLabel}-正文${i + 1}/${segments.length}`
+      );
+      translatedSegments.push(translated || segment);
+    } catch (err) {
+      console.error(`[translate] segment ${i + 1}/${segments.length} failed for ${metaLabel}: ${err.message}`);
+      translatedSegments.push(segment);
+    }
+  }
+  return translatedSegments.join('');
+}
+
 async function translateArticleParts(apiKey, article) {
   if (!apiKey) {
     return {
@@ -329,28 +328,28 @@ async function translateArticleParts(apiKey, article) {
     };
   }
 
-  const chunk = pickBySentenceBoundary(article.contentPlain, MAX_TRANSLATE_CHARS);
+  let titleZh = '';
+  let summaryZh = '';
   try {
-    const [titleZh, summaryZh, contentZh] = await Promise.all([
-      deepseekTranslateSegment(apiKey, article.titleEn, '标题'),
-      deepseekTranslateSegment(apiKey, article.summaryEn, '摘要'),
-      deepseekTranslateSegment(apiKey, chunk, '正文片段')
-    ]);
-    return {
-      titleZh,
-      summaryZh,
-      contentZh,
-      translatedChars: contentZh ? chunk.length : 0
-    };
+    titleZh = await deepseekTranslateSegment(apiKey, article.titleEn, '标题');
   } catch (err) {
-    console.warn(`[translate] failed for ${article.url}: ${err.message}`);
-    return {
-      titleZh: '',
-      summaryZh: '',
-      contentZh: '',
-      translatedChars: 0
-    };
+    console.error(`[translate] title failed for ${article.url}: ${err.message}`);
   }
+
+  try {
+    summaryZh = await deepseekTranslateSegment(apiKey, article.summaryEn, '摘要');
+  } catch (err) {
+    console.error(`[translate] summary failed for ${article.url}: ${err.message}`);
+  }
+
+  const contentZh = await translateFullContent(apiKey, article.contentPlain, article.url);
+
+  return {
+    titleZh,
+    summaryZh,
+    contentZh,
+    translatedChars: article.contentPlain ? article.contentPlain.length : 0
+  };
 }
 
 function parsePublishedAt(value) {
@@ -478,20 +477,18 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
       contentPlain: cleaned.contentPlain,
       url: item.url,
       publishedAt: item.publishedAt,
-      translationStatus: cleaned.summaryOnly ? 'summary_only' : 'partial',
-      translatedChars: 0,
+      translationStatus: cleaned.summaryOnly ? 'summary_only' : 'full',
+      translatedChars: cleaned.contentPlain ? cleaned.contentPlain.length : 0,
       titleZh: '',
       summaryZh: '',
       contentZh: ''
     };
 
-    if (!cleaned.summaryOnly) {
-      const translated = await translateArticleParts(deepseekApiKey, articleBase);
-      articleBase.titleZh = translated.titleZh;
-      articleBase.summaryZh = translated.summaryZh;
-      articleBase.contentZh = translated.contentZh;
-      articleBase.translatedChars = translated.translatedChars;
-    }
+    const translated = await translateArticleParts(deepseekApiKey, articleBase);
+    articleBase.titleZh = translated.titleZh;
+    articleBase.summaryZh = translated.summaryZh;
+    articleBase.contentZh = translated.contentZh;
+    articleBase.translatedChars = translated.translatedChars;
 
     const writeResult = await insertArticle(pool, articleBase, { repairSummary });
     if (writeResult.inserted) {

@@ -11,6 +11,7 @@
 - 最近变更：PWA 秒刷新策略（SW v2 + index.html no-cache）✅
 - 最近变更：阅读页沉浸模式 + 底部 Tab 轻量样式 ✅
 - 最近变更：沉浸模式保留文章标题 ✅
+- 最近变更：抓取全量翻译入库 + 前端移除 translate-next + 重新翻译脚本 ✅
 - 最近变更：全站暖/深色主题切换 ✅
 - 最近变更：列表页灰色主题，阅读页保持暖色 ✅
 - 最近变更：选文气泡/沉浸状态栏/AI 对话面板 ✅
@@ -48,20 +49,19 @@
 
 ## 项目概述
 
-ReadWise 是一个个人沉浸式阅读器，聚合 AI 领域大佬博客（Sam Altman、Andrej Karpathy、Peter Steipete），支持划线、AI 提问、引用追踪、离线阅读。前端为 PWA，后端为 Vercel Serverless Functions，数据库为 Neon PostgreSQL。
+ReadWise 是一个个人沉浸式阅读器，聚合 AI 领域大佬博客（Sam Altman、Andrej Karpathy、Lenny Rachitsky、Naval Ravikant），支持划线、AI 提问、引用追踪、离线阅读。前端为 PWA，后端为 Vercel Serverless Functions，数据库为 Neon PostgreSQL。
 
 ## 架构图
 
 ```
 GitHub Actions（每天北京时间 22:00）
-    ↓ 抓取RSS + 爬全文 + 生成content_plain + 翻译前2000字
+    ↓ 抓取RSS + 爬全文 + 生成content_plain + 全量分段翻译
 Neon PostgreSQL（五张表）
     ↓ REST API（Bearer Token 鉴权，后端映射 DEFAULT_USER_ID）
 Vercel Serverless Functions（/api/*）
     ↓ fetch（api.js 封装，自动带 Authorization header，不传 user_id）
 前端 PWA（GitHub Pages）
     → 用户手机浏览器
-    → 读到第500字触发translate-next，每1500字再触发（5秒节流）
     → 进度每10秒防抖保存 + 退出前保存
 ```
 
@@ -79,7 +79,8 @@ Vercel Serverless Functions（/api/*）
 
 | 文件 | 职责 | 状态 |
 |------|------|------|
-| scripts/fetch-articles.js | 抓取RSS、爬全文、生成content_plain、翻译前2000字、写入数据库 | ✅ 已完成 |
+| scripts/fetch-articles.js | 抓取RSS、爬全文、生成content_plain、全量分段翻译、写入数据库 | ✅ 已完成 |
+| scripts/retranslate.js | 扫描未全量翻译文章并补齐全文翻译 | ✅ 已完成 |
 | .github/workflows/fetch.yml | cron UTC 14:00，支持 INITIAL_FETCH | ✅ 已完成 |
 | api/articles.js | GET /api/articles（join进度表返回百分比）| ✅ 已完成 |
 | api/highlights.js | GET/POST /api/highlights | ✅ 已完成 |
@@ -87,10 +88,10 @@ Vercel Serverless Functions（/api/*）
 | api/reading-list.js | GET/POST/PATCH /api/reading-list | ✅ 已完成 |
 | api/reading-progress.js | GET/POST /api/reading-progress | ✅ 已完成 |
 | api/search-reference.js | POST /api/search-reference，含失败态处理 | ✅ 已完成 |
-| api/translate-next.js | POST /api/translate-next，GREATEST原子更新 | ✅ 已完成 |
+| api/translate-next.js | POST /api/translate-next（保留接口，前端已不再调用） | ✅ 已完成 |
 | api/export.js | GET /api/export | ✅ 已完成 |
 | frontend/js/app.js | 主逻辑、Tab 切换 | ✅ 已完成（前端基础） |
-| frontend/js/reader.js | 翻页、进度（防抖10秒+退出保存）、翻译触发（5秒节流） | ✅ 已完成 |
+| frontend/js/reader.js | 翻页、进度（防抖10秒+退出保存）、直接渲染中文/英文 | ✅ 已完成 |
 | frontend/js/highlight.js | 选文菜单、划线（基于content_plain）、高亮复原 | ✅ 已完成（选区菜单 + 划线保存） |
 | frontend/js/qa.js | 提问弹窗、降级提示 | ✅ 已完成 |
 | frontend/js/reference.js | 查引用、Banner、失败提示"未找到来源" | ✅ 已完成 |
@@ -108,7 +109,7 @@ Vercel Serverless Functions（/api/*）
 - ✅ 完成后端基础 API：`GET /api/articles`（支持筛选排序、含阅读进度 join）和 `GET /api/articles/:id`（返回 `content_en` + `content_plain`）
 - ✅ 完成前端基础：Tab 导航、文章列表（筛选/排序/进度百分比/长按菜单）、全文阅读视图
 - ✅ 完成 PWA 与进度：manifest、service worker 分层缓存、阅读进度防抖10秒与退出保存
-- ✅ 完成按需翻译：`translate-next` 接口、阅读触发阈值（500/1500）与 5 秒节流、段落英文原文查看图标
+- ✅ 完成全量翻译入库：抓取时分段翻译、前端直接展示中文（空则英文兜底）
 - ✅ 完成划线功能：选区菜单（复制/划线/原文）、`api/highlights` 保存与查询、位置按 `content_plain` 存储
 - ✅ 完成 AI 提问：选区提问弹窗、上下文拼接、`api/qa` 入库与 DeepSeek 调用
 - ✅ 完成引用追踪：选区查引用、书籍自动入书单、文章来源确认加入
@@ -136,8 +137,8 @@ Vercel Serverless Functions（/api/*）
 | 内容双版本 | content_en + content_plain | 解决HTML标签干扰字符位置 |
 | 划线位置基准 | content_plain | 纯文本，永远准确 |
 | content_plain返回前端 | 是 | 前端需要计算划线位置 |
-| 翻译原子更新 | GREATEST(translated_chars, $1) | 防并发竞态 |
-| 翻译节流 | 5秒 | 防快速阅读触发并发 |
+| 全量翻译分段 | 1500字串行 | 避免超长输入与并发请求 |
+| 翻译节流 | 不再使用 | 前端取消按需翻译触发 |
 | 进度保存 | 防抖10秒+退出保存 | 平衡频率和完整性 |
 | 查看英文 | 选区菜单触发（长按/选文后） | 与划线/提问共用选区能力，提升对应精度 |
 | 引用失败态 | 显示"未找到来源" | 不静默失败 |
@@ -150,7 +151,7 @@ Vercel Serverless Functions（/api/*）
 - ⚠️ **重要：** 若未来需要修正翻译质量，必须新建文章记录而非覆盖，否则所有历史划线位置失效
 - ⚠️ **URL去重边界：** ON CONFLICT 无法处理同一文章URL略有差异的情况，MVP暂不处理
 - ⚠️ **Paul Graham暂未适配：** RSS只有标题，需单独开发爬虫
-- ⚠️ **Peter RSS 地址异常：** PRD 中的 `https://steipete.me/feed.xml` 当前返回 404（脚本已加多 URL 回退与容错）
+- ⚠️ **Peter RSS 地址异常：** PRD 中的 `https://steipete.me/feed.xml` 当前返回 404（已从抓取配置中移除）
 - ⚠️ **鉴权安全债（已记录）：** 当前前端 Bearer Secret 仅适合 MVP/本地验证；后续需改为后端会话 Cookie 或短期 Token 方案（前端不持有主密钥）
 - ⚠️ **选区定位精度：** 目前中文翻译选区到英文 `content_plain` 的映射为近似匹配，需后续设计更精确的对齐方案
 - ⚠️ **AI 提问质量一般：** 当前仅取前后各 5 句作为上下文，Prompt 也未做结构化优化，需后续统一调优

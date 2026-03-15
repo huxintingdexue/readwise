@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-03-15 — 抓取全量翻译 + 前端移除 translate-next（v2.4.0）
+
+### 已完成
+- ✅ **抓取改为全量翻译入库**：正文按 1500 字分段串行翻译；单段失败记录错误并用英文段落回填
+- ✅ **translated_chars 全量写入**：入库时直接写 `length(content_plain)`，避免前中后英混杂
+- ✅ **前端阅读页简化**：移除滚动触发 translate-next 与中英拼接逻辑，优先渲染 `content_zh`，为空则显示 `content_en`
+- ✅ **新增补翻译脚本**：`node scripts/retranslate.js` 扫描未全量翻译文章并回填全文翻译
+- ✅ **抓取工作流加长超时**：GitHub Actions `timeout-minutes` 调整为 30
+- ✅ **移除 Peter RSS 源**：避免持续 404 干扰日志
+
+### 变更文件
+- scripts/fetch-articles.js
+- scripts/retranslate.js
+- frontend/js/reader.js
+- frontend/js/api.js
+- .github/workflows/fetch.yml
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-14 — 新增 Lenny & Naval 内容源（v2.3.0）
 
 ### 已完成

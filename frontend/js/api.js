@@ -99,20 +99,6 @@ export function saveReadingProgressKeepalive(articleId, scrollPosition) {
   }).catch(() => {});
 }
 
-export async function postTranslateNext(articleId, fromChar) {
-  if (!articleId) {
-    throw new Error('Missing article id');
-  }
-
-  return requestJson('/api/translate-next', {
-    method: 'POST',
-    body: {
-      article_id: articleId,
-      from_char: Math.max(0, Number.parseInt(String(fromChar || 0), 10) || 0)
-    }
-  });
-}
-
 export async function getHighlights(articleId) {
   const url = articleId
     ? `/api/highlights?article_id=${encodeURIComponent(articleId)}`
