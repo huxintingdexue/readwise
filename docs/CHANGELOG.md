@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-03-15 — MVP 用户行为监控（v2.7.0）
+
+### 已完成
+- ✅ **events 表**：新增用户行为埋点表（open_app/open_article/finish_article）
+- ✅ **埋点接口**：`POST /api/events` 失败静默
+- ✅ **前端埋点**：启动、打开文章、阅读完成（80%）触发
+- ✅ **管理员数据面板**：新增 `/api/admin/stats` 与前端展示面板
+
+### 变更文件
+- api/events.js
+- api/admin/stats.js
+- frontend/js/api.js
+- frontend/js/app.js
+- frontend/js/reader.js
+- frontend/index.html
+- frontend/css/reader.css
+- docs/schema.sql
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 顶部标题栏固定 + 主题跟随系统（v2.6.1）
 
 ### 已完成

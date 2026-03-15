@@ -172,6 +172,31 @@ body {
   gap: 12px;
 }
 
+.me-stat-block {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--panel-soft);
+  display: grid;
+  gap: 8px;
+}
+
+.me-stat-block h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.me-stat-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.me-stat-line span {
+  color: var(--muted);
+}
+
 .me-feedback-item {
   border: 1px solid var(--line);
   border-radius: 12px;

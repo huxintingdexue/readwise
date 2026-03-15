@@ -12,6 +12,7 @@
 - 最近变更：底部导航栏背景改为不透明并跟随主题 ✅
 - 最近变更：主题设置移至“我的”并支持跟随系统 ✅
 - 最近变更：修复跟随系统与反馈弹窗不透明 ✅
+- 最近变更：用户行为埋点 + 管理员数据面板 ✅
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
 - 待执行：Neon 迁移 reading_progress 唯一键为 (article_id, user_id)
 - 最近变更："我的"页 + 反馈/管理员入口 ✅
@@ -100,6 +101,8 @@ Vercel Serverless Functions（/api/*）
 | api/search-reference.js | POST /api/search-reference（每日限流） | ✅ 已完成 |
 | api/auth/verify.js | POST /api/auth/verify（邀请码校验） | ✅ 已完成 |
 | api/feedback.js | GET/POST /api/feedback（用户反馈） | ✅ 已完成 |
+| api/events.js | POST /api/events（用户行为埋点） | ✅ 已完成 |
+| api/admin/stats.js | GET /api/admin/stats（数据面板） | ✅ 已完成 |
 | api/_utils/auth.js | 邀请码解析工具（含 isAdmin） | ✅ 已完成 |
 | api/_utils/rateLimit.js | 限流统计工具 | ✅ 已完成 |
 | api/translate-next.js | POST /api/translate-next（保留接口，前端已不再调用） | ✅ 已完成 |

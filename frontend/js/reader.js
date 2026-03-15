@@ -1,4 +1,4 @@
-import { saveReadingProgress, saveReadingProgressKeepalive, getHighlights } from './api.js';
+import { saveReadingProgress, saveReadingProgressKeepalive, getHighlights, trackEvent } from './api.js';
 import { hideReferenceBanner } from './reference.js';
 import { hideArticleNotesPanel } from './notes.js';
 import { applyHighlightsToDOM } from './highlight.js';
@@ -116,8 +116,19 @@ function startReadingSession(detail, nodes, initialProgress) {
     }
   };
 
+  const maybeTrackFinish = () => {
+    if (!readingSession || readingSession.finishTracked) return;
+    const currentChar = calcScrollPositionByPlainLength(contentPlainLength);
+    if (currentChar / contentPlainLength >= 0.8) {
+      readingSession.finishTracked = true;
+      trackEvent('finish_article', articleId);
+    }
+  };
+
   const onScroll = () => {
     if (!readingSession) return;
+
+    maybeTrackFinish();
 
     if (readingSession.debounceTimer) {
       clearTimeout(readingSession.debounceTimer);
@@ -145,13 +156,17 @@ function startReadingSession(detail, nodes, initialProgress) {
     debounceTimer: null,
     onScroll,
     onVisibilityChange,
-    onBeforeUnload
+    onBeforeUnload,
+    finishTracked: false
   };
 
   window.addEventListener('scroll', onScroll, { passive: true });
   document.addEventListener('visibilitychange', onVisibilityChange);
   window.addEventListener('beforeunload', onBeforeUnload);
   restoreScrollByPlainLength(initialProgress?.scroll_position || 0, contentPlainLength);
+  requestAnimationFrame(() => {
+    maybeTrackFinish();
+  });
 }
 
 export function renderReader(detail, nodes, initialProgress = null) {
@@ -165,6 +180,10 @@ export function renderReader(detail, nodes, initialProgress = null) {
   readerMeta.textContent = `${sourceName(detail.source_key)} · ${formatDate(detail.published_at)}`;
 
   readerContent.innerHTML = renderContent(detail);
+
+  if (detail.id) {
+    trackEvent('open_article', detail.id);
+  }
 
   // Re-apply stored highlights after content renders
   if (detail.id) {

@@ -78,6 +78,15 @@ CREATE TABLE IF NOT EXISTS feedback (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- 用户行为事件
+CREATE TABLE IF NOT EXISTS events (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(50),
+  event VARCHAR(50),
+  article_id UUID,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- 索引（提升常用查询性能）
 CREATE INDEX IF NOT EXISTS idx_articles_source_key ON articles(source_key);
 CREATE INDEX IF NOT EXISTS idx_articles_read_status ON articles(read_status);

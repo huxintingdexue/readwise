@@ -1,4 +1,4 @@
-import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback } from './api.js';
+import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, trackEvent } from './api.js';
 import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, scrollToPlainPosition } from './reader.js';
 import { initArticleNotesPanel } from './notes.js';
@@ -62,6 +62,10 @@ const nodes = {
   adminFeedbackModal: document.querySelector('#adminFeedbackModal'),
   adminFeedbackBody: document.querySelector('#adminFeedbackBody'),
   adminFeedbackCloseBtn: document.querySelector('#adminFeedbackCloseBtn'),
+  adminStatsEntry: document.querySelector('#adminStatsEntry'),
+  adminStatsModal: document.querySelector('#adminStatsModal'),
+  adminStatsBody: document.querySelector('#adminStatsBody'),
+  adminStatsCloseBtn: document.querySelector('#adminStatsCloseBtn'),
   themeChoices: [...document.querySelectorAll('.theme-choice')]
 };
 
@@ -422,6 +426,14 @@ function bindEvents() {
     closeAdminFeedback();
   });
 
+  nodes.adminStatsEntry?.addEventListener('click', async () => {
+    await openAdminStats();
+  });
+
+  nodes.adminStatsCloseBtn?.addEventListener('click', () => {
+    closeAdminStats();
+  });
+
   document.addEventListener('click', (event) => {
     const insideMenu = event.target.closest('#longPressMenu');
     const insideCard = event.target.closest('.article-card');
@@ -503,6 +515,75 @@ function refreshMeTab() {
     nodes.adminSection.classList.toggle('hidden', userId !== 'admin');
   }
   renderThemeChoices(normalizeThemeValue(localStorage.getItem('theme')));
+}
+
+function closeAdminStats() {
+  nodes.adminStatsModal?.classList.add('hidden');
+}
+
+function renderStatBlock(title, lines) {
+  const block = document.createElement('div');
+  block.className = 'me-stat-block';
+  block.innerHTML = `<h3>${escapeHtml(title)}</h3>`;
+  lines.forEach((line) => {
+    const row = document.createElement('div');
+    row.className = 'me-stat-line';
+    row.innerHTML = `<div>${escapeHtml(line.label)}</div><span>${escapeHtml(line.value)}</span>`;
+    block.appendChild(row);
+  });
+  return block;
+}
+
+async function openAdminStats() {
+  if (!nodes.adminStatsModal || !nodes.adminStatsBody) return;
+  nodes.adminStatsBody.innerHTML = '';
+  nodes.adminStatsModal.classList.remove('hidden');
+  try {
+    const data = await getAdminStats();
+    const today = renderStatBlock('今日概览', [
+      { label: '今日活跃用户数', value: String(data.today_active_users ?? 0) },
+      { label: '今日文章打开次数', value: String(data.today_open_articles ?? 0) }
+    ]);
+    nodes.adminStatsBody.appendChild(today);
+
+    const weekly = renderStatBlock(
+      '本周阅读排行（按用户）',
+      (data.weekly_user_finishes || []).map((item) => ({
+        label: item.user_id || 'unknown',
+        value: `${item.count || 0} 篇`
+      }))
+    );
+    nodes.adminStatsBody.appendChild(weekly);
+
+    const completion = renderStatBlock(
+      '文章完成率排行',
+      (data.article_completion || []).map((item) => ({
+        label: item.title || '未命名文章',
+        value: `${item.rate || 0}%`
+      }))
+    );
+    nodes.adminStatsBody.appendChild(completion);
+
+    const highlightBlock = renderStatBlock(
+      '核心功能使用（划线）',
+      (data.highlights_by_user || []).map((item) => ({
+        label: item.user_id || 'unknown',
+        value: `${item.count || 0} 次`
+      }))
+    );
+    nodes.adminStatsBody.appendChild(highlightBlock);
+
+    const qaBlock = renderStatBlock(
+      '核心功能使用（提问）',
+      (data.qa_by_user || []).map((item) => ({
+        label: item.user_id || 'unknown',
+        value: `${item.count || 0} 次`
+      }))
+    );
+    nodes.adminStatsBody.appendChild(qaBlock);
+  } catch (_) {
+    nodes.adminStatsBody.innerHTML = '<div class="state-text">加载失败</div>';
+  }
 }
 
 function openFeedbackModal() {
@@ -600,6 +681,7 @@ function bindLoginEvents() {
 function startApp() {
   if (state.appStarted) return;
   state.appStarted = true;
+  trackEvent('open_app');
   bindEvents();
   const openArticleNotes = initArticleNotesPanel({
     panel: nodes.articleNotesPanel,

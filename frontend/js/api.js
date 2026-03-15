@@ -185,3 +185,18 @@ export async function getFeedback() {
   const data = await requestJson('/api/feedback');
   return data.items || [];
 }
+
+export async function getAdminStats() {
+  const data = await requestJson('/api/admin/stats');
+  return data || {};
+}
+
+export function trackEvent(event, articleId) {
+  requestJson('/api/events', {
+    method: 'POST',
+    body: {
+      event,
+      article_id: articleId || null
+    }
+  }).catch(() => {});
+}
