@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
+import { getUserIdFromInviteCode } from './_utils/auth.js';
 
 dotenv.config({ path: '.env.local' });
 
-const DEFAULT_USER_ID = 'default_user';
 let pool;
 
 function getPool() {
@@ -17,18 +17,14 @@ function getPool() {
   return pool;
 }
 
-function ensureAuthorized(req, res) {
-  const expected = process.env.API_SECRET;
-  if (!expected) {
-    res.status(500).json({ error: 'server_misconfigured', message: 'Missing API_SECRET' });
-    return false;
+function getUserId(req, res) {
+  const inviteCode = req.headers['x-invite-code'] || '';
+  const userId = getUserIdFromInviteCode(inviteCode);
+  if (!userId) {
+    res.status(401).json({ error: 'unauthorized', message: '邀请码无效' });
+    return null;
   }
-  const auth = req.headers.authorization || '';
-  if (auth !== `Bearer ${expected}`) {
-    res.status(401).json({ error: 'unauthorized' });
-    return false;
-  }
-  return true;
+  return userId;
 }
 
 function readQuery(req) {
@@ -38,10 +34,10 @@ function readQuery(req) {
   };
 }
 
-async function listItems(req, res) {
+async function listItems(req, res, userId) {
   const { status } = readQuery(req);
-  const params = [DEFAULT_USER_ID];
-  let where = 'WHERE (user_id IS NULL OR user_id = $1)';
+  const params = [userId];
+  let where = 'WHERE user_id = $1';
   if (status) {
     where += ' AND status = $2';
     params.push(status);
@@ -57,7 +53,7 @@ async function listItems(req, res) {
   res.status(200).json({ items: rows });
 }
 
-async function addItem(req, res) {
+async function addItem(req, res, userId) {
   const type = String(req.body?.type || '').trim();
   const title = String(req.body?.title || '').trim();
   const author = String(req.body?.author || '').trim() || null;
@@ -84,12 +80,12 @@ async function addItem(req, res) {
     author,
     url,
     sourceHighlightId,
-    DEFAULT_USER_ID
+    userId
   ]);
   res.status(201).json(rows[0]);
 }
 
-async function updateItem(req, res) {
+async function updateItem(req, res, userId) {
   const id = req.body?.id;
   const status = String(req.body?.status || '').trim();
   if (!id || !status) {
@@ -104,10 +100,10 @@ async function updateItem(req, res) {
   const sql = `
     UPDATE reading_list
     SET status = $1
-    WHERE id = $2 AND (user_id IS NULL OR user_id = $3)
+    WHERE id = $2 AND user_id = $3
     RETURNING id, type, title, author, url, source_highlight_id, status, added_at
   `;
-  const { rows } = await getPool().query(sql, [status, id, DEFAULT_USER_ID]);
+  const { rows } = await getPool().query(sql, [status, id, userId]);
   if (rows.length === 0) {
     res.status(404).json({ error: 'not_found' });
     return;
@@ -116,19 +112,20 @@ async function updateItem(req, res) {
 }
 
 export default async function handler(req, res) {
-  if (!ensureAuthorized(req, res)) return;
+  const userId = getUserId(req, res);
+  if (!userId) return;
 
   try {
     if (req.method === 'GET') {
-      await listItems(req, res);
+      await listItems(req, res, userId);
       return;
     }
     if (req.method === 'POST') {
-      await addItem(req, res);
+      await addItem(req, res, userId);
       return;
     }
     if (req.method === 'PATCH') {
-      await updateItem(req, res);
+      await updateItem(req, res, userId);
       return;
     }
     res.setHeader('Allow', 'GET, POST, PATCH');

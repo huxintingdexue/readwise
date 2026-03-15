@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
+import { getUserIdFromInviteCode } from './_utils/auth.js';
 
 dotenv.config({ path: '.env.local' });
 
-const DEFAULT_USER_ID = 'default_user';
 let pool;
 
 function getPool() {
@@ -17,19 +17,14 @@ function getPool() {
   return pool;
 }
 
-function ensureAuthorized(req, res) {
-  const expected = process.env.API_SECRET;
-  if (!expected) {
-    res.status(500).json({ error: 'server_misconfigured', message: 'Missing API_SECRET' });
-    return false;
+function getUserId(req, res) {
+  const inviteCode = req.headers['x-invite-code'] || '';
+  const userId = getUserIdFromInviteCode(inviteCode);
+  if (!userId) {
+    res.status(401).json({ error: 'unauthorized', message: '邀请码无效' });
+    return null;
   }
-
-  const auth = req.headers.authorization || '';
-  if (auth !== `Bearer ${expected}`) {
-    res.status(401).json({ error: 'unauthorized' });
-    return false;
-  }
-  return true;
+  return userId;
 }
 
 function readQuery(req) {
@@ -39,17 +34,17 @@ function readQuery(req) {
   };
 }
 
-async function getHighlights(req, res) {
+async function getHighlights(req, res, userId) {
   const { articleId } = readQuery(req);
   if (articleId) {
     const sql = `
       SELECT id, article_id, text, position_start, position_end, type, created_at
       FROM highlights
       WHERE article_id = $1
-        AND (user_id IS NULL OR user_id = $2)
+        AND user_id = $2
       ORDER BY created_at DESC
     `;
-    const { rows } = await getPool().query(sql, [articleId, DEFAULT_USER_ID]);
+    const { rows } = await getPool().query(sql, [articleId, userId]);
     res.status(200).json({ highlights: rows });
     return;
   }
@@ -57,14 +52,14 @@ async function getHighlights(req, res) {
   const sql = `
     SELECT id, article_id, text, position_start, position_end, type, created_at
     FROM highlights
-    WHERE (user_id IS NULL OR user_id = $1)
+    WHERE user_id = $1
     ORDER BY created_at DESC
   `;
-  const { rows } = await getPool().query(sql, [DEFAULT_USER_ID]);
+  const { rows } = await getPool().query(sql, [userId]);
   res.status(200).json({ highlights: rows });
 }
 
-async function createHighlight(req, res) {
+async function createHighlight(req, res, userId) {
   const articleId = req.body?.article_id;
   const text = String(req.body?.text || '').trim();
   const type = String(req.body?.type || 'highlight');
@@ -85,23 +80,22 @@ async function createHighlight(req, res) {
     RETURNING id, article_id, text, position_start, position_end, type, created_at
   `;
 
-  const { rows } = await getPool().query(sql, [articleId, text, start, end, type, DEFAULT_USER_ID]);
+  const { rows } = await getPool().query(sql, [articleId, text, start, end, type, userId]);
   res.status(201).json(rows[0]);
 }
 
 export default async function handler(req, res) {
-  if (!ensureAuthorized(req, res)) {
-    return;
-  }
+  const userId = getUserId(req, res);
+  if (!userId) return;
 
   try {
     if (req.method === 'GET') {
-      await getHighlights(req, res);
+      await getHighlights(req, res, userId);
       return;
     }
 
     if (req.method === 'POST') {
-      await createHighlight(req, res);
+      await createHighlight(req, res, userId);
       return;
     }
 

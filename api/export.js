@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
+import { getUserIdFromInviteCode } from './_utils/auth.js';
 
 dotenv.config({ path: '.env.local' });
 
-const DEFAULT_USER_ID = 'default_user';
 let pool;
 
 function getPool() {
@@ -17,22 +17,19 @@ function getPool() {
   return pool;
 }
 
-function ensureAuthorized(req, res) {
-  const expected = process.env.API_SECRET;
-  if (!expected) {
-    res.status(500).json({ error: 'server_misconfigured', message: 'Missing API_SECRET' });
-    return false;
+function getUserId(req, res) {
+  const inviteCode = req.headers['x-invite-code'] || '';
+  const userId = getUserIdFromInviteCode(inviteCode);
+  if (!userId) {
+    res.status(401).json({ error: 'unauthorized', message: '邀请码无效' });
+    return null;
   }
-  const auth = req.headers.authorization || '';
-  if (auth !== `Bearer ${expected}`) {
-    res.status(401).json({ error: 'unauthorized' });
-    return false;
-  }
-  return true;
+  return userId;
 }
 
 export default async function handler(req, res) {
-  if (!ensureAuthorized(req, res)) return;
+  const userId = getUserId(req, res);
+  if (!userId) return;
 
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
@@ -45,23 +42,23 @@ export default async function handler(req, res) {
       getPool().query(
         `SELECT id, article_id, text, position_start, position_end, type, created_at
          FROM highlights
-         WHERE (user_id IS NULL OR user_id = $1)
+         WHERE user_id = $1
          ORDER BY created_at DESC`,
-        [DEFAULT_USER_ID]
+        [userId]
       ),
       getPool().query(
         `SELECT id, highlight_id, article_id, question, answer_summary, created_at
          FROM qa_records
-         WHERE (user_id IS NULL OR user_id = $1)
+         WHERE user_id = $1 AND (answer_summary IS NULL OR answer_summary NOT LIKE '__reference__:%')
          ORDER BY created_at DESC`,
-        [DEFAULT_USER_ID]
+        [userId]
       ),
       getPool().query(
         `SELECT id, type, title, author, url, source_highlight_id, status, added_at
          FROM reading_list
-         WHERE (user_id IS NULL OR user_id = $1)
+         WHERE user_id = $1
          ORDER BY added_at DESC`,
-        [DEFAULT_USER_ID]
+        [userId]
       )
     ]);
 

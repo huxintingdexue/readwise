@@ -8,6 +8,7 @@
 ## 当前状态（每次任务后必须更新）
 
 - 最后完成步骤：PRD 第十一节第 12 步：数据导出 ✅
+- 最近变更：邀请码白名单多用户 + 每日限流 ✅
 - 最近变更：PWA 秒刷新策略（SW v2 + index.html no-cache）✅
 - 最近变更：阅读页沉浸模式 + 底部 Tab 轻量样式 ✅
 - 最近变更：沉浸模式保留文章标题 ✅
@@ -36,7 +37,7 @@
 - 最近变更：新增 Lenny Rachitsky（lenny）+ Naval Ravikant（naval）两个内容源 ✅
 - 本地/部署是否可运行：✅ 可运行（Vercel 统一托管前端 + API）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
-- 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅
+- 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅ / INVITE_CODES ✅
 - 当前已有真实数据：✅（抓取脚本 smoke test 已写入 2 篇：sam 1、andrej 1）
 - 下一步任务：无（MVP 步骤已完成）
 
@@ -85,10 +86,13 @@ Vercel Serverless Functions（/api/*）
 | .github/workflows/fetch.yml | cron UTC 14:00，支持 INITIAL_FETCH | ✅ 已完成 |
 | api/articles.js | GET /api/articles（join进度表返回百分比）| ✅ 已完成 |
 | api/highlights.js | GET/POST /api/highlights | ✅ 已完成 |
-| api/qa.js | POST /api/qa，DeepSeek 问答，失败降级 | ✅ 已完成 |
+| api/qa.js | POST /api/qa（DeepSeek 问答 + 每日限流） | ✅ 已完成 |
 | api/reading-list.js | GET/POST/PATCH /api/reading-list | ✅ 已完成 |
 | api/reading-progress.js | GET/POST /api/reading-progress | ✅ 已完成 |
-| api/search-reference.js | POST /api/search-reference，含失败态处理 | ✅ 已完成 |
+| api/search-reference.js | POST /api/search-reference（每日限流） | ✅ 已完成 |
+| api/auth/verify.js | POST /api/auth/verify（邀请码校验） | ✅ 已完成 |
+| api/_utils/auth.js | 邀请码解析工具 | ✅ 已完成 |
+| api/_utils/rateLimit.js | 限流统计工具 | ✅ 已完成 |
 | api/translate-next.js | POST /api/translate-next（保留接口，前端已不再调用） | ✅ 已完成 |
 | api/export.js | GET /api/export | ✅ 已完成 |
 | frontend/js/app.js | 主逻辑、Tab 切换 | ✅ 已完成（前端基础） |
@@ -97,7 +101,7 @@ Vercel Serverless Functions（/api/*）
 | frontend/js/qa.js | 提问弹窗、降级提示 | ✅ 已完成 |
 | frontend/js/reference.js | 查引用、Banner、失败提示"未找到来源" | ✅ 已完成 |
 | frontend/js/notes.js | 笔记 Tab、本文划线面板 | ✅ 已完成 |
-| frontend/js/api.js | 所有fetch封装，自动带Authorization header，不传user_id | ✅ 已完成 |
+| frontend/js/api.js | 所有fetch封装，自动带 X-Invite-Code | ✅ 已完成 |
 | frontend/sw.js | 列表NetworkFirst，详情CacheFirst，图片不缓存 | ✅ 已完成 |
 | frontend/manifest.json | PWA 配置 | ✅ 已完成 |
 
@@ -114,6 +118,7 @@ Vercel Serverless Functions（/api/*）
 - ✅ 完成划线功能：选区菜单（复制/划线/原文）、`api/highlights` 保存与查询、位置按 `content_plain` 存储
 - ✅ 完成 AI 提问：选区提问弹窗、上下文拼接、`api/qa` 入库与 DeepSeek 调用
 - ✅ 完成引用追踪：选区查引用、书籍自动入书单、文章来源确认加入
+- ✅ 完成邀请码登录 + 每日限流：邀请码白名单多用户隔离，问答/引用追踪每日次数限制
 - ✅ 完成笔记 Tab：按文章聚合划线/问答，书单展示，阅读页“本文划线”入口
 - ✅ 完成数据导出：`GET /api/export` 返回划线 / 问答 / 书单
 
@@ -143,7 +148,7 @@ Vercel Serverless Functions（/api/*）
 | 进度保存 | 防抖10秒+退出保存 | 平衡频率和完整性 |
 | 查看英文 | 选区菜单触发（长按/选文后） | 与划线/提问共用选区能力，提升对应精度 |
 | 引用失败态 | 显示"未找到来源" | 不静默失败 |
-| 多用户预留 | user_id保留，API层映射DEFAULT_USER_ID | 字段有意义不是摆设 |
+| 多用户预留 | user_id保留，API层按邀请码映射真实 user_id | 字段有意义不是摆设 |
 | 内容不可覆盖 | ON CONFLICT DO NOTHING | 保护划线位置 |
 | DeepSeek降级 | 翻译失败显英文，问答失败提示重试 | 不白屏 |
 
@@ -153,7 +158,9 @@ Vercel Serverless Functions（/api/*）
 - ⚠️ **URL去重边界：** ON CONFLICT 无法处理同一文章URL略有差异的情况，MVP暂不处理
 - ⚠️ **Paul Graham暂未适配：** RSS只有标题，需单独开发爬虫
 - ⚠️ **Peter RSS 地址异常：** PRD 中的 `https://steipete.me/feed.xml` 当前返回 404（已从抓取配置中移除）
-- ⚠️ **鉴权安全债（已记录）：** 当前前端 Bearer Secret 仅适合 MVP/本地验证；后续需改为后端会话 Cookie 或短期 Token 方案（前端不持有主密钥）
+- ⚠️ **QA 多轮上下文缺失：** api/qa.js 每次独立调用 DeepSeek，不携带历史消息，追问效果差。修复方式：前端把对话历史拼成 messages 数组传给后端，后端透传给 DeepSeek。
+- ⚠️ **鉴权安全债（已知）：** X-Invite-Code 在 header 中明文传输，抓包可见，MVP 阶段接受此方案，后续改为后端 Session Cookie。
+- ⚠️ **DeepSeek 会员额度与 API 额度不通：** 网页版订阅无法用于 API 调用，暂无解法。
 - ⚠️ **选区定位精度：** 目前中文翻译选区到英文 `content_plain` 的映射为近似匹配，需后续设计更精确的对齐方案
 - ⚠️ **AI 提问质量一般：** 当前仅取前后各 5 句作为上下文，Prompt 也未做结构化优化，需后续统一调优
 
@@ -162,7 +169,8 @@ Vercel Serverless Functions（/api/*）
 ```
 DEEPSEEK_API_KEY     # Vercel Dashboard + GitHub Secrets
 NEON_DATABASE_URL    # 带 ?sslmode=require，Vercel + GitHub Secrets
-API_SECRET           # 仅Vercel Dashboard，前端api.js硬编码，后端映射DEFAULT_USER_ID
+API_SECRET           # 仅Vercel Dashboard（遗留接口使用）
+INVITE_CODES         # 邀请码白名单，格式 CODE:user_id
 INITIAL_FETCH        # 仅首次手动触发时设为3
 ```
 
@@ -172,7 +180,9 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 - [ ] 阅读状态栏整合：返回列表、夜间模式切换、字体设置整合到顶部同一行，沉浸模式时隐藏
 - [ ] 字体选择与本地托管：Noto Serif SC，只下载 weight 400 子集化版本
 - [ ] 夜间模式切换：并入状态栏
-- [ ] 投喂链接溯源：用户粘贴二手信息链接，AI 自动识别原文，抓取翻译后加入待读列表
+- [ ] 手动投喂链接：POST /api/ingest 接口，用户粘贴 URL 触发抓取+翻译+入库
+- [ ] QA 多轮上下文修复：携带对话历史调用 DeepSeek
+- [ ] 投喂链接溯源：用户粘贴二手文章链接，AI 自动识别原文 URL 后投喂
 - [ ] AI 提问质量优化：改进上下文策略和 Prompt 结构
 - [ ] Paul Graham 适配：RSS 只有标题，需单独开发爬虫
 - [ ] 多用户支持：鉴权改为 Cookie/Token 方案

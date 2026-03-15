@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-03-15 — 邀请码白名单多用户 + 每日限流（v2.5.0）
+
+### 已完成
+- ✅ **邀请码校验接口**：新增 `POST /api/auth/verify` 校验邀请码并返回 user_id
+- ✅ **全 API 多用户隔离**：API 统一从 `X-Invite-Code` 解析 user_id，替换 DEFAULT_USER_ID
+- ✅ **问答/引用每日限流**：QA 50 次/天、引用追踪 10 次/天
+- ✅ **前端登录遮罩**：邀请码登录、错误提示、长按主题按钮显示“退出登录”
+- ✅ **导出与笔记过滤**：参考请求不展示在 QA 列表/导出中
+- ✅ **环境变量补充**：新增 `INVITE_CODES`
+
+### 变更文件
+- api/_utils/auth.js
+- api/_utils/rateLimit.js
+- api/auth/verify.js
+- api/articles.js
+- api/highlights.js
+- api/qa.js
+- api/reading-list.js
+- api/reading-progress.js
+- api/search-reference.js
+- api/export.js
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/api.js
+- frontend/js/app.js
+- .env.example
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 抓取全量翻译 + 前端移除 translate-next（v2.4.0）
 
 ### 已完成

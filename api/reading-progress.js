@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
+import { getUserIdFromInviteCode } from './_utils/auth.js';
 
 dotenv.config({ path: '.env.local' });
 
-const DEFAULT_USER_ID = 'default_user';
 let pool;
 
 function getPool() {
@@ -17,19 +17,14 @@ function getPool() {
   return pool;
 }
 
-function ensureAuthorized(req, res) {
-  const expected = process.env.API_SECRET;
-  if (!expected) {
-    res.status(500).json({ error: 'server_misconfigured', message: 'Missing API_SECRET' });
-    return false;
+function getUserId(req, res) {
+  const inviteCode = req.headers['x-invite-code'] || '';
+  const userId = getUserIdFromInviteCode(inviteCode);
+  if (!userId) {
+    res.status(401).json({ error: 'unauthorized', message: '邀请码无效' });
+    return null;
   }
-
-  const auth = req.headers.authorization || '';
-  if (auth !== `Bearer ${expected}`) {
-    res.status(401).json({ error: 'unauthorized' });
-    return false;
-  }
-  return true;
+  return userId;
 }
 
 function readQuery(req) {
@@ -39,7 +34,7 @@ function readQuery(req) {
   };
 }
 
-async function getProgress(req, res) {
+async function getProgress(req, res, userId) {
   const { articleId } = readQuery(req);
   if (!articleId) {
     res.status(400).json({ error: 'bad_request', message: 'article_id is required' });
@@ -50,11 +45,11 @@ async function getProgress(req, res) {
     SELECT article_id, scroll_position, last_read_at
     FROM reading_progress
     WHERE article_id = $1
-      AND (user_id IS NULL OR user_id = $2)
+      AND user_id = $2
     LIMIT 1
   `;
 
-  const { rows } = await getPool().query(sql, [articleId, DEFAULT_USER_ID]);
+  const { rows } = await getPool().query(sql, [articleId, userId]);
   if (rows.length === 0) {
     res.status(200).json({ article_id: articleId, scroll_position: 0, last_read_at: null });
     return;
@@ -63,7 +58,7 @@ async function getProgress(req, res) {
   res.status(200).json(rows[0]);
 }
 
-async function upsertProgress(req, res) {
+async function upsertProgress(req, res, userId) {
   const articleId = req.body?.article_id;
   const rawPosition = Number.parseInt(String(req.body?.scroll_position ?? ''), 10);
 
@@ -81,27 +76,26 @@ async function upsertProgress(req, res) {
     ON CONFLICT (article_id) DO UPDATE SET
       scroll_position = EXCLUDED.scroll_position,
       last_read_at = NOW(),
-      user_id = COALESCE(reading_progress.user_id, EXCLUDED.user_id)
+      user_id = EXCLUDED.user_id
     RETURNING article_id, scroll_position, last_read_at
   `;
 
-  const { rows } = await getPool().query(sql, [articleId, rawPosition, DEFAULT_USER_ID]);
+  const { rows } = await getPool().query(sql, [articleId, rawPosition, userId]);
   res.status(200).json(rows[0]);
 }
 
 export default async function handler(req, res) {
-  if (!ensureAuthorized(req, res)) {
-    return;
-  }
+  const userId = getUserId(req, res);
+  if (!userId) return;
 
   try {
     if (req.method === 'GET') {
-      await getProgress(req, res);
+      await getProgress(req, res, userId);
       return;
     }
 
     if (req.method === 'POST') {
-      await upsertProgress(req, res);
+      await upsertProgress(req, res, userId);
       return;
     }
 

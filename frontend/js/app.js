@@ -1,4 +1,4 @@
-import { getArticles, getArticleById, getReadingProgress } from './api.js';
+import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout } from './api.js';
 import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, scrollToPlainPosition } from './reader.js';
 import { initArticleNotesPanel, loadNotesTab } from './notes.js';
@@ -14,7 +14,9 @@ const state = {
   currentArticle: null,
   longPressTimer: null,
   longPressTargetId: null,
-  historyBound: false
+  historyBound: false,
+  appStarted: false,
+  logoutTimer: null
 };
 
 const nodes = {
@@ -44,7 +46,12 @@ const nodes = {
   originSnippet: document.querySelector('#originSnippet'),
   originSnippetText: document.querySelector('#originSnippetText'),
   closeOriginSnippet: document.querySelector('#closeOriginSnippet'),
-  themeToggle: document.querySelector('#themeToggle')
+  themeToggle: document.querySelector('#themeToggle'),
+  loginOverlay: document.querySelector('#loginOverlay'),
+  loginInput: document.querySelector('#loginInput'),
+  loginButton: document.querySelector('#loginButton'),
+  loginError: document.querySelector('#loginError'),
+  logoutBtn: document.querySelector('#logoutBtn')
 };
 
 function escapeHtml(text) {
@@ -187,7 +194,12 @@ async function loadArticles() {
     renderArticles();
   } catch (err) {
     nodes.articlesState.textContent = `加载失败：${err.message}`;
-    showToast('请确认 frontend/js/local-config.js 中 window.__API_SECRET__ 已填写');
+    if (String(err.message || '').includes('邀请码无效')) {
+      showToast('邀请码无效，请重新登录');
+      logout();
+      return;
+    }
+    showToast('加载失败，请稍后重试');
   }
 }
 
@@ -298,6 +310,27 @@ function bindEvents() {
     toggleTheme();
   });
 
+  if (nodes.themeToggle && nodes.logoutBtn) {
+    nodes.themeToggle.addEventListener('pointerdown', () => {
+      state.logoutTimer = setTimeout(() => {
+        nodes.logoutBtn.classList.remove('hidden');
+        setTimeout(() => nodes.logoutBtn.classList.add('hidden'), 5000);
+      }, 700);
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((name) => {
+      nodes.themeToggle.addEventListener(name, () => {
+        if (state.logoutTimer) {
+          clearTimeout(state.logoutTimer);
+          state.logoutTimer = null;
+        }
+      });
+    });
+  }
+
+  nodes.logoutBtn?.addEventListener('click', () => {
+    logout();
+  });
+
   document.addEventListener('click', (event) => {
     const insideMenu = event.target.closest('#longPressMenu');
     const insideCard = event.target.closest('.article-card');
@@ -361,14 +394,48 @@ function bindEvents() {
   }
 }
 
-function init() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.warn('[sw] register failed', err.message);
-    });
+function showLoginOverlay(message = '') {
+  if (!nodes.loginOverlay) return;
+  nodes.loginOverlay.classList.remove('hidden');
+  if (nodes.loginError) {
+    nodes.loginError.textContent = message;
   }
+}
 
-  initTheme();
+function hideLoginOverlay() {
+  nodes.loginOverlay?.classList.add('hidden');
+  if (nodes.loginError) nodes.loginError.textContent = '';
+}
+
+function bindLoginEvents() {
+  if (!nodes.loginButton || !nodes.loginInput) return;
+
+  const attemptLogin = async () => {
+    const code = nodes.loginInput.value.trim();
+    if (!code) {
+      showLoginOverlay('请输入邀请码');
+      return;
+    }
+    try {
+      await login(code);
+      hideLoginOverlay();
+      startApp();
+    } catch (err) {
+      showLoginOverlay(err.message || '邀请码无效，请联系管理员');
+    }
+  };
+
+  nodes.loginButton.addEventListener('click', attemptLogin);
+  nodes.loginInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      attemptLogin();
+    }
+  });
+}
+
+function startApp() {
+  if (state.appStarted) return;
+  state.appStarted = true;
   bindEvents();
   const openArticleNotes = initArticleNotesPanel({
     panel: nodes.articleNotesPanel,
@@ -393,6 +460,23 @@ function init() {
   });
   switchTab('today');
   loadArticles();
+}
+
+function init() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('[sw] register failed', err.message);
+    });
+  }
+
+  initTheme();
+  bindLoginEvents();
+  if (isLoggedIn()) {
+    hideLoginOverlay();
+    startApp();
+  } else {
+    showLoginOverlay('请输入邀请码');
+  }
 }
 
 init();

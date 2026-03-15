@@ -17,6 +17,7 @@
         </div>
         <div class="topbar-actions">
           <button id="themeToggle" class="icon-btn theme-toggle" type="button" aria-label="切换主题">☀️</button>
+          <button id="logoutBtn" class="icon-btn hidden" type="button" aria-label="退出登录">退出</button>
           <button id="filterToggle" class="icon-btn" type="button" aria-label="筛选">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" fill="currentColor"></path>
@@ -120,6 +121,16 @@
           <span class="tab-label">笔记</span>
         </button>
       </nav>
+    </div>
+
+    <div id="loginOverlay" class="login-overlay hidden" role="dialog" aria-modal="true">
+      <div class="login-card">
+        <h2>邀请码登录</h2>
+        <p>请输入管理员提供的邀请码</p>
+        <input id="loginInput" type="text" placeholder="如：GUANG-ALEX" autocomplete="off" />
+        <button id="loginButton" type="button">确认</button>
+        <div id="loginError" class="login-error"></div>
+      </div>
     </div>
 
     <div id="longPressMenu" class="long-press-menu hidden">

@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
+import { getUserIdFromInviteCode } from './_utils/auth.js';
 
 dotenv.config({ path: '.env.local' });
 
-const DEFAULT_USER_ID = 'default_user';
 const VALID_STATUS = new Set(['unread', 'read', 'archived']);
 const VALID_AUTHOR = new Set(['sam', 'andrej', 'peter', 'lenny', 'naval']);
 const VALID_SORT = new Set(['date_desc', 'date_asc']);
@@ -37,19 +37,14 @@ function getPathId(pathname) {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-function ensureAuthorized(req, res) {
-  const expected = process.env.API_SECRET;
-  if (!expected) {
-    res.status(500).json({ error: 'server_misconfigured', message: 'Missing API_SECRET' });
-    return false;
+function getUserId(req, res) {
+  const inviteCode = req.headers['x-invite-code'] || '';
+  const userId = getUserIdFromInviteCode(inviteCode);
+  if (!userId) {
+    res.status(401).json({ error: 'unauthorized', message: '邀请码无效' });
+    return null;
   }
-
-  const auth = req.headers.authorization || '';
-  if (auth !== `Bearer ${expected}`) {
-    res.status(401).json({ error: 'unauthorized' });
-    return false;
-  }
-  return true;
+  return userId;
 }
 
 function normalizeFilters(query) {
@@ -70,7 +65,7 @@ function normalizeFilters(query) {
   return { status, author, sort };
 }
 
-async function listArticles(res, query) {
+async function listArticles(res, query, userId) {
   const filters = normalizeFilters(query);
   if (filters.error) {
     res.status(400).json({ error: 'bad_request', message: filters.error });
@@ -109,19 +104,19 @@ async function listArticles(res, query) {
     FROM articles a
     LEFT JOIN reading_progress rp
       ON rp.article_id = a.id
-      AND (rp.user_id IS NULL OR rp.user_id = $1)
+      AND rp.user_id = $1
     WHERE ($2::text IS NULL OR a.read_status = $2)
       AND ($3::text IS NULL OR a.source_key = $3)
       AND (a.user_id IS NULL OR a.user_id = $1)
     ORDER BY ${orderClause}
   `;
 
-  const params = [DEFAULT_USER_ID, filters.status, filters.author];
+  const params = [userId, filters.status, filters.author];
   const { rows } = await getPool().query(sql, params);
   res.status(200).json({ articles: rows });
 }
 
-async function getArticleById(res, id) {
+async function getArticleById(res, id, userId) {
   const sql = `
     SELECT
       a.id,
@@ -145,7 +140,7 @@ async function getArticleById(res, id) {
     LIMIT 1
   `;
 
-  const { rows } = await getPool().query(sql, [id, DEFAULT_USER_ID]);
+  const { rows } = await getPool().query(sql, [id, userId]);
   if (rows.length === 0) {
     res.status(404).json({ error: 'not_found' });
     return;
@@ -160,9 +155,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!ensureAuthorized(req, res)) {
-    return;
-  }
+  const userId = getUserId(req, res);
+  if (!userId) return;
 
   try {
     const query = readQuery(req);
@@ -170,11 +164,11 @@ export default async function handler(req, res) {
     const id = query.id || routeId;
 
     if (id) {
-      await getArticleById(res, id);
+      await getArticleById(res, id, userId);
       return;
     }
 
-    await listArticles(res, query);
+    await listArticles(res, query, userId);
   } catch (err) {
     console.error('[api/articles] error', err);
     res.status(500).json({ error: 'internal_error' });

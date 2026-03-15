@@ -1,10 +1,11 @@
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import { Pool } from 'pg';
+import { getUserIdFromInviteCode } from './_utils/auth.js';
+import { checkRateLimit } from './_utils/rateLimit.js';
 
 dotenv.config({ path: '.env.local' });
 
-const DEFAULT_USER_ID = 'default_user';
 const SEARCH_PROMPT = `
 你是引用追踪助手。根据用户提供的文字，判断它更可能来源于“书籍”还是“文章/博客”。
 请只输出 JSON，结构如下：
@@ -32,18 +33,14 @@ function getPool() {
   return pool;
 }
 
-function ensureAuthorized(req, res) {
-  const expected = process.env.API_SECRET;
-  if (!expected) {
-    res.status(500).json({ error: 'server_misconfigured', message: 'Missing API_SECRET' });
-    return false;
+function getUserId(req, res) {
+  const inviteCode = req.headers['x-invite-code'] || '';
+  const userId = getUserIdFromInviteCode(inviteCode);
+  if (!userId) {
+    res.status(401).json({ error: 'unauthorized', message: '邀请码无效' });
+    return null;
   }
-  const auth = req.headers.authorization || '';
-  if (auth !== `Bearer ${expected}`) {
-    res.status(401).json({ error: 'unauthorized' });
-    return false;
-  }
-  return true;
+  return userId;
 }
 
 function extractJson(text) {
@@ -98,7 +95,7 @@ async function callDeepSeek(apiKey, text) {
   return data?.choices?.[0]?.message?.content?.trim() || '';
 }
 
-async function insertReadingList({ type, title, author, url, highlightId }) {
+async function insertReadingList({ type, title, author, url, highlightId, userId }) {
   const sql = `
     INSERT INTO reading_list (type, title, author, url, source_highlight_id, user_id)
     VALUES ($1, $2, $3, $4, $5, $6)
@@ -110,9 +107,18 @@ async function insertReadingList({ type, title, author, url, highlightId }) {
     author || null,
     url || null,
     highlightId || null,
-    DEFAULT_USER_ID
+    userId
   ]);
   return rows[0];
+}
+
+async function logReferenceUsage({ userId, highlightId, articleId, text }) {
+  const sql = `
+    INSERT INTO qa_records (highlight_id, article_id, question, answer_summary, user_id)
+    VALUES ($1, $2, $3, $4, $5)
+  `;
+  const marker = '__reference__:requested';
+  await getPool().query(sql, [highlightId || null, articleId || null, text, marker, userId]);
 }
 
 export default async function handler(req, res) {
@@ -122,7 +128,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!ensureAuthorized(req, res)) return;
+  const userId = getUserId(req, res);
+  if (!userId) return;
 
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
@@ -145,7 +152,8 @@ export default async function handler(req, res) {
       title: normalized.title,
       author: normalized.author,
       url: normalized.url,
-      highlightId
+      highlightId,
+      userId
     });
     res.status(200).json({ status: 'added', entry });
     return;
@@ -157,6 +165,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    const limitResult = await checkRateLimit(userId, 'reference', 10);
+    if (!limitResult.allowed) {
+      res.status(429).json({ error: 'rate_limited', message: '今日引用追踪次数已用完' });
+      return;
+    }
+
+    await logReferenceUsage({ userId, highlightId, articleId, text });
+
     const raw = await callDeepSeek(apiKey, text);
     const parsed = extractJson(raw);
     const normalized = normalizeCandidate(parsed);
@@ -167,7 +183,8 @@ export default async function handler(req, res) {
         title: normalized.title,
         author: normalized.author,
         url: null,
-        highlightId
+        highlightId,
+        userId
       });
       res.status(200).json({ status: 'book_added', entry });
       return;

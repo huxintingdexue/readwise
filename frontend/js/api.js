@@ -1,15 +1,19 @@
-const API_SECRET = '8a40444901904981d2da474df1102be07ed384ae1badc9eb041ccaa6e51e2633';
+const INVITE_CODE_KEY = 'inviteCode';
+const USER_ID_KEY = 'userId';
+
+function getInviteCode() {
+  return localStorage.getItem(INVITE_CODE_KEY) || '';
+}
 
 function buildHeaders() {
-  const secret = API_SECRET;
-  if (!secret) {
-    throw new Error('Missing API secret, please set API_SECRET in frontend/js/api.js');
-  }
-
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${secret}`
+  const headers = {
+    'Content-Type': 'application/json'
   };
+  const inviteCode = getInviteCode();
+  if (inviteCode) {
+    headers['X-Invite-Code'] = inviteCode;
+  }
+  return headers;
 }
 
 async function requestJson(path, options = {}) {
@@ -26,6 +30,33 @@ async function requestJson(path, options = {}) {
   }
 
   return data;
+}
+
+export function isLoggedIn() {
+  return Boolean(localStorage.getItem(INVITE_CODE_KEY) && localStorage.getItem(USER_ID_KEY));
+}
+
+export async function login(inviteCode) {
+  const code = String(inviteCode || '').trim();
+  if (!code) {
+    throw new Error('请输入邀请码');
+  }
+  const data = await requestJson('/api/auth/verify', {
+    method: 'POST',
+    body: { inviteCode: code }
+  });
+  if (!data?.success || !data?.userId) {
+    throw new Error(data?.message || '邀请码无效');
+  }
+  localStorage.setItem(INVITE_CODE_KEY, code);
+  localStorage.setItem(USER_ID_KEY, data.userId);
+  return data;
+}
+
+export function logout() {
+  localStorage.removeItem(INVITE_CODE_KEY);
+  localStorage.removeItem(USER_ID_KEY);
+  window.location.reload();
 }
 
 function toQuery(params) {

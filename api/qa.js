@@ -1,10 +1,11 @@
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import { Pool } from 'pg';
+import { getUserIdFromInviteCode } from './_utils/auth.js';
+import { checkRateLimit } from './_utils/rateLimit.js';
 
 dotenv.config({ path: '.env.local' });
 
-const DEFAULT_USER_ID = 'default_user';
 const QA_PROMPT =
   '你是一个技术文章问答助手。请基于提供的上下文回答用户问题，用中文回答，2-3 句为摘要即可。若上下文不足以回答，说明“上下文不足”。';
 
@@ -21,19 +22,14 @@ function getPool() {
   return pool;
 }
 
-function ensureAuthorized(req, res) {
-  const expected = process.env.API_SECRET;
-  if (!expected) {
-    res.status(500).json({ error: 'server_misconfigured', message: 'Missing API_SECRET' });
-    return false;
+function getUserId(req, res) {
+  const inviteCode = req.headers['x-invite-code'] || '';
+  const userId = getUserIdFromInviteCode(inviteCode);
+  if (!userId) {
+    res.status(401).json({ error: 'unauthorized', message: '邀请码无效' });
+    return null;
   }
-
-  const auth = req.headers.authorization || '';
-  if (auth !== `Bearer ${expected}`) {
-    res.status(401).json({ error: 'unauthorized' });
-    return false;
-  }
-  return true;
+  return userId;
 }
 
 async function callDeepSeek(apiKey, question, context) {
@@ -64,15 +60,14 @@ async function callDeepSeek(apiKey, question, context) {
 }
 
 export default async function handler(req, res) {
-  if (!ensureAuthorized(req, res)) {
-    return;
-  }
+  const userId = getUserId(req, res);
+  if (!userId) return;
 
   if (req.method === 'GET') {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const articleId = req.query?.article_id || url.searchParams.get('article_id');
-    const params = [DEFAULT_USER_ID];
-    let where = 'WHERE (user_id IS NULL OR user_id = $1)';
+    const params = [userId];
+    let where = `WHERE user_id = $1 AND (answer_summary IS NULL OR answer_summary NOT LIKE '__reference__:%')`;
     if (articleId) {
       where += ' AND article_id = $2';
       params.push(articleId);
@@ -108,6 +103,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    const limitResult = await checkRateLimit(userId, 'qa', 50);
+    if (!limitResult.allowed) {
+      res.status(429).json({ error: 'rate_limited', message: '今日提问次数已用完' });
+      return;
+    }
+
     const answerSummary = await callDeepSeek(apiKey, question, context);
 
     const sql = `
@@ -116,7 +117,7 @@ export default async function handler(req, res) {
       RETURNING id, answer_summary, created_at
     `;
 
-    const { rows } = await getPool().query(sql, [highlight_id || null, article_id, question, answerSummary, DEFAULT_USER_ID]);
+    const { rows } = await getPool().query(sql, [highlight_id || null, article_id, question, answerSummary, userId]);
     res.status(200).json({
       id: rows[0].id,
       answer_summary: rows[0].answer_summary,
