@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-03-15 — 合并 API 入口以适配 Vercel 限制（v2.7.2）
+
+### 已完成
+- ✅ **API 合并入口**：新增 `api/index.js` 路由分发，Vercel 仅部署单函数
+- ✅ **删除旧接口**：移除已不使用的 `api/translate-next.js`
+- ✅ **Vercel 配置调整**：`builds`/`routes` 仅指向 `api/index.js`
+
+### 变更文件
+- api/index.js
+- api/translate-next.js
+- vercel.json
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 我的页版本号提示（v2.7.1）
 
 ### 已完成

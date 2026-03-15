@@ -15,6 +15,7 @@
 - 最近变更：新增主题调试信息复制入口 ✅
 - 最近变更：用户行为埋点 + 管理员数据面板 ✅
 - 最近变更：账号区块退出登录按钮 + 颜色按钮等宽 ✅
+- 最近变更：合并 API 入口以适配 Vercel Hobby 限制 ✅
 - 最近变更：我的页底部版本号提示 ✅
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
 - 待执行：Neon 迁移 reading_progress 唯一键为 (article_id, user_id)
@@ -108,7 +109,6 @@ Vercel Serverless Functions（/api/*）
 | api/admin/stats.js | GET /api/admin/stats（数据面板） | ✅ 已完成 |
 | api/_utils/auth.js | 邀请码解析工具（含 isAdmin） | ✅ 已完成 |
 | api/_utils/rateLimit.js | 限流统计工具 | ✅ 已完成 |
-| api/translate-next.js | POST /api/translate-next（保留接口，前端已不再调用） | ✅ 已完成 |
 | api/export.js | GET /api/export | ✅ 已完成 |
 | frontend/js/app.js | 主逻辑、Tab 切换 | ✅ 已完成（前端基础） |
 | frontend/js/reader.js | 翻页、进度（防抖10秒+退出保存）、直接渲染中文/英文 | ✅ 已完成 |

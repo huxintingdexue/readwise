@@ -1,0 +1,56 @@
+import articles from './articles.js';
+import highlights from './highlights.js';
+import qa from './qa.js';
+import readingList from './reading-list.js';
+import readingProgress from './reading-progress.js';
+import searchReference from './search-reference.js';
+import exportHandler from './export.js';
+import authVerify from './auth/verify.js';
+import feedback from './feedback.js';
+import events from './events.js';
+import adminStats from './admin/stats.js';
+
+function getPathname(req) {
+  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  return url.pathname;
+}
+
+export default async function handler(req, res) {
+  const pathname = getPathname(req);
+
+  if (pathname === '/api/articles' || pathname.startsWith('/api/articles/')) {
+    return articles(req, res);
+  }
+  if (pathname === '/api/highlights') {
+    return highlights(req, res);
+  }
+  if (pathname === '/api/qa') {
+    return qa(req, res);
+  }
+  if (pathname === '/api/reading-list') {
+    return readingList(req, res);
+  }
+  if (pathname === '/api/reading-progress') {
+    return readingProgress(req, res);
+  }
+  if (pathname === '/api/search-reference') {
+    return searchReference(req, res);
+  }
+  if (pathname === '/api/export') {
+    return exportHandler(req, res);
+  }
+  if (pathname === '/api/auth/verify') {
+    return authVerify(req, res);
+  }
+  if (pathname === '/api/feedback') {
+    return feedback(req, res);
+  }
+  if (pathname === '/api/events') {
+    return events(req, res);
+  }
+  if (pathname === '/api/admin/stats') {
+    return adminStats(req, res);
+  }
+
+  res.status(404).json({ error: 'not_found' });
+}
