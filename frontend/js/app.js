@@ -179,6 +179,7 @@ function readStatusLabel(status, progress) {
 }
 
 function hideLongPressMenu() {
+  if (!nodes.longPressMenu) return;
   nodes.longPressMenu.classList.add('hidden');
   nodes.longPressMenu.style.left = '-9999px';
   nodes.longPressMenu.style.top = '-9999px';
@@ -187,6 +188,7 @@ function hideLongPressMenu() {
 
 function showLongPressMenu(x, y, articleId) {
   state.longPressTargetId = articleId;
+  if (!nodes.longPressMenu) return;
   nodes.longPressMenu.style.left = `${x}px`;
   nodes.longPressMenu.style.top = `${y}px`;
   nodes.longPressMenu.classList.remove('hidden');
@@ -219,27 +221,6 @@ function renderArticles() {
 
     const card = li.firstElementChild;
     card.addEventListener('click', () => openArticle(item.id));
-
-    card.addEventListener('pointerdown', (event) => {
-      state.longPressTimer = setTimeout(() => {
-        event.preventDefault();
-        showLongPressMenu(event.clientX, event.clientY, item.id);
-      }, 550);
-    });
-
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach((name) => {
-      card.addEventListener(name, () => {
-        if (state.longPressTimer) {
-          clearTimeout(state.longPressTimer);
-          state.longPressTimer = null;
-        }
-      });
-    });
-
-    card.addEventListener('contextmenu', (event) => {
-      event.preventDefault();
-      showLongPressMenu(event.clientX, event.clientY, item.id);
-    });
 
     nodes.articlesList.appendChild(li);
   });
@@ -472,20 +453,9 @@ function bindEvents() {
     }
   });
 
-  nodes.longPressMenu.addEventListener('click', (event) => {
-    const action = event.target.dataset.action;
-    if (!action || !state.longPressTargetId) return;
-
-    if (action === 'mark-read') {
-      showToast('已触发“标记已读”菜单（状态写库在后续步骤接入）');
-    } else if (action === 'archive') {
-      showToast('已触发“存档”菜单（状态写库在后续步骤接入）');
-    } else if (action === 'cancel-archive') {
-      showToast('已触发“取消存档”菜单（状态写库在后续步骤接入）');
-    }
-
-    hideLongPressMenu();
-  });
+  if (nodes.longPressMenu) {
+    nodes.longPressMenu.classList.add('hidden');
+  }
 
   nodes.readerContent.addEventListener('click', () => {
     if (!document.body.classList.contains('reading-mode')) return;
