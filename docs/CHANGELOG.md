@@ -21,6 +21,7 @@
 ### 已完成
 - ✅ **底部导航栏背景修复**：改为使用主题色 `var(--bg)`，避免内容透出
 - ✅ **安全区适配**：`padding-bottom` 使用 `env(safe-area-inset-bottom, 12px)`
+- ✅ **深色模式实色**：移除深色模式下的半透明覆盖
 
 ### 变更文件
 - frontend/css/reader.css

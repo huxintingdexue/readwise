@@ -888,7 +888,7 @@ body {
 }
 
 body.theme-dark .bottom-nav {
-  background: rgba(26, 26, 26, 0.92);
+  background: var(--bg);
 }
 
 /* Theme toggle in topbar — icon-btn provides border/bg/size */
