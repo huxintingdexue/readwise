@@ -851,11 +851,11 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(242, 243, 245, 0.92);
+  background: var(--bg);
   display: flex;
   justify-content: center;
   gap: 28px;
-  padding: 10px 18px 12px;
+  padding: 10px 18px env(safe-area-inset-bottom, 12px);
   z-index: 25;
 }
 

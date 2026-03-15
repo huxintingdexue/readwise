@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-15 — 底部导航栏不透明背景（v2.5.1）
+
+### 已完成
+- ✅ **底部导航栏背景修复**：改为使用主题色 `var(--bg)`，避免内容透出
+- ✅ **安全区适配**：`padding-bottom` 使用 `env(safe-area-inset-bottom, 12px)`
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 邀请码白名单多用户 + 每日限流（v2.5.0）
 
 ### 已完成
