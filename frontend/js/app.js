@@ -85,9 +85,6 @@ function showToast(message, duration = 2200) {
   setTimeout(() => nodes.toast.classList.add('hidden'), duration);
 }
 
-let systemThemeWatcher = null;
-let systemThemeHandler = null;
-
 function applyTheme(theme) {
   document.body.classList.remove('theme-warm', 'theme-dark');
   if (theme === 'eye') document.body.classList.add('theme-warm');
@@ -97,23 +94,8 @@ function applyTheme(theme) {
 function normalizeThemeValue(value) {
   if (value === 'day') return 'light';
   if (value === 'warm') return 'eye';
-  if (value === 'dark' || value === 'light' || value === 'eye' || value === 'system') return value;
-  return 'system';
-}
-
-function getSystemTheme() {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function clearSystemWatcher() {
-  if (!systemThemeWatcher) return;
-  if (systemThemeWatcher.removeEventListener && systemThemeHandler) {
-    systemThemeWatcher.removeEventListener('change', systemThemeHandler);
-  } else if ('onchange' in systemThemeWatcher) {
-    systemThemeWatcher.onchange = null;
-  }
-  systemThemeWatcher = null;
-  systemThemeHandler = null;
+  if (value === 'dark' || value === 'light' || value === 'eye') return value;
+  return 'light';
 }
 
 function setThemeChoice(theme) {
@@ -124,22 +106,6 @@ function setThemeChoice(theme) {
 }
 
 function updateTheme(theme) {
-  clearSystemWatcher();
-
-  if (theme === 'system') {
-    systemThemeWatcher = window.matchMedia('(prefers-color-scheme: dark)');
-    systemThemeHandler = (event) => {
-      applyTheme(event.matches ? 'dark' : 'light');
-    };
-    applyTheme(systemThemeWatcher.matches ? 'dark' : 'light');
-    if (systemThemeWatcher.addEventListener) {
-      systemThemeWatcher.addEventListener('change', systemThemeHandler);
-    } else {
-      systemThemeWatcher.onchange = systemThemeHandler;
-    }
-    return;
-  }
-
   applyTheme(theme);
 }
 
