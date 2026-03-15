@@ -81,6 +81,7 @@ function showToast(message, duration = 2200) {
 }
 
 let systemThemeWatcher = null;
+let systemThemeHandler = null;
 
 function applyTheme(theme) {
   document.body.classList.remove('theme-warm', 'theme-dark');
@@ -99,6 +100,17 @@ function getSystemTheme() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+function clearSystemWatcher() {
+  if (!systemThemeWatcher) return;
+  if (systemThemeWatcher.removeEventListener && systemThemeHandler) {
+    systemThemeWatcher.removeEventListener('change', systemThemeHandler);
+  } else if ('onchange' in systemThemeWatcher) {
+    systemThemeWatcher.onchange = null;
+  }
+  systemThemeWatcher = null;
+  systemThemeHandler = null;
+}
+
 function setThemeChoice(theme) {
   const normalized = normalizeThemeValue(theme);
   localStorage.setItem('theme', normalized);
@@ -107,18 +119,19 @@ function setThemeChoice(theme) {
 }
 
 function updateTheme(theme) {
-  if (systemThemeWatcher) {
-    systemThemeWatcher.onchange = null;
-    systemThemeWatcher = null;
-  }
+  clearSystemWatcher();
 
   if (theme === 'system') {
-    const sysTheme = getSystemTheme();
-    applyTheme(sysTheme);
     systemThemeWatcher = window.matchMedia('(prefers-color-scheme: dark)');
-    systemThemeWatcher.onchange = (event) => {
+    systemThemeHandler = (event) => {
       applyTheme(event.matches ? 'dark' : 'light');
     };
+    applyTheme(systemThemeWatcher.matches ? 'dark' : 'light');
+    if (systemThemeWatcher.addEventListener) {
+      systemThemeWatcher.addEventListener('change', systemThemeHandler);
+    } else {
+      systemThemeWatcher.onchange = systemThemeHandler;
+    }
     return;
   }
 

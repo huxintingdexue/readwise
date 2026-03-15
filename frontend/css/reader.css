@@ -745,6 +745,11 @@ body {
   z-index: 60;
 }
 
+#feedbackModal,
+#adminFeedbackModal {
+  background: var(--bg);
+}
+
 .qa-sheet {
   width: 100%;
   max-width: 840px;
