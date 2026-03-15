@@ -98,7 +98,7 @@ async function main() {
       WHERE content_plain IS NOT NULL
         AND length(content_plain) > 0
         AND COALESCE(translated_chars, 0) < length(content_plain)
-      ORDER BY published_at DESC NULLS LAST
+      ORDER BY length(content_plain) ASC, published_at DESC NULLS LAST
     `);
 
     if (rows.length === 0) {

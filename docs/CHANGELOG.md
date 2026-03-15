@@ -11,6 +11,7 @@
 - ✅ **translated_chars 全量写入**：入库时直接写 `length(content_plain)`，避免前中后英混杂
 - ✅ **前端阅读页简化**：移除滚动触发 translate-next 与中英拼接逻辑，优先渲染 `content_zh`，为空则显示 `content_en`
 - ✅ **新增补翻译脚本**：`node scripts/retranslate.js` 扫描未全量翻译文章并回填全文翻译
+- ✅ **补翻译顺序优化**：优先处理短文（按 `length(content_plain)` 升序）
 - ✅ **抓取工作流加长超时**：GitHub Actions `timeout-minutes` 调整为 30
 - ✅ **移除 Peter RSS 源**：避免持续 404 干扰日志
 
