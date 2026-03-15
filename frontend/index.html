@@ -11,12 +11,11 @@
   <body>
     <div class="app-shell">
       <header class="topbar">
-        <div class="topbar-title">
+        <div class="topbar-title" id="topbarTitle">
           <h1>今日硅谷</h1>
           <p>全球一手信息触手可及</p>
         </div>
         <div class="topbar-actions">
-          <button id="themeToggle" class="icon-btn theme-toggle" type="button" aria-label="切换主题">☀️</button>
           <button id="logoutBtn" class="icon-btn hidden" type="button" aria-label="退出登录">退出</button>
           <button id="filterToggle" class="icon-btn" type="button" aria-label="筛选">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -69,6 +68,15 @@
             <h2>账号</h2>
             <div class="me-item">
               <span class="me-value" id="inviteCodeDisplay">邀请码：-</span>
+            </div>
+          </div>
+          <div class="me-section">
+            <h2>颜色</h2>
+            <div class="me-theme-row">
+              <button class="theme-choice" data-theme="system" type="button">跟随系统</button>
+              <button class="theme-choice" data-theme="light" type="button">标准</button>
+              <button class="theme-choice" data-theme="eye" type="button">护眼</button>
+              <button class="theme-choice" data-theme="dark" type="button">深色</button>
             </div>
           </div>
           <div class="me-section">

@@ -211,10 +211,15 @@ body {
 }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+  background: var(--bg);
+  padding: 12px 0 10px;
 }
 
 .topbar-title {
@@ -243,6 +248,28 @@ body {
   display: grid;
   place-items: center;
   cursor: pointer;
+}
+
+.me-theme-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.theme-choice {
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 8px 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.theme-choice.is-active {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
 }
 
 .icon-btn svg {

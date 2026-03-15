@@ -174,9 +174,10 @@ export async function getReadingList(status) {
 }
 
 export async function postFeedback(content) {
+  const userId = localStorage.getItem('userId') || '';
   return requestJson('/api/feedback', {
     method: 'POST',
-    body: { content }
+    body: { content, userId }
   });
 }
 

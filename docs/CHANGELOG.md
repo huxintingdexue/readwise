@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-15 — 顶部标题栏固定 + 主题跟随系统（v2.6.1）
+
+### 已完成
+- ✅ **顶部标题栏固定**：列表页 topbar 设为 `position: sticky`，背景不透明
+- ✅ **主题设置移至“我的”**：新增 4 个选项（跟随系统/标准/护眼/深色）
+- ✅ **跟随系统主题**：使用 `matchMedia` 自动切换浅色/深色
+- ✅ **顶部移除主题按钮**：不再在 topbar 显示切换按钮
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 底部导航优化 + 我的页 + 反馈（v2.6.0）
 
 ### 已完成
