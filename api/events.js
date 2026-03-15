@@ -19,9 +19,9 @@ function getPool() {
   return pool;
 }
 
-function getUserId(req, res) {
+async function getUserId(req, res) {
   const inviteCode = req.headers['x-invite-code'] || '';
-  const userId = getUserIdFromInviteCode(inviteCode);
+  const userId = await getUserIdFromInviteCode(inviteCode);
   if (!userId) {
     res.status(401).json({ error: 'unauthorized', message: '邀请码无效' });
     return null;
@@ -42,7 +42,7 @@ async function ensureTable() {
 }
 
 export default async function handler(req, res) {
-  const userId = getUserId(req, res);
+  const userId = await getUserId(req, res);
   if (!userId) return;
 
   if (req.method !== 'POST') {

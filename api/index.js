@@ -9,6 +9,7 @@ import authVerify from './auth/verify.js';
 import feedback from './feedback.js';
 import events from './events.js';
 import adminStats from './admin/stats.js';
+import adminInviteCodes from './admin/invite-codes.js';
 
 function getPathname(req) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -50,6 +51,9 @@ export default async function handler(req, res) {
   }
   if (pathname === '/api/admin/stats') {
     return adminStats(req, res);
+  }
+  if (pathname === '/api/admin/invite-codes') {
+    return adminInviteCodes(req, res);
   }
 
   res.status(404).json({ error: 'not_found' });

@@ -191,6 +191,18 @@ export async function getAdminStats() {
   return data || {};
 }
 
+export async function getInviteCodes() {
+  const data = await requestJson('/api/admin/invite-codes');
+  return data.items || [];
+}
+
+export async function addInviteCode(code, userId) {
+  return requestJson('/api/admin/invite-codes', {
+    method: 'POST',
+    body: { code, userId }
+  });
+}
+
 export function trackEvent(event, articleId) {
   requestJson('/api/events', {
     method: 'POST',

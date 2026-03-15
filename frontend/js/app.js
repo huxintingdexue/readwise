@@ -1,4 +1,4 @@
-import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, trackEvent } from './api.js';
+import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, trackEvent } from './api.js';
 import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, scrollToPlainPosition } from './reader.js';
 import { initArticleNotesPanel } from './notes.js';
@@ -41,7 +41,15 @@ const nodes = {
   feedbackEntry: document.querySelector('#feedbackEntry'),
   themeDebugCopy: document.querySelector('#themeDebugCopy'),
   adminSection: document.querySelector('#adminSection'),
-  adminFeedbackEntry: document.querySelector('#adminFeedbackEntry'),
+  adminConsoleEntry: document.querySelector('#adminConsoleEntry'),
+  adminConsole: document.querySelector('#adminConsole'),
+  adminBackBtn: document.querySelector('#adminBackBtn'),
+  adminFeedbackList: document.querySelector('#adminFeedbackList'),
+  adminStatsList: document.querySelector('#adminStatsList'),
+  adminInviteList: document.querySelector('#adminInviteList'),
+  adminInviteCode: document.querySelector('#adminInviteCode'),
+  adminInviteUserId: document.querySelector('#adminInviteUserId'),
+  adminInviteAdd: document.querySelector('#adminInviteAdd'),
   backBtn: document.querySelector('#backBtn'),
   filterToggle: document.querySelector('#filterToggle'),
   filterPanel: document.querySelector('#filterPanel'),
@@ -60,13 +68,6 @@ const nodes = {
   feedbackInput: document.querySelector('#feedbackInput'),
   feedbackSubmitBtn: document.querySelector('#feedbackSubmitBtn'),
   feedbackCloseBtn: document.querySelector('#feedbackCloseBtn'),
-  adminFeedbackModal: document.querySelector('#adminFeedbackModal'),
-  adminFeedbackBody: document.querySelector('#adminFeedbackBody'),
-  adminFeedbackCloseBtn: document.querySelector('#adminFeedbackCloseBtn'),
-  adminStatsEntry: document.querySelector('#adminStatsEntry'),
-  adminStatsModal: document.querySelector('#adminStatsModal'),
-  adminStatsBody: document.querySelector('#adminStatsBody'),
-  adminStatsCloseBtn: document.querySelector('#adminStatsCloseBtn'),
   themeChoices: [...document.querySelectorAll('.theme-choice')]
 };
 
@@ -240,6 +241,10 @@ function switchTab(nextTab) {
   nodes.tabButtons.forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.tab === nextTab);
   });
+  if (nodes.adminConsole) {
+    nodes.adminConsole.classList.add('hidden');
+  }
+  document.body.classList.remove('admin-mode');
   document.body.classList.remove('reading-mode');
   document.body.classList.remove('reader-bar-hidden');
   closeReader({
@@ -383,20 +388,16 @@ function bindEvents() {
     handleFeedbackSubmit();
   });
 
-  nodes.adminFeedbackEntry?.addEventListener('click', async () => {
-    await openAdminFeedback();
+  nodes.adminConsoleEntry?.addEventListener('click', () => {
+    openAdminConsole();
   });
 
-  nodes.adminFeedbackCloseBtn?.addEventListener('click', () => {
-    closeAdminFeedback();
+  nodes.adminBackBtn?.addEventListener('click', () => {
+    closeAdminConsole();
   });
 
-  nodes.adminStatsEntry?.addEventListener('click', async () => {
-    await openAdminStats();
-  });
-
-  nodes.adminStatsCloseBtn?.addEventListener('click', () => {
-    closeAdminStats();
+  nodes.adminInviteAdd?.addEventListener('click', async () => {
+    await handleInviteAdd();
   });
 
   document.addEventListener('click', (event) => {
@@ -471,10 +472,6 @@ function refreshMeTab() {
   renderThemeChoices(normalizeThemeValue(localStorage.getItem('theme')));
 }
 
-function closeAdminStats() {
-  nodes.adminStatsModal?.classList.add('hidden');
-}
-
 function renderStatBlock(title, lines) {
   const block = document.createElement('div');
   block.className = 'me-stat-block';
@@ -488,55 +485,151 @@ function renderStatBlock(title, lines) {
   return block;
 }
 
-async function openAdminStats() {
-  if (!nodes.adminStatsModal || !nodes.adminStatsBody) return;
-  nodes.adminStatsBody.innerHTML = '';
-  nodes.adminStatsModal.classList.remove('hidden');
+async function openAdminConsole() {
+  if (getUserId() !== 'admin') {
+    showToast('仅管理员可访问', 2000);
+    switchTab('today');
+    return;
+  }
+  if (!nodes.adminConsole) return;
+  document.body.classList.add('admin-mode');
+  nodes.todayTab.classList.add('hidden');
+  nodes.notesTab.classList.add('hidden');
+  nodes.adminConsole.classList.remove('hidden');
+  await Promise.all([loadAdminFeedback(), loadAdminStats(), loadInviteCodes()]);
+}
+
+function closeAdminConsole() {
+  document.body.classList.remove('admin-mode');
+  if (nodes.adminConsole) {
+    nodes.adminConsole.classList.add('hidden');
+  }
+  switchTab('notes');
+}
+
+async function loadAdminFeedback() {
+  if (!nodes.adminFeedbackList) return;
+  nodes.adminFeedbackList.innerHTML = '';
+  try {
+    const items = await getFeedback();
+    if (!items.length) {
+      nodes.adminFeedbackList.innerHTML = '<div class="state-text">暂无反馈</div>';
+      return;
+    }
+    items.forEach((item) => {
+      const div = document.createElement('div');
+      div.className = 'admin-item';
+      div.innerHTML = `
+        <div class="admin-item-meta">
+          <span>${escapeHtml(item.user_id || 'unknown')}</span>
+          <span>${escapeHtml(formatAdminTime(item.created_at))}</span>
+        </div>
+        <div>${escapeHtml(item.content || '')}</div>
+      `;
+      nodes.adminFeedbackList.appendChild(div);
+    });
+  } catch (_) {
+    nodes.adminFeedbackList.innerHTML = '<div class="state-text">加载失败</div>';
+  }
+}
+
+async function loadAdminStats() {
+  if (!nodes.adminStatsList) return;
+  nodes.adminStatsList.innerHTML = '';
   try {
     const data = await getAdminStats();
-    const today = renderStatBlock('今日概览', [
-      { label: '今日活跃用户数', value: String(data.today_active_users ?? 0) },
-      { label: '今日文章打开次数', value: String(data.today_open_articles ?? 0) }
-    ]);
-    nodes.adminStatsBody.appendChild(today);
-
-    const weekly = renderStatBlock(
-      '本周阅读排行（按用户）',
-      (data.weekly_user_finishes || []).map((item) => ({
-        label: item.user_id || 'unknown',
-        value: `${item.count || 0} 篇`
-      }))
+    nodes.adminStatsList.appendChild(
+      renderStatBlock('今日概览', [
+        { label: '今日活跃用户数', value: String(data.today_active_users ?? 0) },
+        { label: '今日文章打开次数', value: String(data.today_open_articles ?? 0) }
+      ])
     );
-    nodes.adminStatsBody.appendChild(weekly);
-
-    const completion = renderStatBlock(
-      '文章完成率排行',
-      (data.article_completion || []).map((item) => ({
-        label: item.title || '未命名文章',
-        value: `${item.rate || 0}%`
-      }))
+    nodes.adminStatsList.appendChild(
+      renderStatBlock(
+        '本周阅读排行（按用户）',
+        (data.weekly_user_finishes || []).map((item) => ({
+          label: item.user_id || 'unknown',
+          value: `${item.count || 0} 篇`
+        }))
+      )
     );
-    nodes.adminStatsBody.appendChild(completion);
-
-    const highlightBlock = renderStatBlock(
-      '核心功能使用（划线）',
-      (data.highlights_by_user || []).map((item) => ({
-        label: item.user_id || 'unknown',
-        value: `${item.count || 0} 次`
-      }))
+    nodes.adminStatsList.appendChild(
+      renderStatBlock(
+        '文章完成率排行',
+        (data.article_completion || []).map((item) => ({
+          label: item.title || '未命名文章',
+          value: `${item.rate || 0}%`
+        }))
+      )
     );
-    nodes.adminStatsBody.appendChild(highlightBlock);
-
-    const qaBlock = renderStatBlock(
-      '核心功能使用（提问）',
-      (data.qa_by_user || []).map((item) => ({
-        label: item.user_id || 'unknown',
-        value: `${item.count || 0} 次`
-      }))
+    nodes.adminStatsList.appendChild(
+      renderStatBlock(
+        '核心功能使用（划线）',
+        (data.highlights_by_user || []).map((item) => ({
+          label: item.user_id || 'unknown',
+          value: `${item.count || 0} 次`
+        }))
+      )
     );
-    nodes.adminStatsBody.appendChild(qaBlock);
+    nodes.adminStatsList.appendChild(
+      renderStatBlock(
+        '核心功能使用（提问）',
+        (data.qa_by_user || []).map((item) => ({
+          label: item.user_id || 'unknown',
+          value: `${item.count || 0} 次`
+        }))
+      )
+    );
   } catch (_) {
-    nodes.adminStatsBody.innerHTML = '<div class="state-text">加载失败</div>';
+    nodes.adminStatsList.innerHTML = '<div class="state-text">加载失败</div>';
+  }
+}
+
+async function loadInviteCodes() {
+  if (!nodes.adminInviteList) return;
+  nodes.adminInviteList.innerHTML = '';
+  try {
+    const items = await getInviteCodes();
+    if (!items.length) {
+      nodes.adminInviteList.innerHTML = '<div class="state-text">暂无邀请码</div>';
+      return;
+    }
+    items.forEach((item) => {
+      const div = document.createElement('div');
+      div.className = 'admin-item';
+      div.innerHTML = `
+        <div class="admin-item-meta">
+          <span>${escapeHtml(item.code || '')}</span>
+          <span>${escapeHtml(item.user_id || '')}</span>
+        </div>
+        <div>${escapeHtml(formatAdminTime(item.created_at))}</div>
+      `;
+      nodes.adminInviteList.appendChild(div);
+    });
+  } catch (_) {
+    nodes.adminInviteList.innerHTML = '<div class="state-text">加载失败</div>';
+  }
+}
+
+async function handleInviteAdd() {
+  const code = String(nodes.adminInviteCode?.value || '').trim();
+  const userId = String(nodes.adminInviteUserId?.value || '').trim();
+  if (!code || !userId) {
+    showToast('请填写邀请码和用户ID', 2000);
+    return;
+  }
+  try {
+    await addInviteCode(code, userId);
+    if (nodes.adminInviteCode) nodes.adminInviteCode.value = '';
+    if (nodes.adminInviteUserId) nodes.adminInviteUserId.value = '';
+    showToast('邀请码已添加，立即生效', 2000);
+    await loadInviteCodes();
+  } catch (err) {
+    if (String(err.message || '').includes('conflict')) {
+      showToast('邀请码或用户ID已存在', 2000);
+    } else {
+      showToast('添加失败，请重试', 2000);
+    }
   }
 }
 
@@ -562,36 +655,6 @@ function formatAdminTime(isoString) {
   return `${mm}/${dd} ${hh}:${mi}`;
 }
 
-function closeAdminFeedback() {
-  nodes.adminFeedbackModal?.classList.add('hidden');
-}
-
-async function openAdminFeedback() {
-  if (!nodes.adminFeedbackModal || !nodes.adminFeedbackBody) return;
-  nodes.adminFeedbackBody.innerHTML = '';
-  nodes.adminFeedbackModal.classList.remove('hidden');
-  try {
-    const items = await getFeedback();
-    if (!items.length) {
-      nodes.adminFeedbackBody.innerHTML = '<div class="state-text">暂无反馈</div>';
-      return;
-    }
-    items.forEach((item) => {
-      const div = document.createElement('div');
-      div.className = 'me-feedback-item';
-      div.innerHTML = `
-        <div class="me-feedback-meta">
-          <span>${escapeHtml(item.user_id || 'unknown')}</span>
-          <span>${escapeHtml(formatAdminTime(item.created_at))}</span>
-        </div>
-        <div>${escapeHtml(item.content || '')}</div>
-      `;
-      nodes.adminFeedbackBody.appendChild(div);
-    });
-  } catch (_) {
-    nodes.adminFeedbackBody.innerHTML = '<div class="state-text">加载失败</div>';
-  }
-}
 
 function showLoginOverlay(message = '') {
   if (!nodes.loginOverlay) return;

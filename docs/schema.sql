@@ -87,6 +87,14 @@ CREATE TABLE IF NOT EXISTS events (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- 邀请码管理
+CREATE TABLE IF NOT EXISTS invite_codes (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(50) UNIQUE NOT NULL,
+  user_id VARCHAR(50) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- 索引（提升常用查询性能）
 CREATE INDEX IF NOT EXISTS idx_articles_source_key ON articles(source_key);
 CREATE INDEX IF NOT EXISTS idx_articles_read_status ON articles(read_status);

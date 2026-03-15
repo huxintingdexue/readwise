@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-03-15 — 管理员控制台整合 + 邀请码管理（v2.8.0）
+
+### 已完成
+- ✅ **管理员控制台页面**：整合反馈、统计、邀请码管理
+- ✅ **邀请码管理接口**：新增 `GET/POST /api/admin/invite-codes`
+- ✅ **邀请码迁移**：auth 优先 env，后查 invite_codes 表
+- ✅ **管理员入口整合**：我的页仅保留“管理员控制台”
+
+### 变更文件
+- api/_utils/auth.js
+- api/admin/invite-codes.js
+- api/admin/stats.js
+- api/auth/verify.js
+- api/articles.js
+- api/highlights.js
+- api/reading-list.js
+- api/reading-progress.js
+- api/qa.js
+- api/search-reference.js
+- api/export.js
+- api/feedback.js
+- api/events.js
+- api/index.js
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- frontend/js/api.js
+- docs/schema.sql
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 合并 API 入口以适配 Vercel 限制（v2.7.2）
 
 ### 已完成

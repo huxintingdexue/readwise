@@ -19,10 +19,12 @@
 - 最近变更：移除文章列表长按菜单 ✅
 - 最近变更：移除跟随系统主题选项 ✅
 - 最近变更：退出登录按钮无边框 ✅
+- 最近变更：管理员控制台整合 + 邀请码管理 ✅
 - 最近变更：合并 API 入口以适配 Vercel Hobby 限制 ✅
 - 最近变更：我的页底部版本号提示 ✅
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
 - 待执行：Neon 迁移 reading_progress 唯一键为 (article_id, user_id)
+- 待执行：Neon 创建 invite_codes 表并迁移已有邀请码
 - 最近变更："我的"页 + 反馈/管理员入口 ✅
 - 最近变更：反馈发送成功提示文案优化 ✅
 - 最近变更：反馈发送改为一次点击提交 ✅
@@ -111,6 +113,7 @@ Vercel Serverless Functions（/api/*）
 | api/feedback.js | GET/POST /api/feedback（用户反馈） | ✅ 已完成 |
 | api/events.js | POST /api/events（用户行为埋点） | ✅ 已完成 |
 | api/admin/stats.js | GET /api/admin/stats（数据面板） | ✅ 已完成 |
+| api/admin/invite-codes.js | GET/POST /api/admin/invite-codes（邀请码管理） | ✅ 已完成 |
 | api/_utils/auth.js | 邀请码解析工具（含 isAdmin） | ✅ 已完成 |
 | api/_utils/rateLimit.js | 限流统计工具 | ✅ 已完成 |
 | api/export.js | GET /api/export | ✅ 已完成 |
@@ -191,7 +194,7 @@ Vercel Serverless Functions（/api/*）
 DEEPSEEK_API_KEY     # Vercel Dashboard + GitHub Secrets
 NEON_DATABASE_URL    # 带 ?sslmode=require，Vercel + GitHub Secrets
 API_SECRET           # 仅Vercel Dashboard（遗留接口使用）
-INVITE_CODES         # 邀请码白名单，格式 CODE:user_id
+INVITE_CODES         # 邀请码白名单兜底（仅 admin 推荐保留）
 INITIAL_FETCH        # 仅首次手动触发时设为3
 ```
 

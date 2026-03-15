@@ -103,16 +103,38 @@
           </div>
           <div class="me-section hidden" id="adminSection">
             <h2>管理员</h2>
-            <div class="me-item" id="adminFeedbackEntry">
-              <div>查看用户反馈</div>
-              <span>></span>
-            </div>
-            <div class="me-item" id="adminStatsEntry">
-              <div>数据面板</div>
+            <div class="me-item" id="adminConsoleEntry">
+              <div>管理员控制台</div>
               <span>></span>
             </div>
           </div>
-          <div class="app-version" id="appVersion">版本：v2.7.1</div>
+          <div class="app-version" id="appVersion">版本：v2.8.0</div>
+        </section>
+
+        <section id="adminConsole" class="admin-console hidden">
+          <header class="admin-console-head">
+            <button id="adminBackBtn" class="back-btn" type="button">←</button>
+            <h2>管理员控制台</h2>
+          </header>
+          <div class="admin-console-body">
+            <div class="admin-block">
+              <h3>用户反馈</h3>
+              <div id="adminFeedbackList" class="admin-list"></div>
+            </div>
+            <div class="admin-block">
+              <h3>用户使用情况</h3>
+              <div id="adminStatsList" class="admin-list"></div>
+            </div>
+            <div class="admin-block">
+              <h3>邀请码管理</h3>
+              <div id="adminInviteList" class="admin-list"></div>
+              <div class="admin-invite-form">
+                <input id="adminInviteCode" type="text" placeholder="如 GUANG-CHEN" />
+                <input id="adminInviteUserId" type="text" placeholder="如 user_chen" />
+                <button id="adminInviteAdd" type="button">添加</button>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section id="readerView" class="reader hidden" aria-live="polite">
@@ -215,25 +237,6 @@
       </div>
     </div>
 
-    <div id="adminFeedbackModal" class="qa-modal hidden" role="dialog" aria-modal="true">
-      <div class="me-panel">
-        <div class="me-panel-head">
-          <strong>用户反馈</strong>
-          <button id="adminFeedbackCloseBtn" type="button" aria-label="关闭">✕</button>
-        </div>
-        <div id="adminFeedbackBody" class="me-panel-body"></div>
-      </div>
-    </div>
-
-    <div id="adminStatsModal" class="qa-modal hidden" role="dialog" aria-modal="true">
-      <div class="me-panel">
-        <div class="me-panel-head">
-          <strong>数据面板</strong>
-          <button id="adminStatsCloseBtn" type="button" aria-label="关闭">✕</button>
-        </div>
-        <div id="adminStatsBody" class="me-panel-body"></div>
-      </div>
-    </div>
 
     <script>
       if ('serviceWorker' in navigator) {

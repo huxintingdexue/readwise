@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   const inviteCode = req.body?.inviteCode || '';
-  const userId = getUserIdFromInviteCode(inviteCode);
+  const userId = await getUserIdFromInviteCode(inviteCode);
 
   if (!userId) {
     res.status(401).json({ success: false, message: '邀请码无效' });
