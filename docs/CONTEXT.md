@@ -21,11 +21,13 @@
 - 最近变更：退出登录按钮无边框 ✅
 - 最近变更：管理员控制台整合 + 邀请码管理 ✅
 - 最近变更：移除普通用户诊断模块 ✅
+- 最近变更：手动投喂链接（翻译中可见、完成后全员可见）✅
 - 最近变更：合并 API 入口以适配 Vercel Hobby 限制 ✅
 - 最近变更：我的页底部版本号提示 ✅
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
 - 待执行：Neon 迁移 reading_progress 唯一键为 (article_id, user_id)
 - 待执行：Neon 创建 invite_codes 表并迁移已有邀请码
+- 待执行：Neon 为 articles 表补充 `submitted_by/status/source_url/author` 字段
 - 最近变更："我的"页 + 反馈/管理员入口 ✅
 - 最近变更：反馈发送成功提示文案优化 ✅
 - 最近变更：反馈发送改为一次点击提交 ✅
@@ -57,7 +59,7 @@
 - 最近变更：新增 Lenny Rachitsky（lenny）+ Naval Ravikant（naval）两个内容源 ✅
 - 本地/部署是否可运行：✅ 可运行（Vercel 统一托管前端 + API）
 - 数据库是否已初始化：✅（Neon 已执行 schema.sql）
-- 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅ / INVITE_CODES ✅
+- 环境变量是否已配置：DEEPSEEK_API_KEY ✅ / NEON_DATABASE_URL ✅ / API_SECRET ✅ / INVITE_CODES ✅（仅 admin 兜底）
 - 当前已有真实数据：✅（抓取脚本 smoke test 已写入 2 篇：sam 1、andrej 1）
 - 下一步任务：无（MVP 步骤已完成）
 
@@ -115,6 +117,7 @@ Vercel Serverless Functions（/api/*）
 | api/events.js | POST /api/events（用户行为埋点） | ✅ 已完成 |
 | api/admin/stats.js | GET /api/admin/stats（数据面板） | ✅ 已完成 |
 | api/admin/invite-codes.js | GET/POST /api/admin/invite-codes（邀请码管理） | ✅ 已完成 |
+| api/ingest.js | POST /api/ingest（手动投喂+翻译推进） | ✅ 已完成 |
 | api/_utils/auth.js | 邀请码解析工具（含 isAdmin） | ✅ 已完成 |
 | api/_utils/rateLimit.js | 限流统计工具 | ✅ 已完成 |
 | api/export.js | GET /api/export | ✅ 已完成 |
@@ -145,6 +148,7 @@ Vercel Serverless Functions（/api/*）
 - ✅ 完成邀请码登录 + 每日限流：邀请码白名单多用户隔离，问答/引用追踪每日次数限制
 - ✅ 完成笔记 Tab：按文章聚合划线/问答，书单展示，阅读页“本文划线”入口
 - ✅ 完成数据导出：`GET /api/export` 返回划线 / 问答 / 书单
+- ✅ 完成手动投喂：用户粘贴 URL 触发抓取+翻译+入库，翻译中仅投喂者可见
 
 ## 待开发功能（严格按此顺序）
 1. ✅ 项目初始化
@@ -205,7 +209,7 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 - [ ] 阅读状态栏整合：返回列表、夜间模式切换、字体设置整合到顶部同一行，沉浸模式时隐藏
 - [ ] 字体选择与本地托管：Noto Serif SC，只下载 weight 400 子集化版本
 - [ ] 夜间模式切换：并入状态栏
-- [ ] 手动投喂链接：POST /api/ingest 接口，用户粘贴 URL 触发抓取+翻译+入库
+- [x] 手动投喂链接：POST /api/ingest 接口，用户粘贴 URL 触发抓取+翻译+入库
 - [ ] QA 多轮上下文修复：携带对话历史调用 DeepSeek
 - [ ] 投喂链接溯源：用户粘贴二手文章链接，AI 自动识别原文 URL 后投喂
 - [ ] AI 提问质量优化：改进上下文策略和 Prompt 结构

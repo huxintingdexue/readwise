@@ -16,6 +16,12 @@
           <p>全球一手信息触手可及</p>
         </div>
         <div class="topbar-actions">
+          <button id="ingestToggle" class="icon-btn" type="button" aria-label="添加文章">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M11 4h2v16h-2z" fill="currentColor"></path>
+              <path d="M4 11h16v2H4z" fill="currentColor"></path>
+            </svg>
+          </button>
           <button id="filterToggle" class="icon-btn" type="button" aria-label="筛选">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" fill="currentColor"></path>
@@ -101,7 +107,7 @@
               <span>></span>
             </div>
           </div>
-          <div class="app-version" id="appVersion">版本：v2.8.0</div>
+          <div class="app-version" id="appVersion">版本：v2.9.0</div>
         </section>
 
         <section id="adminConsole" class="admin-console hidden">
@@ -227,6 +233,17 @@
         </div>
         <textarea id="feedbackInput" class="feedback-input" placeholder="非常欢迎提出改进建议！大家的每条建议我都会认真读的！也欢迎微信跟我讨论！"></textarea>
         <button id="feedbackSubmitBtn" class="feedback-submit" type="button">发送</button>
+      </div>
+    </div>
+
+    <div id="ingestModal" class="qa-modal hidden" role="dialog" aria-modal="true">
+      <div class="me-panel">
+        <div class="me-panel-head">
+          <strong>添加文章</strong>
+          <button id="ingestCloseBtn" type="button" aria-label="关闭">✕</button>
+        </div>
+        <input id="ingestInput" class="ingest-input" type="url" placeholder="粘贴文章链接" />
+        <button id="ingestSubmitBtn" class="ingest-submit" type="button">添加</button>
       </div>
     </div>
 

@@ -1,4 +1,4 @@
-import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, trackEvent } from './api.js';
+import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, ingestUrl, translateIngestStep, trackEvent } from './api.js';
 import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, scrollToPlainPosition } from './reader.js';
 import { initArticleNotesPanel } from './notes.js';
@@ -16,7 +16,9 @@ const state = {
   longPressTargetId: null,
   historyBound: false,
   appStarted: false,
-  logoutTimer: null
+  logoutTimer: null,
+  ingestTimer: null,
+  ingestBusy: false
 };
 
 const nodes = {
@@ -52,6 +54,11 @@ const nodes = {
   backBtn: document.querySelector('#backBtn'),
   filterToggle: document.querySelector('#filterToggle'),
   filterPanel: document.querySelector('#filterPanel'),
+  ingestToggle: document.querySelector('#ingestToggle'),
+  ingestModal: document.querySelector('#ingestModal'),
+  ingestInput: document.querySelector('#ingestInput'),
+  ingestSubmitBtn: document.querySelector('#ingestSubmitBtn'),
+  ingestCloseBtn: document.querySelector('#ingestCloseBtn'),
   longPressMenu: document.querySelector('#longPressMenu'),
   toast: document.querySelector('#toast'),
   originSnippet: document.querySelector('#originSnippet'),
@@ -128,7 +135,8 @@ function formatDate(isoString) {
   return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
 }
 
-function sourceName(sourceKey) {
+function sourceName(sourceKey, author) {
+  if (sourceKey === 'manual') return author || '读友推荐';
   if (sourceKey === 'sam') return 'Sam Altman';
   if (sourceKey === 'andrej') return 'Andrej Karpathy';
   if (sourceKey === 'peter') return 'Peter Steipete';
@@ -174,19 +182,27 @@ function renderArticles() {
     const li = document.createElement('li');
     const progress = Math.max(0, Math.min(100, Number(item.read_progress || 0)));
     const progressLabel = Math.round(progress);
+    const isTranslating = item.status === 'translating';
+    const statusLabel = isTranslating ? '翻译中...' : readStatusLabel(item.read_status, progressLabel);
+    const showBadge = item.status !== 'translating' && item.submitted_by;
     li.innerHTML = `
-      <article class="article-card" data-id="${item.id}">
+      <article class="article-card${isTranslating ? ' is-disabled' : ''}" data-id="${item.id}">
         <div class="article-card-head">
-          <h3>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
-          <span class="read-status">${escapeHtml(readStatusLabel(item.read_status, progressLabel))}</span>
+          <div class="article-card-title">
+            <h3>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
+            ${showBadge ? '<span class="article-badge">读友推荐</span>' : ''}
+          </div>
+          <span class="${isTranslating ? 'article-status' : 'read-status'}">${escapeHtml(statusLabel)}</span>
         </div>
-        <div class="article-meta">${escapeHtml(sourceName(item.source_key))} · ${escapeHtml(formatDate(item.published_at))}</div>
+        <div class="article-meta">${escapeHtml(sourceName(item.source_key, item.author))} · ${escapeHtml(formatDate(item.published_at))}</div>
         <p class="article-summary">${escapeHtml(item.summary_zh || item.summary_en || '暂无摘要')}</p>
       </article>
     `;
 
     const card = li.firstElementChild;
-    card.addEventListener('click', () => openArticle(item.id));
+    if (!isTranslating) {
+      card.addEventListener('click', () => openArticle(item.id));
+    }
 
     nodes.articlesList.appendChild(li);
   });
@@ -197,6 +213,7 @@ async function loadArticles() {
     nodes.articlesState.textContent = '加载中...';
     state.articles = await getArticles(state.filters);
     renderArticles();
+    ensureIngestPolling();
   } catch (err) {
     nodes.articlesState.textContent = `加载失败：${err.message}`;
     if (String(err.message || '').includes('邀请码无效')) {
@@ -330,6 +347,14 @@ function bindEvents() {
     openFeedbackModal();
   });
 
+  nodes.ingestToggle?.addEventListener('click', () => {
+    openIngestModal();
+  });
+
+  nodes.ingestCloseBtn?.addEventListener('click', () => {
+    closeIngestModal();
+  });
+
 
   nodes.feedbackCloseBtn?.addEventListener('click', () => {
     closeFeedbackModal();
@@ -356,6 +381,45 @@ function bindEvents() {
   });
   nodes.feedbackSubmitBtn?.addEventListener('click', () => {
     handleFeedbackSubmit();
+  });
+
+  const handleIngestSubmit = async () => {
+    const url = String(nodes.ingestInput?.value || '').trim();
+    if (!url) {
+      showToast('请粘贴文章链接', 2000);
+      return;
+    }
+    setIngestSubmitting(true);
+    try {
+      const result = await ingestUrl(url);
+      if (result?.success) {
+        showToast('已加入翻译队列，稍后可阅读', 2000);
+        closeIngestModal();
+        await loadArticles();
+        pollIngestTranslation();
+      } else {
+        showToast(result?.message || '文章已存在', 2000);
+      }
+    } catch (err) {
+      const message = String(err.message || '');
+      if (message.includes('上限')) {
+        showToast('今日投喂次数已达上限（5篇）', 2000);
+      } else if (message.includes('存在')) {
+        showToast('文章已存在', 2000);
+      } else {
+        showToast('添加失败，请检查链接是否有效', 2000);
+      }
+    } finally {
+      setIngestSubmitting(false);
+    }
+  };
+
+  nodes.ingestSubmitBtn?.addEventListener('touchend', (event) => {
+    event.preventDefault();
+    handleIngestSubmit();
+  });
+  nodes.ingestSubmitBtn?.addEventListener('click', () => {
+    handleIngestSubmit();
   });
 
   nodes.adminConsoleEntry?.addEventListener('click', () => {
@@ -613,6 +677,56 @@ function openFeedbackModal() {
 
 function closeFeedbackModal() {
   nodes.feedbackModal?.classList.add('hidden');
+}
+
+function openIngestModal() {
+  nodes.ingestModal?.classList.remove('hidden');
+  if (nodes.ingestInput) {
+    nodes.ingestInput.value = '';
+    nodes.ingestInput.focus();
+  }
+  setIngestSubmitting(false);
+}
+
+function closeIngestModal() {
+  nodes.ingestModal?.classList.add('hidden');
+}
+
+function setIngestSubmitting(isSubmitting) {
+  if (!nodes.ingestSubmitBtn) return;
+  nodes.ingestSubmitBtn.disabled = isSubmitting;
+  nodes.ingestSubmitBtn.textContent = isSubmitting ? '处理中...' : '添加';
+}
+
+function ensureIngestPolling() {
+  const hasTranslating = state.articles.some((item) => item.status === 'translating');
+  if (hasTranslating && !state.ingestTimer) {
+    state.ingestTimer = setInterval(() => {
+      pollIngestTranslation();
+    }, 30000);
+    pollIngestTranslation();
+  }
+  if (!hasTranslating && state.ingestTimer) {
+    clearInterval(state.ingestTimer);
+    state.ingestTimer = null;
+  }
+}
+
+async function pollIngestTranslation() {
+  if (state.ingestBusy) return;
+  const translating = state.articles.filter((item) => item.status === 'translating');
+  if (!translating.length) return;
+  state.ingestBusy = true;
+  try {
+    for (const item of translating) {
+      await translateIngestStep(item.id);
+    }
+  } catch (_) {
+    // silent
+  } finally {
+    state.ingestBusy = false;
+  }
+  await loadArticles();
 }
 
 function formatAdminTime(isoString) {

@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-03-15 — 手动投喂链接（v2.9.0）
+
+### 已完成
+- ✅ **手动投喂入口**：今日页顶部“+”按钮打开添加文章面板
+- ✅ **后台抓取与入库**：新增 `POST /api/ingest`，写入 `status=translating` 并异步分段翻译
+- ✅ **翻译轮询**：列表存在翻译中时，前端 30 秒轮询触发翻译推进
+- ✅ **列表展示**：翻译中显示“翻译中...”，不可进入；完成后显示“读友推荐”
+- ✅ **数据库字段补充**：articles 表新增 `submitted_by`、`status`、`source_url`、`author`
+- ✅ **环境变量示例收敛**：INVITE_CODES 仅保留 admin 兜底示例
+
+### 变更文件
+- .env.example
+- api/index.js
+- api/articles.js
+- api/ingest.js
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- frontend/js/api.js
+- docs/schema.sql
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 管理员控制台整合 + 邀请码管理（v2.8.0）
 
 ### 已完成

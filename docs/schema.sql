@@ -8,11 +8,12 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- 文章表
 CREATE TABLE IF NOT EXISTS articles (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  source_key          TEXT NOT NULL,                        -- 'sam' | 'andrej' | 'peter'
+  source_key          TEXT NOT NULL,                        -- 'sam' | 'andrej' | 'peter' | 'lenny' | 'naval' | 'manual'
   title_en            TEXT NOT NULL,
   title_zh            TEXT,
   summary_en          TEXT,
   summary_zh          TEXT,
+  author             TEXT,                                 -- 手动投喂作者名
   content_en          TEXT,                                 -- 富文本原文（含 HTML 标签，用于渲染）
   content_plain       TEXT,                                 -- 纯文本版本（无 HTML 标签，用于划线字符位置计算和进度记录）
   content_zh          TEXT,                                 -- 已翻译部分（持续追加）
@@ -20,9 +21,12 @@ CREATE TABLE IF NOT EXISTS articles (
   translated_chars    INT DEFAULT 0,                        -- 已翻译字符数，只增不减，基于 content_plain 计算
   read_status         TEXT DEFAULT 'unread',                -- 'unread' | 'read' | 'archived'
   url                 TEXT NOT NULL UNIQUE,                 -- ON CONFLICT DO NOTHING 依赖此唯一约束
+  source_url          TEXT,                                 -- 手动投喂原始 URL
   published_at        TIMESTAMP,
   fetched_at          TIMESTAMP DEFAULT NOW(),
-  user_id             TEXT NULL                             -- 预留多用户，MVP 阶段由后端映射默认用户
+  user_id             TEXT NULL,                            -- 预留多用户，MVP 阶段由后端映射默认用户
+  submitted_by        TEXT,                                 -- 手动投喂者 user_id
+  status              VARCHAR(20) DEFAULT 'ready'            -- 'translating' | 'ready'
 );
 
 -- 划线表

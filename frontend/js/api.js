@@ -203,6 +203,20 @@ export async function addInviteCode(code, userId) {
   });
 }
 
+export async function ingestUrl(url) {
+  return requestJson('/api/ingest', {
+    method: 'POST',
+    body: { url }
+  });
+}
+
+export async function translateIngestStep(articleId) {
+  return requestJson('/api/ingest', {
+    method: 'POST',
+    body: { action: 'translate', article_id: articleId }
+  });
+}
+
 export function trackEvent(event, articleId) {
   requestJson('/api/events', {
     method: 'POST',

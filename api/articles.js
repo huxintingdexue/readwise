@@ -5,7 +5,7 @@ import { getUserIdFromInviteCode } from './_utils/auth.js';
 dotenv.config({ path: '.env.local' });
 
 const VALID_STATUS = new Set(['unread', 'read', 'archived']);
-const VALID_AUTHOR = new Set(['sam', 'andrej', 'peter', 'lenny', 'naval']);
+const VALID_AUTHOR = new Set(['sam', 'andrej', 'peter', 'lenny', 'naval', 'manual']);
 const VALID_SORT = new Set(['date_desc', 'date_asc']);
 
 let pool;
@@ -84,10 +84,13 @@ async function listArticles(res, query, userId) {
       a.title_zh,
       a.summary_en,
       a.summary_zh,
+      a.author,
       a.url,
       a.published_at,
       a.translation_status,
       a.translated_chars,
+      a.status,
+      a.submitted_by,
       a.read_status,
       CASE
         WHEN NULLIF(LENGTH(COALESCE(a.content_plain, '')), 0) IS NULL THEN 0
@@ -107,6 +110,7 @@ async function listArticles(res, query, userId) {
       AND rp.user_id = $1
     WHERE ($2::text IS NULL OR a.read_status = $2)
       AND ($3::text IS NULL OR a.source_key = $3)
+      AND (COALESCE(a.status, 'ready') = 'ready' OR (a.status = 'translating' AND a.submitted_by = $1))
       AND (a.user_id IS NULL OR a.user_id = $1)
     ORDER BY ${orderClause}
   `;
@@ -125,6 +129,7 @@ async function getArticleById(res, id, userId) {
       a.title_zh,
       a.summary_en,
       a.summary_zh,
+      a.author,
       a.content_en,
       a.content_plain,
       a.content_zh,
@@ -133,9 +138,12 @@ async function getArticleById(res, id, userId) {
       a.read_status,
       a.url,
       a.published_at,
-      a.fetched_at
+      a.fetched_at,
+      a.status,
+      a.submitted_by
     FROM articles a
     WHERE a.id = $1
+      AND (COALESCE(a.status, 'ready') = 'ready' OR (a.status = 'translating' AND a.submitted_by = $2))
       AND (a.user_id IS NULL OR a.user_id = $2)
     LIMIT 1
   `;
