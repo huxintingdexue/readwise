@@ -124,6 +124,27 @@ body {
   font-size: 16px;
 }
 
+.me-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.me-section-head h2 {
+  margin: 0;
+}
+
+.me-ghost-btn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
 .me-item {
   display: flex;
   align-items: center;
@@ -288,6 +309,8 @@ body {
   border-radius: 12px;
   padding: 8px 6px;
   font-size: 12px;
+  width: 100%;
+  white-space: nowrap;
   cursor: pointer;
 }
 

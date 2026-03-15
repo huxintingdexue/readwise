@@ -16,7 +16,6 @@
           <p>全球一手信息触手可及</p>
         </div>
         <div class="topbar-actions">
-          <button id="logoutBtn" class="icon-btn hidden" type="button" aria-label="退出登录">退出</button>
           <button id="filterToggle" class="icon-btn" type="button" aria-label="筛选">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" fill="currentColor"></path>
@@ -65,7 +64,10 @@
 
         <section id="tab-notes" class="tab-panel hidden">
           <div class="me-section">
-            <h2>账号</h2>
+            <div class="me-section-head">
+              <h2>账号</h2>
+              <button id="logoutBtn" class="me-ghost-btn" type="button">退出登录</button>
+            </div>
             <div class="me-item">
               <span class="me-value" id="inviteCodeDisplay">邀请码：-</span>
             </div>

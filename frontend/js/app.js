@@ -359,21 +359,6 @@ function bindEvents() {
     });
   });
 
-  nodes.topbarTitle?.addEventListener('pointerdown', () => {
-    state.logoutTimer = setTimeout(() => {
-      nodes.logoutBtn?.classList.remove('hidden');
-      setTimeout(() => nodes.logoutBtn?.classList.add('hidden'), 5000);
-    }, 700);
-  });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach((name) => {
-    nodes.topbarTitle?.addEventListener(name, () => {
-      if (state.logoutTimer) {
-        clearTimeout(state.logoutTimer);
-        state.logoutTimer = null;
-      }
-    });
-  });
-
   nodes.themeChoices.forEach((btn) => {
     btn.addEventListener('click', () => {
       setThemeChoice(btn.dataset.theme || 'system');
@@ -381,6 +366,8 @@ function bindEvents() {
   });
 
   nodes.logoutBtn?.addEventListener('click', () => {
+    const confirmed = window.confirm('确定退出登录吗？');
+    if (!confirmed) return;
     logout();
   });
 
