@@ -30,6 +30,7 @@
 - 最近变更：选区气泡图标对齐 ✅
 - 最近变更：移除 Lenny 数据源 ✅
 - 最近变更：新增 is_fully_translated 字段 + 全量补翻译 ✅
+- 最近变更：列表宽度溢出修复（长标题换行） ✅
 - 最近变更：合并 API 入口以适配 Vercel Hobby 限制 ✅
 - 最近变更：我的页底部版本号提示 ✅
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
