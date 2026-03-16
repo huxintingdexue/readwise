@@ -364,6 +364,10 @@ function parsePublishedAt(value) {
 
 async function insertArticle(pool, article, options = {}) {
   const repairSummary = options.repairSummary === true;
+  const contentLen = article.contentPlain ? article.contentPlain.length : 0;
+  const isFullyTranslated = article.translationStatus !== 'summary_only'
+    && article.translatedChars >= contentLen
+    && contentLen > 0;
   const query = repairSummary
     ? `
     INSERT INTO articles (
@@ -377,12 +381,13 @@ async function insertArticle(pool, article, options = {}) {
       content_zh,
       translation_status,
       translated_chars,
+      is_fully_translated,
       read_status,
       url,
       published_at,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'unread', $11, $12, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'unread', $12, $13, NULL
     )
     ON CONFLICT (url) DO UPDATE SET
       summary_en = EXCLUDED.summary_en,
@@ -402,12 +407,13 @@ async function insertArticle(pool, article, options = {}) {
       content_zh,
       translation_status,
       translated_chars,
+      is_fully_translated,
       read_status,
       url,
       published_at,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'unread', $11, $12, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'unread', $12, $13, NULL
     )
     ON CONFLICT (url) DO NOTHING
     RETURNING id
@@ -424,6 +430,7 @@ async function insertArticle(pool, article, options = {}) {
     article.contentZh || null,
     article.translationStatus,
     article.translatedChars,
+    isFullyTranslated,
     article.url,
     parsePublishedAt(article.publishedAt)
   ];

@@ -86,6 +86,26 @@ async function translateFullContent(apiKey, contentPlain, metaLabel) {
   return translatedSegments.join('');
 }
 
+async function translateMeta(apiKey, titleEn, summaryEn, label) {
+  let titleZh = '';
+  let summaryZh = '';
+  if (titleEn) {
+    try {
+      titleZh = await deepseekTranslateSegment(apiKey, titleEn, `${label}-标题`);
+    } catch (err) {
+      console.error(`[retranslate] title failed for ${label}: ${err.message}`);
+    }
+  }
+  if (summaryEn) {
+    try {
+      summaryZh = await deepseekTranslateSegment(apiKey, summaryEn, `${label}-摘要`);
+    } catch (err) {
+      console.error(`[retranslate] summary failed for ${label}: ${err.message}`);
+    }
+  }
+  return { titleZh, summaryZh };
+}
+
 async function main() {
   const dbUrl = requiredEnv('NEON_DATABASE_URL');
   const deepseekApiKey = requiredEnv('DEEPSEEK_API_KEY');
@@ -93,11 +113,15 @@ async function main() {
   const pool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
   try {
     const { rows } = await pool.query(`
-      SELECT id, url, title_en, content_plain
+      SELECT id, url, title_en, title_zh, summary_en, summary_zh, content_plain, translated_chars, translation_status
       FROM articles
       WHERE content_plain IS NOT NULL
         AND length(content_plain) > 0
-        AND COALESCE(translated_chars, 0) < length(content_plain)
+        AND (
+          COALESCE(translated_chars, 0) < length(content_plain)
+          OR title_zh IS NULL
+          OR summary_zh IS NULL
+        )
       ORDER BY length(content_plain) ASC, published_at DESC NULLS LAST
     `);
 
@@ -112,19 +136,46 @@ async function main() {
       const label = row.url || row.title_en || row.id;
       const contentPlain = row.content_plain || '';
       const translatedChars = contentPlain.length;
-      console.log(`[retranslate] start ${label}`);
+      const needsFull = Number(row.translated_chars || 0) < translatedChars;
+      console.log(`[retranslate] start ${label} (full=${needsFull})`);
 
-      const contentZh = await translateFullContent(deepseekApiKey, contentPlain, label);
+      let contentZh = row.content_zh || '';
+      if (needsFull) {
+        contentZh = await translateFullContent(deepseekApiKey, contentPlain, label);
+      }
+
+      const meta = await translateMeta(
+        deepseekApiKey,
+        row.title_en,
+        row.summary_en,
+        label
+      );
+
+      const finalTitleZh = row.title_zh || meta.titleZh || null;
+      const finalSummaryZh = row.summary_zh || meta.summaryZh || null;
+      const finalStatus = needsFull ? 'full' : row.translation_status;
+      const isFullyTranslated = finalStatus !== 'summary_only' && translatedChars > 0;
 
       await pool.query(
         `
         UPDATE articles
         SET content_zh = $1,
             translated_chars = $2,
-            translation_status = CASE WHEN translation_status = 'summary_only' THEN 'summary_only' ELSE 'full' END
-        WHERE id = $3
+            translation_status = $3,
+            title_zh = COALESCE($4, title_zh),
+            summary_zh = COALESCE($5, summary_zh),
+            is_fully_translated = $6
+        WHERE id = $7
         `,
-        [contentZh, translatedChars, row.id]
+        [
+          contentZh,
+          translatedChars,
+          finalStatus,
+          finalTitleZh,
+          finalSummaryZh,
+          isFullyTranslated,
+          row.id
+        ]
       );
 
       console.log(`[retranslate] done ${label}`);

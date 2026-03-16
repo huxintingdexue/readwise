@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-03-16 — 翻译完整标记 + 全量补翻译（v2.9.9）
+
+### 已完成
+- ✅ **新增字段**：articles 增加 `is_fully_translated`
+- ✅ **翻译标记**：抓取/投喂/补翻译均同步维护完整翻译标记
+- ✅ **补翻译执行**：已对未翻译完文章补齐全文与标题/摘要
+
+### 变更文件
+- api/ingest.js
+- scripts/fetch-articles.js
+- scripts/ingest-translate.js
+- scripts/retranslate.js
+- docs/schema.sql
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-15 — 移除 Lenny 数据源（v2.9.8）
 
 ### 已完成

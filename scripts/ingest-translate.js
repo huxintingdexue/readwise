@@ -166,6 +166,7 @@ async function main() {
       const nextTranslationStatus = done && article.translation_status !== 'summary_only'
         ? 'full'
         : article.translation_status;
+      const isFullyTranslated = done && nextTranslationStatus !== 'summary_only';
 
       await pool.query(
         `
@@ -175,7 +176,8 @@ async function main() {
               content_zh = $4,
               translated_chars = $5,
               status = $6,
-              translation_status = $7
+              translation_status = $7,
+              is_fully_translated = $8
           WHERE id = $1
         `,
         [
@@ -185,7 +187,8 @@ async function main() {
           contentZh,
           Math.min(translatedChars, totalLen),
           nextStatus,
-          nextTranslationStatus
+          nextTranslationStatus,
+          isFullyTranslated
         ]
       );
 

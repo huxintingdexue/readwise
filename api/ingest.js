@@ -427,6 +427,7 @@ async function handleIngestSubmit(req, res, userId) {
       content_zh,
       translation_status,
       translated_chars,
+      is_fully_translated,
       read_status,
       url,
       source_url,
@@ -435,7 +436,7 @@ async function handleIngestSubmit(req, res, userId) {
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, NULL, $3, NULL, $4, $5, $6, '', $7, 0, 'unread', $8, $9, $10, 'translating', $11, NULL
+      $1, $2, NULL, $3, NULL, $4, $5, $6, '', $7, 0, false, 'unread', $8, $9, $10, 'translating', $11, NULL
     )
     RETURNING id
   `;
@@ -519,6 +520,7 @@ async function handleTranslateStep(req, res, userId) {
   const nextTranslationStatus = step.done && article.translation_status !== 'summary_only'
     ? 'full'
     : article.translation_status;
+  const isFullyTranslated = step.done && nextTranslationStatus !== 'summary_only';
 
   await poolClient.query(
     `
@@ -528,7 +530,8 @@ async function handleTranslateStep(req, res, userId) {
           content_zh = $4,
           translated_chars = $5,
           status = $6,
-          translation_status = $7
+          translation_status = $7,
+          is_fully_translated = $8
       WHERE id = $1
     `,
     [
@@ -538,7 +541,8 @@ async function handleTranslateStep(req, res, userId) {
       step.contentZh,
       step.translatedChars,
       nextStatus,
-      nextTranslationStatus
+      nextTranslationStatus,
+      isFullyTranslated
     ]
   );
 
