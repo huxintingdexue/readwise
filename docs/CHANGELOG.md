@@ -17,6 +17,27 @@
 
 ---
 
+## 2026-03-17 — 管理员隐藏文章（v2.10.12）
+
+### 已完成
+- ✅ 新增文章隐藏状态，记录隐藏原因与隐藏时间
+- ✅ 阅读页管理员入口支持隐藏并填写原因
+- ✅ 管理员控制台新增已隐藏文章列表与取消隐藏
+- ✅ 新增 `/api/admin/articles` 管理隐藏状态
+
+### 变更文件
+- api/admin/articles.js
+- api/index.js
+- frontend/js/api.js
+- frontend/js/app.js
+- frontend/index.html
+- frontend/css/reader.css
+- docs/schema.sql
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-17 — 划线选区可调整性修复（v2.10.11）
 
 ### 已完成

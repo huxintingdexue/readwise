@@ -1,4 +1,4 @@
-import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, ingestUrl, translateIngestStep, trackEvent } from './api.js';
+import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, updateAdminArticleStatus, ingestUrl, translateIngestStep, trackEvent } from './api.js';
 import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 import { initArticleNotesPanel } from './notes.js';
@@ -61,6 +61,7 @@ const nodes = {
   adminInviteCode: document.querySelector('#adminInviteCode'),
   adminInviteUserId: document.querySelector('#adminInviteUserId'),
   adminInviteAdd: document.querySelector('#adminInviteAdd'),
+  adminHiddenList: document.querySelector('#adminHiddenList'),
   backBtn: document.querySelector('#backBtn'),
   filterToggle: document.querySelector('#filterToggle'),
   filterPanel: document.querySelector('#filterPanel'),
@@ -80,6 +81,12 @@ const nodes = {
   loginButton: document.querySelector('#loginButton'),
   loginError: document.querySelector('#loginError'),
   logoutBtn: document.querySelector('#logoutBtn'),
+  readerAdminActions: document.querySelector('#readerAdminActions'),
+  hideArticleBtn: document.querySelector('#hideArticleBtn'),
+  hideArticleModal: document.querySelector('#hideArticleModal'),
+  hideArticleReasonInput: document.querySelector('#hideArticleReasonInput'),
+  hideArticleSubmitBtn: document.querySelector('#hideArticleSubmitBtn'),
+  hideArticleCloseBtn: document.querySelector('#hideArticleCloseBtn'),
   feedbackModal: document.querySelector('#feedbackModal'),
   feedbackInput: document.querySelector('#feedbackInput'),
   feedbackSubmitBtn: document.querySelector('#feedbackSubmitBtn'),
@@ -184,6 +191,11 @@ function calcScrollPositionByBaseLength(baseLength) {
   return Math.round(baseLength * ratio);
 }
 
+function setReaderAdminActionsVisible(show) {
+  if (!nodes.readerAdminActions) return;
+  nodes.readerAdminActions.classList.toggle('hidden', !show);
+}
+
 async function persistReadingProgressNow() {
   const detail = state.currentArticle;
   if (!detail?.id) return;
@@ -194,6 +206,28 @@ async function persistReadingProgressNow() {
     await saveReadingProgress(detail.id, scrollPosition);
   } catch (err) {
     console.warn('[reading-progress] save failed', err.message);
+  }
+}
+
+async function exitReaderView(shouldReload = true) {
+  await persistReadingProgressNow();
+  state.currentArticle = null;
+  setReadingMode(false);
+  document.body.classList.remove('reader-bar-hidden');
+  closeReader({
+    readerView: nodes.readerView,
+    listPanels: [nodes.todayTab, nodes.notesTab],
+    readerContent: nodes.readerContent,
+    originSnippet: nodes.originSnippet,
+    originSnippetText: nodes.originSnippetText
+  });
+  setReaderAdminActionsVisible(false);
+  closeHideArticleModal();
+  setReaderAdminActionsVisible(false);
+  nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
+  nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
+  if (shouldReload && state.tab === 'today') {
+    loadArticles();
   }
 }
 
@@ -291,6 +325,7 @@ async function openArticle(id, jumpTo = null) {
     if (!history.state || history.state.view !== 'reader' || history.state.articleId !== id) {
       history.pushState({ view: 'reader', articleId: id }, '', `?article=${id}`);
     }
+    setReaderAdminActionsVisible(false);
     let loadingShown = false;
     const loadingTimer = setTimeout(() => {
       loadingShown = true;
@@ -312,6 +347,7 @@ async function openArticle(id, jumpTo = null) {
       setReadingMode(true);
     }
     document.body.classList.add('reader-bar-hidden');
+    setReaderAdminActionsVisible(isAdminUser());
     renderReader(detail, {
       readerView: nodes.readerView,
       readerTitle: nodes.readerTitle,
@@ -330,6 +366,7 @@ async function openArticle(id, jumpTo = null) {
     showToast(`打开文章失败：${err.message}`);
     setReadingMode(false);
     document.body.classList.remove('reader-bar-hidden');
+    setReaderAdminActionsVisible(false);
     closeReader({
       readerView: nodes.readerView,
       listPanels: [nodes.todayTab, nodes.notesTab],
@@ -397,22 +434,7 @@ function bindEvents() {
   });
 
   nodes.backBtn.addEventListener('click', async () => {
-    await persistReadingProgressNow();
-    state.currentArticle = null;
-    setReadingMode(false);
-    document.body.classList.remove('reader-bar-hidden');
-    closeReader({
-      readerView: nodes.readerView,
-      listPanels: [nodes.todayTab, nodes.notesTab],
-      readerContent: nodes.readerContent,
-      originSnippet: nodes.originSnippet,
-      originSnippetText: nodes.originSnippetText
-    });
-    nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
-    nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
-    if (state.tab === 'today') {
-      loadArticles();
-    }
+    await exitReaderView(true);
   });
 
   nodes.closeOriginSnippet?.addEventListener('click', () => {
@@ -448,6 +470,45 @@ function bindEvents() {
 
   nodes.ingestCloseBtn?.addEventListener('click', () => {
     closeIngestModal();
+  });
+
+  nodes.hideArticleBtn?.addEventListener('click', () => {
+    if (!isAdminUser()) return;
+    openHideArticleModal();
+  });
+
+  nodes.hideArticleCloseBtn?.addEventListener('click', () => {
+    closeHideArticleModal();
+  });
+
+  const handleHideArticleSubmit = async () => {
+    if (!isAdminUser()) return;
+    const detail = state.currentArticle;
+    if (!detail?.id) {
+      showToast('未找到文章', 2000);
+      return;
+    }
+    const reason = String(nodes.hideArticleReasonInput?.value || '').trim();
+    if (!reason) {
+      showToast('请填写隐藏原因', 2000);
+      return;
+    }
+    try {
+      await updateAdminArticleStatus(detail.id, 'hidden', reason);
+      closeHideArticleModal();
+      showToast('已隐藏', 2000);
+      await exitReaderView(true);
+    } catch (err) {
+      showToast(`隐藏失败：${err.message}`, 2000);
+    }
+  };
+
+  nodes.hideArticleSubmitBtn?.addEventListener('touchend', (event) => {
+    event.preventDefault();
+    handleHideArticleSubmit();
+  });
+  nodes.hideArticleSubmitBtn?.addEventListener('click', () => {
+    handleHideArticleSubmit();
   });
 
 
@@ -563,22 +624,7 @@ function bindEvents() {
   if (!state.historyBound) {
     window.addEventListener('popstate', () => {
       if (isReadingMode()) {
-        persistReadingProgressNow();
-        state.currentArticle = null;
-        setReadingMode(false);
-        document.body.classList.remove('reader-bar-hidden');
-        closeReader({
-          readerView: nodes.readerView,
-          listPanels: [nodes.todayTab, nodes.notesTab],
-          readerContent: nodes.readerContent,
-          originSnippet: nodes.originSnippet,
-          originSnippetText: nodes.originSnippetText
-        });
-        nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
-        nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
-        if (state.tab === 'today') {
-          loadArticles();
-        }
+        exitReaderView(true);
       }
     });
     state.historyBound = true;
@@ -592,6 +638,10 @@ function getInviteCodeLabel() {
 
 function getUserId() {
   return localStorage.getItem('userId') || '';
+}
+
+function isAdminUser() {
+  return getUserId() === 'admin';
 }
 
 function refreshMeTab() {
@@ -629,7 +679,7 @@ async function openAdminConsole() {
   nodes.todayTab.classList.add('hidden');
   nodes.notesTab.classList.add('hidden');
   nodes.adminConsole.classList.remove('hidden');
-  await Promise.all([loadAdminFeedback(), loadAdminStats(), loadInviteCodes()]);
+  await Promise.all([loadAdminFeedback(), loadAdminStats(), loadInviteCodes(), loadHiddenArticles()]);
 }
 
 function closeAdminConsole() {
@@ -744,6 +794,45 @@ async function loadInviteCodes() {
   }
 }
 
+async function loadHiddenArticles() {
+  if (!nodes.adminHiddenList) return;
+  nodes.adminHiddenList.innerHTML = '';
+  try {
+    const items = await getHiddenArticles();
+    if (!items.length) {
+      nodes.adminHiddenList.innerHTML = '<div class="state-text">暂无隐藏文章</div>';
+      return;
+    }
+    items.forEach((item) => {
+      const div = document.createElement('div');
+      div.className = 'admin-item';
+      div.innerHTML = `
+        <div class="admin-item-meta">
+          <span>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</span>
+          <span>${escapeHtml(formatAdminTime(item.hidden_at))}</span>
+        </div>
+        <div>${escapeHtml(item.hidden_reason || '（无原因）')}</div>
+        <div class="admin-item-actions">
+          <button class="danger" type="button" data-id="${escapeHtml(item.id)}">取消隐藏</button>
+        </div>
+      `;
+      const btn = div.querySelector('button');
+      btn?.addEventListener('click', async () => {
+        try {
+          await updateAdminArticleStatus(item.id, 'ready');
+          showToast('已取消隐藏', 2000);
+          await loadHiddenArticles();
+        } catch (err) {
+          showToast(`操作失败：${err.message}`, 2000);
+        }
+      });
+      nodes.adminHiddenList.appendChild(div);
+    });
+  } catch (_) {
+    nodes.adminHiddenList.innerHTML = '<div class="state-text">加载失败</div>';
+  }
+}
+
 async function handleInviteAdd() {
   const code = String(nodes.adminInviteCode?.value || '').trim();
   const userId = String(nodes.adminInviteUserId?.value || '').trim();
@@ -791,6 +880,19 @@ function closeIngestModal() {
   nodes.ingestModal?.classList.add('hidden');
 }
 
+function openHideArticleModal() {
+  if (!nodes.hideArticleModal) return;
+  nodes.hideArticleModal.classList.remove('hidden');
+  if (nodes.hideArticleReasonInput) {
+    nodes.hideArticleReasonInput.value = '';
+    nodes.hideArticleReasonInput.focus();
+  }
+}
+
+function closeHideArticleModal() {
+  nodes.hideArticleModal?.classList.add('hidden');
+}
+
 function setIngestSubmitting(isSubmitting) {
   if (!nodes.ingestSubmitBtn) return;
   nodes.ingestSubmitBtn.disabled = isSubmitting;
@@ -829,6 +931,7 @@ async function pollIngestTranslation() {
 }
 
 function formatAdminTime(isoString) {
+  if (!isoString) return '未知时间';
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return '未知时间';
   const mm = String(d.getMonth() + 1).padStart(2, '0');

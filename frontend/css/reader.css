@@ -801,6 +801,24 @@ body.reading-mode::-webkit-scrollbar-thumb {
   padding: 0 8px;
 }
 
+.reader-admin-actions {
+  width: 100%;
+  max-width: 720px;
+  margin: 14px auto 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.reader-hide-btn {
+  border: 1px solid rgba(255, 123, 123, 0.45);
+  background: transparent;
+  color: var(--danger);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
 /* Divider between Chinese translation and English original */
 .reader-original-label {
   display: flex;
@@ -1068,7 +1086,8 @@ body.reading-mode::-webkit-scrollbar-thumb {
 }
 
 #feedbackModal,
-#adminFeedbackModal {
+#adminFeedbackModal,
+#hideArticleModal {
   background: var(--bg);
 }
 

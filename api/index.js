@@ -10,6 +10,7 @@ import feedback from './feedback.js';
 import events from './events.js';
 import adminStats from './admin/stats.js';
 import adminInviteCodes from './admin/invite-codes.js';
+import adminArticles from './admin/articles.js';
 import ingest from './ingest.js';
 
 function getPathname(req) {
@@ -55,6 +56,9 @@ export default async function handler(req, res) {
   }
   if (pathname === '/api/admin/invite-codes') {
     return adminInviteCodes(req, res);
+  }
+  if (pathname === '/api/admin/articles' || pathname.startsWith('/api/admin/articles/')) {
+    return adminArticles(req, res);
   }
   if (pathname === '/api/ingest') {
     return ingest(req, res);

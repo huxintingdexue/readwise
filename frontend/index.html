@@ -127,6 +127,10 @@
                 <button id="adminInviteAdd" type="button">添加</button>
               </div>
             </div>
+            <div class="admin-block">
+              <h3>已隐藏文章</h3>
+              <div id="adminHiddenList" class="admin-list"></div>
+            </div>
           </div>
         </section>
 
@@ -160,6 +164,9 @@
             </div>
           </div>
           <article id="readerContent" class="reader-content"></article>
+          <div id="readerAdminActions" class="reader-admin-actions hidden">
+            <button id="hideArticleBtn" class="reader-hide-btn" type="button">隐藏此文章</button>
+          </div>
         </section>
       </main>
       <nav class="bottom-nav" aria-label="主导航">
@@ -244,6 +251,17 @@
         <div class="ingest-note">你添加的英文原文链接会自动翻译，翻译完成后即可打开阅读</div>
         <input id="ingestInput" class="ingest-input" type="url" placeholder="粘贴文章链接" />
         <button id="ingestSubmitBtn" class="ingest-submit" type="button">添加</button>
+      </div>
+    </div>
+
+    <div id="hideArticleModal" class="qa-modal hidden" role="dialog" aria-modal="true">
+      <div class="me-panel">
+        <div class="me-panel-head">
+          <strong>隐藏文章</strong>
+          <button id="hideArticleCloseBtn" type="button" aria-label="关闭">✕</button>
+        </div>
+        <textarea id="hideArticleReasonInput" class="feedback-input" placeholder="请填写隐藏原因（如：翻译质量差/内容不完整）"></textarea>
+        <button id="hideArticleSubmitBtn" class="feedback-submit" type="button">确认隐藏</button>
       </div>
     </div>
 

@@ -203,6 +203,24 @@ export async function addInviteCode(code, userId) {
   });
 }
 
+export async function getHiddenArticles() {
+  const data = await requestJson('/api/admin/articles?status=hidden');
+  return data.items || [];
+}
+
+export async function updateAdminArticleStatus(articleId, status, hiddenReason = '') {
+  if (!articleId) {
+    throw new Error('Missing article id');
+  }
+  return requestJson(`/api/admin/articles/${encodeURIComponent(articleId)}`, {
+    method: 'PATCH',
+    body: {
+      status,
+      hidden_reason: hiddenReason
+    }
+  });
+}
+
 export async function ingestUrl(url) {
   return requestJson('/api/ingest', {
     method: 'POST',
