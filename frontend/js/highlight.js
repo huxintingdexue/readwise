@@ -7,6 +7,7 @@ let currentHighlightEl = null; // the .highlight-mark span currently being inter
 let menuEl = null;
 let lastMenuShownAt = 0;
 let customMenuEnabled = true;
+let suppressSelectionChange = false;
 const isTouchDevice = typeof window !== 'undefined' && (
   'ontouchstart' in window
   || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0)
@@ -17,10 +18,14 @@ function suppressNativeSelection() {
   const sel = window.getSelection?.();
   if (!sel || sel.isCollapsed) return;
   setTimeout(() => {
+    if (!menuEl || menuEl.classList.contains('hidden')) return;
+    if (!currentSelection) return;
+    suppressSelectionChange = true;
     try {
       window.getSelection()?.removeAllRanges();
     } catch (_) {}
-  }, 0);
+    setTimeout(() => { suppressSelectionChange = false; }, 0);
+  }, 250);
 }
 
 function ensureMenu() {
@@ -372,6 +377,7 @@ export function initHighlightFeature({
   });
 
   document.addEventListener('selectionchange', () => {
+    if (suppressSelectionChange) return;
     const menu = ensureMenu();
     if (!menu.classList.contains('hidden')) {
       menu.classList.add('hidden');
