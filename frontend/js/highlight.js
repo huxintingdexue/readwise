@@ -105,6 +105,13 @@ function getPlainSelectionText(selection) {
   return selection?.toString()?.trim() || '';
 }
 
+function isStandalonePwa() {
+  return (
+    window.matchMedia?.('(display-mode: standalone)')?.matches
+    || window.navigator?.standalone === true
+  );
+}
+
 function inferPosition(content, selectedText, lastStartRef) {
   const plain = content || '';
   if (!plain || !selectedText) return { start: -1, end: -1 };
@@ -267,7 +274,7 @@ export function initHighlightFeature({
       return;
     }
 
-    const range = selection.getRangeAt(0);
+    const range = selection.getRangeAt(0).cloneRange();
     if (!readerContent.contains(range.commonAncestorContainer)) {
       hideMenu();
       return;
@@ -299,6 +306,13 @@ export function initHighlightFeature({
     };
 
     showMenu(rect, positionMode);
+
+    if (isStandalonePwa()) {
+      // Suppress native selection menu in standalone PWA while keeping our bubble.
+      setTimeout(() => {
+        window.getSelection()?.removeAllRanges();
+      }, 0);
+    }
 
     if (event?.type === 'touchend') {
       event.preventDefault();
