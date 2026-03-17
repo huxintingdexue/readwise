@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-03-17 — PWA 图标文字重做（v2.10.9）
+
+### 已完成
+- ✅ 以旧版 PNG 视觉比例为基准重绘 VT，避免桌面图标留白
+- ✅ 由 512 生成 192，保证占比一致
+- ✅ 同步修正 SVG 文案样式（去除多余加粗）
+
+### 变更文件
+- frontend/icons/icon-512.png
+- frontend/icons/icon-192.png
+- frontend/icons/icon-512.svg
+- frontend/icons/icon-192.svg
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-17 — 进度与位置基准切换为中文（v2.10.8）
 
 ### 已完成
