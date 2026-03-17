@@ -24,7 +24,7 @@ function getPool() {
 }
 
 function isPrivilegedUser(userId) {
-  return isAdmin(userId) || userId === 'user_claw';
+  return isAdmin(userId) || userId === 'openclaw' || userId === 'user_claw';
 }
 
 async function getUserId(req, res) {
@@ -516,7 +516,7 @@ async function handleIngestFullText(req, res, userId) {
   const contentZh = cleanupWhitespace(payload.content_zh || '');
   const contentEnRaw = String(payload.content_en || '').trim();
   const authorRaw = String(payload.author || '').trim();
-  const sourceUrl = String(payload.source_url || '').trim();
+  const sourceUrl = String(payload.source_url || payload.url || '').trim();
   const publishedAtRaw = String(payload.published_at || '').trim();
 
   if (!titleZh || !titleEn || !summaryZh || !contentZh || !authorRaw || !sourceUrl || !publishedAtRaw) {
