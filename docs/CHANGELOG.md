@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-17 — 补齐 partial 旧翻译数据
+
+### 已完成
+- ✅ `scripts/retranslate.js` 现在会补翻 `translation_status = 'partial'` 的旧文章
+- ✅ 已修复 Sam 文章 `b750898a-7208-4200-9d39-b7b64a097cbb`，状态从 `partial` 更新为 `full`
+
+### 变更文件
+- scripts/retranslate.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-17 — 固定源补齐按实际新增计数（v2.10.6）
 
 ### 已完成

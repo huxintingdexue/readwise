@@ -119,6 +119,7 @@ async function main() {
         AND length(content_plain) > 0
         AND (
           COALESCE(translated_chars, 0) < length(content_plain)
+          OR translation_status = 'partial'
           OR content_zh IS NULL
           OR length(content_zh) = 0
           OR title_zh IS NULL
@@ -139,6 +140,7 @@ async function main() {
       const contentPlain = row.content_plain || '';
       const translatedChars = contentPlain.length;
       const needsFull = Number(row.translated_chars || 0) < translatedChars
+        || row.translation_status === 'partial'
         || !row.content_zh
         || row.content_zh.length === 0;
       console.log(`[retranslate] start ${label} (full=${needsFull})`);
