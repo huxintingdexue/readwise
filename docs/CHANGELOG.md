@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-17 — 校验 Neon 待执行项（v2.10.3）
+
+### 已完成
+- ✅ 确认 reading_progress 唯一索引存在
+- ✅ 确认 invite_codes 表已创建
+- ✅ 确认 articles 补字段已存在
+
+### 变更文件
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-17 — 补回缺失中文正文（v2.10.2）
 
 ### 已完成

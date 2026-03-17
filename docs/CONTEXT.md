@@ -35,9 +35,9 @@
 - 最近变更：合并 API 入口以适配 Vercel Hobby 限制 ✅
 - 最近变更：我的页底部版本号提示 ✅
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
-- 待执行：Neon 迁移 reading_progress 唯一键为 (article_id, user_id)
-- 待执行：Neon 创建 invite_codes 表并迁移已有邀请码
-- 待执行：Neon 为 articles 表补充 `submitted_by/status/source_url/author` 字段
+- 最近变更：Neon reading_progress 唯一键已确认 ✅
+- 最近变更：Neon invite_codes 表已确认 ✅
+- 最近变更：Neon articles 字段已确认（submitted_by/status/source_url/author）✅
 - 最近变更："我的"页 + 反馈/管理员入口 ✅
 - 最近变更：反馈发送成功提示文案优化 ✅
 - 最近变更：反馈发送改为一次点击提交 ✅
