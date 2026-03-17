@@ -36,15 +36,28 @@ function maxScrollableDistance() {
   return Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
 }
 
-function calcScrollPositionByPlainLength(contentPlainLength) {
-  if (!contentPlainLength || contentPlainLength <= 0) return 0;
-  const ratio = Math.min(1, Math.max(0, currentScrollTop() / maxScrollableDistance()));
-  return Math.round(contentPlainLength * ratio);
+export function getReadingBaseText(detail, readerContent) {
+  const zhText = (detail?.content_zh || '').trim();
+  if (zhText) return zhText;
+  const plainText = detail?.content_plain || '';
+  if (plainText) return plainText;
+  return readerContent?.textContent || '';
 }
 
-function restoreScrollByPlainLength(scrollPosition, contentPlainLength) {
-  if (!contentPlainLength || contentPlainLength <= 0) return;
-  const ratio = Math.min(1, Math.max(0, Number(scrollPosition || 0) / contentPlainLength));
+export function getReadingBaseLength(detail, readerContent) {
+  const baseText = getReadingBaseText(detail, readerContent);
+  return baseText.length || 0;
+}
+
+function calcScrollPositionByBaseLength(baseLength) {
+  if (!baseLength || baseLength <= 0) return 0;
+  const ratio = Math.min(1, Math.max(0, currentScrollTop() / maxScrollableDistance()));
+  return Math.round(baseLength * ratio);
+}
+
+function restoreScrollByBaseLength(scrollPosition, baseLength) {
+  if (!baseLength || baseLength <= 0) return;
+  const ratio = Math.min(1, Math.max(0, Number(scrollPosition || 0) / baseLength));
   const targetY = Math.round(maxScrollableDistance() * ratio);
   requestAnimationFrame(() => window.scrollTo({ top: targetY, behavior: 'auto' }));
 }
@@ -122,11 +135,11 @@ function startReadingSession(detail, nodes, initialProgress) {
   stopReadingSession(nodes);
 
   const articleId = detail.id;
-  const contentPlainLength = Number((detail.content_plain || '').length || 0);
-  if (!articleId || !contentPlainLength) return;
+  const baseLength = getReadingBaseLength(detail, nodes?.readerContent);
+  if (!articleId || !baseLength) return;
 
   const persistNow = async () => {
-    const scrollPosition = calcScrollPositionByPlainLength(contentPlainLength);
+    const scrollPosition = calcScrollPositionByBaseLength(baseLength);
     try {
       await saveReadingProgress(articleId, scrollPosition);
     } catch (err) {
@@ -136,8 +149,8 @@ function startReadingSession(detail, nodes, initialProgress) {
 
   const maybeTrackFinish = () => {
     if (!readingSession || readingSession.finishTracked) return;
-    const currentChar = calcScrollPositionByPlainLength(contentPlainLength);
-    if (currentChar / contentPlainLength >= 0.8) {
+    const currentChar = calcScrollPositionByBaseLength(baseLength);
+    if (currentChar / baseLength >= 0.8) {
       readingSession.finishTracked = true;
       trackEvent('finish_article', articleId);
     }
@@ -163,13 +176,13 @@ function startReadingSession(detail, nodes, initialProgress) {
   };
 
   const onBeforeUnload = () => {
-    const scrollPosition = calcScrollPositionByPlainLength(contentPlainLength);
+    const scrollPosition = calcScrollPositionByBaseLength(baseLength);
     saveReadingProgressKeepalive(articleId, scrollPosition);
   };
 
   readingSession = {
     articleId,
-    contentPlainLength,
+    baseLength,
     readerContent: nodes.readerContent || null,
     debounceTimer: null,
     onScroll,
@@ -181,7 +194,7 @@ function startReadingSession(detail, nodes, initialProgress) {
   window.addEventListener('scroll', onScroll, { passive: true });
   document.addEventListener('visibilitychange', onVisibilityChange);
   window.addEventListener('beforeunload', onBeforeUnload);
-  restoreScrollByPlainLength(initialProgress?.scroll_position || 0, contentPlainLength);
+  restoreScrollByBaseLength(initialProgress?.scroll_position || 0, baseLength);
   requestAnimationFrame(() => {
     maybeTrackFinish();
   });
@@ -228,6 +241,6 @@ export function openOriginSnippetPanel(nodes, text) {
   showOriginSnippet(nodes, text);
 }
 
-export function scrollToPlainPosition(contentPlainLength, position) {
-  restoreScrollByPlainLength(position, contentPlainLength);
+export function scrollToPlainPosition(baseLength, position) {
+  restoreScrollByBaseLength(position, baseLength);
 }

@@ -16,6 +16,13 @@ function formatDate(isoString) {
   return d.toLocaleDateString('zh-CN');
 }
 
+function getArticleBaseLength(article) {
+  const zhText = (article?.content_zh || '').trim();
+  if (zhText) return zhText.length;
+  const plainText = article?.content_plain || '';
+  return plainText.length || 0;
+}
+
 function renderNotesList(container, articles, highlights, qaRecords, onJump) {
   container.innerHTML = '';
   if (articles.length === 0) {
@@ -165,7 +172,8 @@ export function initArticleNotesPanel({
           <p class="note-item-text">${escapeHtml(hl.text || '')}</p>
         `;
         el.addEventListener('click', () => {
-          scrollToPosition(article.content_plain?.length || 0, hl.position_start || 0);
+          const baseLength = getArticleBaseLength(article);
+          scrollToPosition(baseLength, hl.position_start || 0);
           panel.classList.add('hidden');
         });
         body.appendChild(el);

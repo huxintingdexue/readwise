@@ -93,13 +93,22 @@ async function listArticles(res, query, userId) {
       a.submitted_by,
       a.read_status,
       CASE
+        WHEN NULLIF(LENGTH(COALESCE(a.content_zh, '')), 0) IS NOT NULL THEN ROUND(
+          LEAST(
+            100,
+            GREATEST(
+              0,
+              (COALESCE(rp.scroll_position, 0)::numeric / NULLIF(LENGTH(COALESCE(a.content_zh, '')), 0)::numeric) * 100
+            )
+          )
+        )::int
         WHEN NULLIF(LENGTH(COALESCE(a.content_plain, '')), 0) IS NULL THEN 0
         ELSE ROUND(
           LEAST(
             100,
             GREATEST(
               0,
-              (COALESCE(rp.scroll_position, 0)::numeric / NULLIF(LENGTH(a.content_plain), 0)::numeric) * 100
+              (COALESCE(rp.scroll_position, 0)::numeric / NULLIF(LENGTH(COALESCE(a.content_plain, '')), 0)::numeric) * 100
             )
           )
         )::int

@@ -4,6 +4,23 @@
 
 ---
 
+## 2026-03-17 — 进度与位置基准切换为中文（v2.10.8）
+
+### 已完成
+- ✅ 划线/提问/进度/跳转统一按 `content_zh` 计算，缺失回退 `content_plain`
+- ✅ 列表阅读进度百分比按 `content_zh` 计算
+- ✅ 同步更新上下文说明
+
+### 变更文件
+- frontend/js/reader.js
+- frontend/js/app.js
+- frontend/js/notes.js
+- api/articles.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-17 — PWA 图标文案更新（v2.10.7）
 
 ### 已完成

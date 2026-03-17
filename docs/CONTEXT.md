@@ -31,6 +31,7 @@
 - 最近变更：移除 Lenny 数据源 ✅
 - 最近变更：投喂元信息修复 + 去除 is_fully_translated ✅
 - 最近变更：补回缺失中文正文 ✅
+- 最近变更：划线/进度/位置统一基于中文（缺失回退 content_plain）✅
 - 最近变更：阅读进度返回即保存（修复清空状态导致不写入）✅
 - 最近变更：列表隐藏滚动条（同步 html）+ 阅读页滚动条配色 + 禁用缩放 ✅
 - 最近变更：固定源抓取改为“跳过不占名额”，并已各补齐 5 篇 ✅
@@ -110,10 +111,11 @@ Vercel Serverless Functions（/api/*）
 | 字段 | 内容 | 用途 |
 |------|------|------|
 | content_en | 富文本，含 HTML 标签 | 前端渲染 |
-| content_plain | 纯文本，无 HTML 标签 | 划线位置计算、进度记录、翻译分段 |
+| content_zh | 中文纯文本 | 阅读展示、划线定位、进度记录 |
+| content_plain | 纯文本，无 HTML 标签 | 翻译分段、英文兜底 |
 
-**所有 position_start/end 和 scroll_position 均基于 content_plain 计算，不是 content_en。**
-**content_plain 需要随文章详情一起返回给前端，前端用它计算划线位置。**
+**所有 position_start/end 和 scroll_position 以 content_zh 为基准，缺失时回退 content_plain。**
+**content_zh 需要随文章详情一起返回给前端，前端用它计算划线位置与阅读进度。**
 
 ## 模块说明
 
@@ -140,7 +142,7 @@ Vercel Serverless Functions（/api/*）
 | api/export.js | GET /api/export | ✅ 已完成 |
 | frontend/js/app.js | 主逻辑、Tab 切换 | ✅ 已完成（前端基础） |
 | frontend/js/reader.js | 翻页、进度（防抖10秒+退出保存）、直接渲染中文/英文 | ✅ 已完成 |
-| frontend/js/highlight.js | 选文菜单、划线（基于content_plain）、高亮复原 | ✅ 已完成（选区菜单 + 划线保存） |
+| frontend/js/highlight.js | 选文菜单、划线（基于content_zh，缺失回退content_plain）、高亮复原 | ✅ 已完成（选区菜单 + 划线保存） |
 | frontend/js/qa.js | 提问弹窗、降级提示 | ✅ 已完成 |
 | frontend/js/reference.js | 查引用、Banner、失败提示"未找到来源" | ✅ 已完成 |
 | frontend/js/notes.js | 笔记 Tab、本文划线面板 | ✅ 已完成 |
@@ -155,11 +157,11 @@ Vercel Serverless Functions（/api/*）
 - ✅ 完成数据库初始化：在 Neon 创建 5 张核心表并校验索引
 - ✅ 完成抓取脚本与工作流：支持三源抓取、summary 降级、content_plain 生成、翻译前 2000 字、`INITIAL_FETCH`
 - ✅ 修复抓取数据质量：清除 `summary_en/summary_zh` 中的 HTML 标签，并修复 `content_plain` 开头重复标题
-- ✅ 完成后端基础 API：`GET /api/articles`（支持筛选排序、含阅读进度 join）和 `GET /api/articles/:id`（返回 `content_en` + `content_plain`）
+- ✅ 完成后端基础 API：`GET /api/articles`（支持筛选排序、含阅读进度 join）和 `GET /api/articles/:id`（返回 `content_en` + `content_plain` + `content_zh`）
 - ✅ 完成前端基础：Tab 导航、文章列表（筛选/排序/进度百分比/长按菜单）、全文阅读视图
 - ✅ 完成 PWA 与进度：manifest、service worker 分层缓存、阅读进度防抖10秒与退出保存
 - ✅ 完成全量翻译入库：抓取时分段翻译、前端直接展示中文（空则英文兜底）
-- ✅ 完成划线功能：选区菜单（复制/划线/原文）、`api/highlights` 保存与查询、位置按 `content_plain` 存储
+- ✅ 完成划线功能：选区菜单（复制/划线/原文）、`api/highlights` 保存与查询、位置按 `content_zh`（缺失回退 `content_plain`）存储
 - ✅ 完成 AI 提问：选区提问弹窗、上下文拼接、`api/qa` 入库与 DeepSeek 调用
 - ✅ 完成引用追踪：选区查引用、书籍自动入书单、文章来源确认加入
 - ✅ 完成邀请码登录 + 每日限流：邀请码白名单多用户隔离，问答/引用追踪每日次数限制
@@ -185,9 +187,9 @@ Vercel Serverless Functions（/api/*）
 
 | 决策 | 选择 | 原因 |
 |------|------|------|
-| 内容双版本 | content_en + content_plain | 解决HTML标签干扰字符位置 |
-| 划线位置基准 | content_plain | 纯文本，永远准确 |
-| content_plain返回前端 | 是 | 前端需要计算划线位置 |
+| 内容双版本 | content_en + content_plain + content_zh | 兼顾渲染、兜底与中文定位 |
+| 划线位置基准 | content_zh（缺失回退content_plain） | 与当前阅读内容一致 |
+| content_zh返回前端 | 是 | 前端需要计算划线位置与阅读进度 |
 | 全量翻译分段 | 1500字串行 | 避免超长输入与并发请求 |
 | 翻译节流 | 不再使用 | 前端取消按需翻译触发 |
 | 进度保存 | 防抖10秒+退出保存 | 平衡频率和完整性 |
@@ -207,7 +209,7 @@ Vercel Serverless Functions（/api/*）
 - ⚠️ **QA 多轮上下文缺失：** api/qa.js 每次独立调用 DeepSeek，不携带历史消息，追问效果差。修复方式：前端把对话历史拼成 messages 数组传给后端，后端透传给 DeepSeek。
 - ⚠️ **鉴权安全债（已知）：** X-Invite-Code 在 header 中明文传输，抓包可见，MVP 阶段接受此方案，后续改为后端 Session Cookie。
 - ⚠️ **DeepSeek 会员额度与 API 额度不通：** 网页版订阅无法用于 API 调用，暂无解法。
-- ⚠️ **选区定位精度：** 目前中文翻译选区到英文 `content_plain` 的映射为近似匹配，需后续设计更精确的对齐方案
+- ⚠️ **位置口径切换风险：** 已改为以 `content_zh` 计算位置与进度，旧数据若基于 `content_plain`，可能出现跳转/进度不一致，需要后续清理或迁移策略
 - ⚠️ **AI 提问质量一般：** 当前仅取前后各 5 句作为上下文，Prompt 也未做结构化优化，需后续统一调优
 
 ## 环境变量

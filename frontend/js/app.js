@@ -1,6 +1,6 @@
 import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, ingestUrl, translateIngestStep, trackEvent } from './api.js';
 import { initHighlightFeature } from './highlight.js';
-import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition } from './reader.js';
+import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 import { initArticleNotesPanel } from './notes.js';
 
 const state = {
@@ -168,18 +168,18 @@ function maxScrollableDistance() {
   return Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
 }
 
-function calcScrollPositionByPlainLength(contentPlainLength) {
-  if (!contentPlainLength || contentPlainLength <= 0) return 0;
+function calcScrollPositionByBaseLength(baseLength) {
+  if (!baseLength || baseLength <= 0) return 0;
   const ratio = Math.min(1, Math.max(0, currentScrollTop() / maxScrollableDistance()));
-  return Math.round(contentPlainLength * ratio);
+  return Math.round(baseLength * ratio);
 }
 
 async function persistReadingProgressNow() {
   const detail = state.currentArticle;
   if (!detail?.id) return;
-  const contentPlainLength = Number((detail.content_plain || '').length || 0);
-  if (!contentPlainLength) return;
-  const scrollPosition = calcScrollPositionByPlainLength(contentPlainLength);
+  const baseLength = getReadingBaseLength(detail, nodes.readerContent);
+  if (!baseLength) return;
+  const scrollPosition = calcScrollPositionByBaseLength(baseLength);
   try {
     await saveReadingProgress(detail.id, scrollPosition);
   } catch (err) {
@@ -310,7 +310,8 @@ async function openArticle(id, jumpTo = null) {
       articleNotesPanel: nodes.articleNotesPanel
     }, progress);
     if (jumpTo != null) {
-      scrollToPlainPosition((detail.content_plain || '').length || 0, jumpTo);
+      const baseLength = getReadingBaseLength(detail, nodes.readerContent);
+      scrollToPlainPosition(baseLength, jumpTo);
     }
   } catch (err) {
     showToast(`打开文章失败：${err.message}`);
