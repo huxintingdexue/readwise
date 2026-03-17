@@ -441,6 +441,19 @@ async function insertArticle(pool, article, options = {}) {
   };
 }
 
+async function articleExists(pool, url) {
+  const { rows } = await pool.query(
+    `
+      SELECT 1
+      FROM articles
+      WHERE url = $1
+      LIMIT 1
+    `,
+    [url]
+  );
+  return rows.length > 0;
+}
+
 async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
   let xml = '';
   let lastError = null;
@@ -458,8 +471,7 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
   }
 
   const parsed = parseFeed(xml)
-    .filter((item) => item.url && item.title)
-    .slice(0, fetchCount);
+    .filter((item) => item.url && item.title);
 
   console.log(`[feed:${feed.key}] found ${parsed.length} candidates`);
 
@@ -467,6 +479,16 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
   let repairedCount = 0;
   const repairSummary = optionalEnv('REPAIR_SUMMARY') === '1';
   for (const item of parsed) {
+    if (insertedCount >= fetchCount) {
+      break;
+    }
+
+    const exists = await articleExists(pool, item.url);
+    if (exists && !repairSummary) {
+      console.log(`[skipped] already exists: ${item.url}`);
+      continue;
+    }
+
     const cleaned = await fetchAndCleanArticleHtml(item.url, item.contentHintHtml, item.title);
     const articleBase = {
       sourceKey: feed.key,
