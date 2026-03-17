@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-03-17 — PWA 图标文案更新（v2.10.7）
+
+### 已完成
+- ✅ 图标内文案由 `RW` 改为 `VT`
+- ✅ 桌面显示名称保持为“今日硅谷”（由 `manifest.json` 控制）
+- ✅ 保留原始图标备份（`png` + `svg`）
+- ✅ `icon-192.png` 改为直接由 `icon-512.png` 等比缩放生成，保证视觉占比一致
+
+### 变更文件
+- frontend/icons/icon-192.png
+- frontend/icons/icon-192.svg
+- frontend/icons/icon-512.png
+- frontend/icons/icon-512.svg
+- frontend/icons/icon-192.backup-20260317.png
+- frontend/icons/icon-192.backup-20260317.svg
+- frontend/icons/icon-512.backup-20260317.png
+- frontend/icons/icon-512.backup-20260317.svg
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 待下一步
+- 无
+
+---
+
 ## 2026-03-17 — 补齐 partial 旧翻译数据
 
 ### 已完成
