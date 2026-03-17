@@ -154,7 +154,6 @@ async function main() {
       const finalTitleZh = row.title_zh || meta.titleZh || null;
       const finalSummaryZh = row.summary_zh || meta.summaryZh || null;
       const finalStatus = needsFull ? 'full' : row.translation_status;
-      const isFullyTranslated = finalStatus !== 'summary_only' && translatedChars > 0;
 
       await pool.query(
         `
@@ -163,9 +162,8 @@ async function main() {
             translated_chars = $2,
             translation_status = $3,
             title_zh = COALESCE($4, title_zh),
-            summary_zh = COALESCE($5, summary_zh),
-            is_fully_translated = $6
-        WHERE id = $7
+            summary_zh = COALESCE($5, summary_zh)
+        WHERE id = $6
         `,
         [
           contentZh,
@@ -173,7 +171,6 @@ async function main() {
           finalStatus,
           finalTitleZh,
           finalSummaryZh,
-          isFullyTranslated,
           row.id
         ]
       );

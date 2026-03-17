@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-03-16 — 投喂元信息修复 + 去除冗余字段（v2.10.1）
+
+### 已完成
+- ✅ **投喂标题清洗**：避免 URL 当标题，移除媒体/作者后缀
+- ✅ **作者/时间提取增强**：补充常见 meta 字段，缺失时回退
+- ✅ **修复脚本**：新增 `scripts/repair-ingest-meta.js` 定向修复投喂文章
+- ✅ **字段简化**：移除 `is_fully_translated`，统一用 `translation_status`
+
+### 变更文件
+- api/ingest.js
+- scripts/fetch-articles.js
+- scripts/ingest-translate.js
+- scripts/retranslate.js
+- scripts/repair-ingest-meta.js
+- docs/schema.sql
+- frontend/index.html
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-16 — 列表宽度溢出修复（v2.10.0）
 
 ### 已完成
@@ -15,11 +34,10 @@
 - frontend/index.html
 - docs/CHANGELOG.md
 
-## 2026-03-16 — 翻译完整标记 + 全量补翻译（v2.9.9）
+## 2026-03-16 — 翻译完整状态回归 + 全量补翻译（v2.9.9）
 
 ### 已完成
-- ✅ **新增字段**：articles 增加 `is_fully_translated`
-- ✅ **翻译标记**：抓取/投喂/补翻译均同步维护完整翻译标记
+- ✅ **状态回归**：完整翻译状态统一使用 `translation_status`
 - ✅ **补翻译执行**：已对未翻译完文章补齐全文与标题/摘要
 
 ### 变更文件

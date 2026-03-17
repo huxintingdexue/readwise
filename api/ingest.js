@@ -166,11 +166,61 @@ function extractMetaContent(html, key) {
   return match ? match[1] : '';
 }
 
-function extractTitle(html) {
+function extractMetaItemprop(html, key) {
+  const re = new RegExp(`<meta[^>]+itemprop=["']${key}["'][^>]*content=["']([^"']+)["'][^>]*>`, 'i');
+  const match = html.match(re);
+  return match ? match[1] : '';
+}
+
+function normalizeTitle(raw) {
+  return sanitizeToPlain(raw || '').replace(/\s+/g, ' ').trim();
+}
+
+function stripTitleSuffix(title, author = '') {
+  if (!title) return title;
+  let cleaned = title;
+  const siteSuffixes = [
+    'Reuters',
+    'Bloomberg',
+    'TechCrunch',
+    'Financial Times',
+    'The Verge',
+    'The New York Times',
+    'WSJ',
+    'Wall Street Journal',
+    'CNN',
+    'BBC'
+  ];
+  const authorTrim = author ? author.trim() : '';
+  const separators = [' - ', ' | ', ' — ', ' – ', ' · '];
+
+  for (const sep of separators) {
+    if (!cleaned.includes(sep)) continue;
+    const [head, tail] = cleaned.split(sep);
+    if (authorTrim && tail.toLowerCase().includes(authorTrim.toLowerCase())) {
+      cleaned = head;
+      continue;
+    }
+    if (siteSuffixes.some((site) => tail.toLowerCase().includes(site.toLowerCase()))) {
+      cleaned = head;
+    }
+  }
+
+  if (authorTrim) {
+    const authorRe = new RegExp(`\\s+${authorTrim.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}$`, 'i');
+    cleaned = cleaned.replace(authorRe, '');
+  }
+
+  return cleaned.trim();
+}
+
+function extractTitle(html, author = '') {
   const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1];
   const ogTitle = extractMetaContent(html, 'og:title');
   const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
-  return sanitizeToPlain(h1 || ogTitle || titleTag || '');
+  const raw = ogTitle || h1 || titleTag || '';
+  const normalized = normalizeTitle(raw);
+  return stripTitleSuffix(normalized, author);
 }
 
 function parsePublishedAt(value) {
@@ -186,9 +236,11 @@ function extractPublishedAt(html) {
   const candidates = [
     extractMetaContent(html, 'article:published_time'),
     extractMetaContent(html, 'og:article:published_time'),
+    extractMetaContent(html, 'parsely-pub-date'),
     extractMetaContent(html, 'pubdate'),
     extractMetaContent(html, 'date'),
     extractMetaContent(html, 'dc.date'),
+    extractMetaItemprop(html, 'datePublished'),
     html.match(/<time[^>]*datetime=["']([^"']+)["'][^>]*>/i)?.[1]
   ];
   for (const value of candidates) {
@@ -202,7 +254,9 @@ function extractAuthor(html) {
   const candidates = [
     extractMetaContent(html, 'author'),
     extractMetaContent(html, 'article:author'),
-    extractMetaContent(html, 'twitter:creator')
+    extractMetaContent(html, 'twitter:creator'),
+    extractMetaContent(html, 'parsely-author'),
+    extractMetaItemprop(html, 'author')
   ];
   for (const value of candidates) {
     const raw = sanitizeToPlain(value || '');
@@ -220,13 +274,15 @@ async function fetchAndCleanArticleHtml(url) {
     const rawHtml = await safeFetch(url);
     const main = chooseMainHtmlDocument(rawHtml);
     const cleanHtml = normalizeHtmlForStorage(main);
-    const title = extractTitle(rawHtml) || extractTitle(cleanHtml);
+    const author = extractAuthor(rawHtml) || extractAuthor(cleanHtml);
+    const title = extractTitle(rawHtml, author) || extractTitle(cleanHtml, author);
     const contentPlain = htmlToPlain(cleanHtml, title);
     if (!contentPlain) {
       throw new Error('Cleaned content is empty');
     }
     return {
       title,
+      author,
       contentEn: cleanHtml,
       contentPlain,
       summaryOnly: false,
@@ -237,6 +293,7 @@ async function fetchAndCleanArticleHtml(url) {
     const fallbackPlain = htmlToPlain(fallbackHtml);
     return {
       title: '',
+      author: '',
       contentEn: fallbackHtml,
       contentPlain: fallbackPlain,
       summaryOnly: true,
@@ -406,9 +463,17 @@ async function handleIngestSubmit(req, res, userId) {
 
   const cleaned = await fetchAndCleanArticleHtml(sourceUrl);
   const rawHtml = cleaned.rawHtml || '';
-  const title = cleaned.title || extractTitle(rawHtml) || sanitizeToPlain(sourceUrl);
+  const fallbackTitle = (() => {
+    try {
+      const { hostname } = new URL(sourceUrl);
+      return hostname.replace(/^www\./, '');
+    } catch (_) {
+      return '未命名文章';
+    }
+  })();
+  const title = cleaned.title || extractTitle(rawHtml, cleaned.author) || fallbackTitle;
   const publishedAt = extractPublishedAt(rawHtml);
-  const rawAuthor = extractAuthor(rawHtml);
+  const rawAuthor = cleaned.author || extractAuthor(rawHtml);
   const author = await resolveAuthor(poolClient, rawAuthor);
   const summaryEn = summarizeText(cleaned.contentPlain);
 
@@ -427,7 +492,6 @@ async function handleIngestSubmit(req, res, userId) {
       content_zh,
       translation_status,
       translated_chars,
-      is_fully_translated,
       read_status,
       url,
       source_url,
@@ -436,14 +500,15 @@ async function handleIngestSubmit(req, res, userId) {
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, NULL, $3, NULL, $4, $5, $6, '', $7, 0, false, 'unread', $8, $9, $10, 'translating', $11, NULL
+      $1, $2, NULL, $3, NULL, $4, $5, $6, '', $7, 0, 'unread', $8, $9, $10, 'translating', $11, NULL
     )
     RETURNING id
   `;
 
+  const finalPublishedAt = publishedAt || null;
   const { rows } = await poolClient.query(insertSql, [
     'manual',
-    title || sourceUrl,
+    title,
     summaryEn || null,
     author || null,
     cleaned.contentEn || null,
@@ -451,7 +516,7 @@ async function handleIngestSubmit(req, res, userId) {
     translationStatus,
     sourceUrl,
     sourceUrl,
-    publishedAt,
+    finalPublishedAt,
     userId
   ]);
 
@@ -520,7 +585,6 @@ async function handleTranslateStep(req, res, userId) {
   const nextTranslationStatus = step.done && article.translation_status !== 'summary_only'
     ? 'full'
     : article.translation_status;
-  const isFullyTranslated = step.done && nextTranslationStatus !== 'summary_only';
 
   await poolClient.query(
     `
@@ -530,8 +594,7 @@ async function handleTranslateStep(req, res, userId) {
           content_zh = $4,
           translated_chars = $5,
           status = $6,
-          translation_status = $7,
-          is_fully_translated = $8
+          translation_status = $7
       WHERE id = $1
     `,
     [
@@ -541,8 +604,7 @@ async function handleTranslateStep(req, res, userId) {
       step.contentZh,
       step.translatedChars,
       nextStatus,
-      nextTranslationStatus,
-      isFullyTranslated
+      nextTranslationStatus
     ]
   );
 

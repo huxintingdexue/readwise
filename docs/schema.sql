@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS articles (
   content_zh          TEXT,                                 -- 已翻译部分（持续追加）
   translation_status  TEXT DEFAULT 'partial',               -- 'partial' | 'full' | 'summary_only'
   translated_chars    INT DEFAULT 0,                        -- 已翻译字符数，只增不减，基于 content_plain 计算
-  is_fully_translated BOOLEAN DEFAULT false,                -- 是否已完整翻译（翻译完成后置 true）
   read_status         TEXT DEFAULT 'unread',                -- 'unread' | 'read' | 'archived'
   url                 TEXT NOT NULL UNIQUE,                 -- ON CONFLICT DO NOTHING 依赖此唯一约束
   source_url          TEXT,                                 -- 手动投喂原始 URL
