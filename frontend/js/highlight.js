@@ -423,9 +423,7 @@ export function initHighlightFeature({
       const baseText = article?.content_zh || article?.content_plain || '';
       const summaryText = article?.summary_zh || article?.summary_en || '';
       const contextText = buildContextText(baseText, selection.positionStart, selection.positionEnd, 5);
-      const expandedContext = buildContextText(baseText, selection.positionStart, selection.positionEnd, 12);
-      const fullText = baseText.length <= 8000 ? baseText : '';
-      const fallbackContextText = fullText || expandedContext;
+      const fallbackContextText = buildParagraphContext(baseText, selection.positionStart, selection.positionEnd, 2);
       const primaryContext = [summaryText, contextText].filter(Boolean).join('\n\n');
       const fallbackContext = [summaryText, fallbackContextText].filter(Boolean).join('\n\n');
       hideMenu();
@@ -559,4 +557,27 @@ function buildContextText(contentPlain, start, end, windowSize = 5) {
   const from = Math.max(0, startIdx - windowSize);
   const to = Math.min(sentences.length, endIdx + windowSize + 1);
   return sentences.slice(from, to).join('').trim();
+}
+
+function buildParagraphContext(contentPlain, start, end, windowSize = 2) {
+  const text = contentPlain || '';
+  if (!text) return '';
+  const paragraphs = [];
+  const re = /[^\n]+(?:\n(?!\n)[^\n]+)*/g;
+  let match;
+  while ((match = re.exec(text))) {
+    paragraphs.push({ text: match[0], start: match.index, end: match.index + match[0].length });
+  }
+  if (paragraphs.length === 0) return text.trim();
+
+  let startIdx = 0;
+  let endIdx = 0;
+  paragraphs.forEach((p, idx) => {
+    if (start >= p.start && start < p.end) startIdx = idx;
+    if (end > p.start && end <= p.end) endIdx = idx;
+  });
+
+  const from = Math.max(0, startIdx - windowSize);
+  const to = Math.min(paragraphs.length, endIdx + windowSize + 1);
+  return paragraphs.slice(from, to).map((p) => p.text.trim()).join('\n\n').trim();
 }

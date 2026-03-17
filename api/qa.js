@@ -7,7 +7,10 @@ import { checkRateLimit } from './_utils/rateLimit.js';
 dotenv.config({ path: '.env.local' });
 
 const QA_PROMPT =
-  '你是一个技术文章问答助手。请基于提供的上下文回答用户问题，用中文回答，2-3 句为摘要即可。若上下文不足以回答，说明“上下文不足”。';
+  '你是一个技术文章问答助手。请优先基于提供的上下文回答用户问题，用中文回答，2-3 句为摘要即可。若上下文不足以回答，回复“上下文不足”。不要编造。';
+
+const QA_DIRECT_PROMPT =
+  '你是一个技术文章问答助手。请直接回答用户问题，用中文回答，2-3 句即可。无需提及上下文不足。';
 
 let pool;
 
@@ -32,7 +35,7 @@ async function getUserId(req, res) {
   return userId;
 }
 
-async function callDeepSeek(apiKey, question, context) {
+async function callDeepSeek(apiKey, question, context, prompt = QA_PROMPT) {
   const res = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
     headers: {
@@ -43,7 +46,7 @@ async function callDeepSeek(apiKey, question, context) {
       model: 'deepseek-chat',
       temperature: 0.2,
       messages: [
-        { role: 'system', content: QA_PROMPT },
+        { role: 'system', content: prompt },
         {
           role: 'user',
           content: `【问题】\n${question}\n\n【上下文】\n${context}`
@@ -119,6 +122,12 @@ export default async function handler(req, res) {
       const nextAnswer = await callDeepSeek(apiKey, question, fallback_context);
       if (nextAnswer) {
         answerSummary = nextAnswer;
+      }
+    }
+    if (shouldRetryWithFallback(answerSummary)) {
+      const directAnswer = await callDeepSeek(apiKey, question, '', QA_DIRECT_PROMPT);
+      if (directAnswer) {
+        answerSummary = directAnswer;
       }
     }
 
