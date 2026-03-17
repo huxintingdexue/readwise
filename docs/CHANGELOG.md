@@ -17,6 +17,20 @@
 
 ---
 
+## 2026-03-17 — /api/ingest 支持全文入库（v2.10.13）
+
+### 已完成
+- ✅ /api/ingest 新增全文模式（content_zh 直接入库）
+- ✅ admin/user_claw 可用全文模式且不受每日次数限制
+- ✅ 更新技术债/未来清单与架构图
+
+### 变更文件
+- api/ingest.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-17 — 管理员隐藏文章（v2.10.12）
 
 ### 已完成

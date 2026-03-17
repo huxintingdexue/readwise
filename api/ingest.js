@@ -23,6 +23,10 @@ function getPool() {
   return pool;
 }
 
+function isPrivilegedUser(userId) {
+  return isAdmin(userId) || userId === 'user_claw';
+}
+
 async function getUserId(req, res) {
   const inviteCode = req.headers['x-invite-code'] || '';
   const userId = await getUserIdFromInviteCode(inviteCode);
@@ -498,8 +502,104 @@ async function resolveAuthor(poolClient, rawAuthor) {
   }
 }
 
+async function handleIngestFullText(req, res, userId) {
+  if (!isPrivilegedUser(userId)) {
+    res.status(403).json({ error: 'forbidden', message: '无权限' });
+    return;
+  }
+
+  const payload = req.body || {};
+  const titleZh = String(payload.title_zh || '').trim();
+  const titleEn = String(payload.title_en || '').trim();
+  const summaryZh = cleanupWhitespace(payload.summary_zh || '');
+  const summaryEn = cleanupWhitespace(payload.summary_en || '');
+  const contentZh = cleanupWhitespace(payload.content_zh || '');
+  const contentEnRaw = String(payload.content_en || '').trim();
+  const authorRaw = String(payload.author || '').trim();
+  const sourceUrl = String(payload.source_url || '').trim();
+  const publishedAtRaw = String(payload.published_at || '').trim();
+
+  if (!titleZh || !titleEn || !summaryZh || !contentZh || !authorRaw || !sourceUrl || !publishedAtRaw) {
+    res.status(400).json({ error: 'bad_request', message: 'missing required fields' });
+    return;
+  }
+
+  const publishedAt = parsePublishedAt(publishedAtRaw);
+  if (!publishedAt) {
+    res.status(400).json({ error: 'bad_request', message: 'published_at is invalid' });
+    return;
+  }
+
+  const poolClient = getPool();
+  const dupCheck = await poolClient.query(
+    'SELECT id FROM articles WHERE source_url = $1 OR url = $1 LIMIT 1',
+    [sourceUrl]
+  );
+  if (dupCheck.rows.length > 0) {
+    res.status(200).json({ success: false, message: '文章已存在', articleId: dupCheck.rows[0].id });
+    return;
+  }
+
+  const author = await resolveAuthor(poolClient, authorRaw);
+  const contentEn = contentEnRaw ? normalizeHtmlForStorage(contentEnRaw) : null;
+  const contentPlain = contentEn ? htmlToPlain(contentEn, titleEn) : sanitizeToPlain(contentZh);
+  const translatedChars = contentPlain.length;
+
+  const insertSql = `
+    INSERT INTO articles (
+      source_key,
+      title_en,
+      title_zh,
+      summary_en,
+      summary_zh,
+      author,
+      content_en,
+      content_plain,
+      content_zh,
+      translation_status,
+      translated_chars,
+      read_status,
+      url,
+      source_url,
+      published_at,
+      status,
+      submitted_by,
+      user_id
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, 'full', $10, 'unread', $11, $12, $13, 'ready', $14, NULL
+    )
+    RETURNING id
+  `;
+
+  const { rows } = await poolClient.query(insertSql, [
+    'manual',
+    titleEn,
+    titleZh,
+    summaryEn || null,
+    summaryZh,
+    author || null,
+    contentEn,
+    contentPlain || null,
+    contentZh,
+    translatedChars,
+    sourceUrl,
+    sourceUrl,
+    publishedAt,
+    userId
+  ]);
+
+  res.status(200).json({ success: true, articleId: rows[0].id, status: 'ready' });
+}
+
 async function handleIngestSubmit(req, res, userId) {
-  const { url } = req.body || {};
+  const body = req.body || {};
+  const contentZh = String(body.content_zh || '').trim();
+  if (contentZh) {
+    await handleIngestFullText(req, res, userId);
+    return;
+  }
+
+  const { url } = body || {};
   const sourceUrl = String(url || '').trim();
   if (!sourceUrl) {
     res.status(400).json({ error: 'bad_request', message: 'url is required' });
@@ -508,7 +608,7 @@ async function handleIngestSubmit(req, res, userId) {
 
   const poolClient = getPool();
 
-  if (!isAdmin(userId)) {
+  if (!isPrivilegedUser(userId)) {
     const limitSql = `
       SELECT COUNT(*)::int AS count
       FROM articles
