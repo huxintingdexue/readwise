@@ -54,6 +54,7 @@ const nodes = {
   adminSection: document.querySelector('#adminSection'),
   adminConsoleEntry: document.querySelector('#adminConsoleEntry'),
   adminConsole: document.querySelector('#adminConsole'),
+  adminBlocks: [...document.querySelectorAll('#adminConsole .admin-block')],
   adminBackBtn: document.querySelector('#adminBackBtn'),
   adminFeedbackList: document.querySelector('#adminFeedbackList'),
   adminStatsList: document.querySelector('#adminStatsList'),
@@ -667,6 +668,39 @@ function renderStatBlock(title, lines) {
   return block;
 }
 
+function setAdminBlockCollapsed(block, collapsed) {
+  if (!block) return;
+  block.classList.toggle('is-collapsed', collapsed);
+  const heading = block.querySelector('h3');
+  if (!heading) return;
+  heading.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+
+function resetAdminBlocksCollapsed() {
+  nodes.adminBlocks.forEach((block) => {
+    setAdminBlockCollapsed(block, true);
+  });
+}
+
+function bindAdminBlockAccordion() {
+  nodes.adminBlocks.forEach((block) => {
+    const heading = block.querySelector('h3');
+    if (!heading) return;
+    heading.setAttribute('role', 'button');
+    heading.setAttribute('tabindex', '0');
+    const toggle = () => {
+      const collapsed = block.classList.contains('is-collapsed');
+      setAdminBlockCollapsed(block, !collapsed);
+    };
+    heading.addEventListener('click', toggle);
+    heading.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      toggle();
+    });
+  });
+}
+
 async function openAdminConsole() {
   if (getUserId() !== 'admin') {
     showToast('仅管理员可访问', 2000);
@@ -677,6 +711,7 @@ async function openAdminConsole() {
   document.body.classList.add('admin-mode');
   nodes.todayTab.classList.add('hidden');
   nodes.notesTab.classList.add('hidden');
+  resetAdminBlocksCollapsed();
   nodes.adminConsole.classList.remove('hidden');
   await Promise.all([loadAdminFeedback(), loadAdminStats(), loadInviteCodes(), loadHiddenArticles()]);
 }
@@ -985,6 +1020,7 @@ function startApp() {
   state.appStarted = true;
   trackEvent('open_app');
   bindEvents();
+  bindAdminBlockAccordion();
   const openArticleNotes = initArticleNotesPanel({
     panel: nodes.articleNotesPanel,
     body: nodes.articleNotesBody,
