@@ -230,7 +230,8 @@ function renderArticles() {
     const isTranslating = item.status === 'translating';
     const statusLabel = isTranslating ? '翻译中...' : readStatusLabel(item.read_status, progressLabel);
     const isOwner = item.submitted_by && item.submitted_by === getUserId();
-    const showBadge = item.status !== 'translating' && isOwner;
+    const showBadge = Boolean(isOwner);
+    const badgeLabel = isTranslating ? '导入中' : '已导入';
     const isManual = Boolean(item.submitted_by || item.source_key === 'manual');
     const isManualTranslating = isManual && isTranslating;
     li.innerHTML = `
@@ -238,9 +239,11 @@ function renderArticles() {
         <div class="article-card-head">
           <div class="article-card-title">
             <h3>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
-            ${showBadge ? '<span class="article-badge">我添加的</span>' : ''}
           </div>
-          <span class="${isTranslating ? 'article-status' : 'read-status'}">${escapeHtml(statusLabel)}</span>
+          <div class="article-card-status">
+            ${showBadge ? `<span class="article-badge">${badgeLabel}</span>` : ''}
+            <span class="${isTranslating ? 'article-status' : 'read-status'}">${escapeHtml(statusLabel)}</span>
+          </div>
         </div>
         <div class="article-meta">${escapeHtml(sourceName(item.source_key, item.author))} · ${escapeHtml(formatDate(item.published_at))}</div>
         <p class="article-summary">${escapeHtml(item.summary_zh || item.summary_en || '暂无摘要')}</p>

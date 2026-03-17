@@ -571,9 +571,18 @@ body.reading-mode::-webkit-scrollbar-thumb {
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 999px;
-  background: var(--accent);
-  color: var(--bg);
+  background: rgba(136, 214, 181, 0.16);
+  color: var(--accent);
+  border: 1px solid rgba(136, 214, 181, 0.24);
   white-space: nowrap;
+}
+
+.article-card-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .article-meta {
@@ -598,14 +607,14 @@ body.reading-mode::-webkit-scrollbar-thumb {
   font-size: 12px;
   color: var(--muted);
   white-space: nowrap;
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 .article-status {
   font-size: 12px;
   color: var(--muted);
   white-space: nowrap;
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 .article-card.is-disabled {
