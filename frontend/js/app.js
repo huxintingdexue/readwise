@@ -374,10 +374,10 @@ function bindEvents() {
   });
 
   nodes.backBtn.addEventListener('click', async () => {
+    await persistReadingProgressNow();
     state.currentArticle = null;
     document.body.classList.remove('reading-mode');
     document.body.classList.remove('reader-bar-hidden');
-    await persistReadingProgressNow();
     closeReader({
       readerView: nodes.readerView,
       listPanels: [nodes.todayTab, nodes.notesTab],
@@ -540,10 +540,10 @@ function bindEvents() {
   if (!state.historyBound) {
     window.addEventListener('popstate', () => {
       if (document.body.classList.contains('reading-mode')) {
+        persistReadingProgressNow();
         state.currentArticle = null;
         document.body.classList.remove('reading-mode');
         document.body.classList.remove('reader-bar-hidden');
-        persistReadingProgressNow();
         closeReader({
           readerView: nodes.readerView,
           listPanels: [nodes.todayTab, nodes.notesTab],
