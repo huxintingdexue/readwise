@@ -1,4 +1,4 @@
-import { getArticles, getArticleById, getReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, ingestUrl, translateIngestStep, trackEvent } from './api.js';
+import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, ingestUrl, translateIngestStep, trackEvent } from './api.js';
 import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition } from './reader.js';
 import { initArticleNotesPanel } from './notes.js';
@@ -149,6 +149,33 @@ function readStatusLabel(status, progress) {
   if (status === 'read') return `已读 ${progress}%`;
   if (progress > 0) return `已读 ${progress}%`;
   return '未读';
+}
+
+function currentScrollTop() {
+  return Math.max(window.scrollY, document.documentElement.scrollTop, document.body.scrollTop, 0);
+}
+
+function maxScrollableDistance() {
+  return Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+}
+
+function calcScrollPositionByPlainLength(contentPlainLength) {
+  if (!contentPlainLength || contentPlainLength <= 0) return 0;
+  const ratio = Math.min(1, Math.max(0, currentScrollTop() / maxScrollableDistance()));
+  return Math.round(contentPlainLength * ratio);
+}
+
+async function persistReadingProgressNow() {
+  const detail = state.currentArticle;
+  if (!detail?.id) return;
+  const contentPlainLength = Number((detail.content_plain || '').length || 0);
+  if (!contentPlainLength) return;
+  const scrollPosition = calcScrollPositionByPlainLength(contentPlainLength);
+  try {
+    await saveReadingProgress(detail.id, scrollPosition);
+  } catch (err) {
+    console.warn('[reading-progress] save failed', err.message);
+  }
 }
 
 function hideLongPressMenu() {
@@ -346,10 +373,11 @@ function bindEvents() {
     loadArticles();
   });
 
-  nodes.backBtn.addEventListener('click', () => {
+  nodes.backBtn.addEventListener('click', async () => {
     state.currentArticle = null;
     document.body.classList.remove('reading-mode');
     document.body.classList.remove('reader-bar-hidden');
+    await persistReadingProgressNow();
     closeReader({
       readerView: nodes.readerView,
       listPanels: [nodes.todayTab, nodes.notesTab],
@@ -359,6 +387,9 @@ function bindEvents() {
     });
     nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
     nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
+    if (state.tab === 'today') {
+      loadArticles();
+    }
   });
 
   nodes.closeOriginSnippet?.addEventListener('click', () => {
@@ -512,6 +543,7 @@ function bindEvents() {
         state.currentArticle = null;
         document.body.classList.remove('reading-mode');
         document.body.classList.remove('reader-bar-hidden');
+        persistReadingProgressNow();
         closeReader({
           readerView: nodes.readerView,
           listPanels: [nodes.todayTab, nodes.notesTab],
@@ -521,6 +553,9 @@ function bindEvents() {
         });
         nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
         nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
+        if (state.tab === 'today') {
+          loadArticles();
+        }
       }
     });
     state.historyBound = true;
