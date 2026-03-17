@@ -258,4 +258,4 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 - [ ] 管理员隐藏文章+备注原因，作为 AI 编辑室质量校准数据源
 - [ ] 存量博客全量抓取：Sam/Andrej/Naval/Peter 历史文章
 - [ ] /api/ingest 支持传全文直接入库（小龙虾专用）
-- [ ] 小龙虾专属邀请码 GUANG-CLAW:user_claw，editor 权限
+- [ ] 小龙虾专属邀请码 openclaw:openclaw，editor 权限
