@@ -21,6 +21,15 @@ const state = {
   ingestBusy: false
 };
 
+function setReadingMode(enabled) {
+  document.body.classList.toggle('reading-mode', enabled);
+  document.documentElement.classList.toggle('reading-mode', enabled);
+}
+
+function isReadingMode() {
+  return document.body.classList.contains('reading-mode');
+}
+
 const nodes = {
   tabButtons: [...document.querySelectorAll('.tab-btn')],
   todayTab: document.querySelector('#tab-today'),
@@ -272,7 +281,7 @@ async function openArticle(id, jumpTo = null) {
     let loadingShown = false;
     const loadingTimer = setTimeout(() => {
       loadingShown = true;
-      document.body.classList.add('reading-mode');
+      setReadingMode(true);
       renderReaderLoading({
         readerView: nodes.readerView,
         readerTitle: nodes.readerTitle,
@@ -287,7 +296,7 @@ async function openArticle(id, jumpTo = null) {
     clearTimeout(loadingTimer);
     state.currentArticle = detail;
     if (!loadingShown) {
-      document.body.classList.add('reading-mode');
+      setReadingMode(true);
     }
     document.body.classList.add('reader-bar-hidden');
     renderReader(detail, {
@@ -305,7 +314,7 @@ async function openArticle(id, jumpTo = null) {
     }
   } catch (err) {
     showToast(`打开文章失败：${err.message}`);
-    document.body.classList.remove('reading-mode');
+    setReadingMode(false);
     document.body.classList.remove('reader-bar-hidden');
     closeReader({
       readerView: nodes.readerView,
@@ -326,7 +335,7 @@ function switchTab(nextTab) {
     nodes.adminConsole.classList.add('hidden');
   }
   document.body.classList.remove('admin-mode');
-  document.body.classList.remove('reading-mode');
+  setReadingMode(false);
   document.body.classList.remove('reader-bar-hidden');
   closeReader({
     readerView: nodes.readerView,
@@ -376,7 +385,7 @@ function bindEvents() {
   nodes.backBtn.addEventListener('click', async () => {
     await persistReadingProgressNow();
     state.currentArticle = null;
-    document.body.classList.remove('reading-mode');
+    setReadingMode(false);
     document.body.classList.remove('reader-bar-hidden');
     closeReader({
       readerView: nodes.readerView,
@@ -531,7 +540,7 @@ function bindEvents() {
   }
 
   nodes.readerContent.addEventListener('click', () => {
-    if (!document.body.classList.contains('reading-mode')) return;
+    if (!isReadingMode()) return;
     const selectionText = window.getSelection()?.toString()?.trim();
     if (selectionText) return;
     document.body.classList.toggle('reader-bar-hidden');
@@ -539,10 +548,10 @@ function bindEvents() {
 
   if (!state.historyBound) {
     window.addEventListener('popstate', () => {
-      if (document.body.classList.contains('reading-mode')) {
+      if (isReadingMode()) {
         persistReadingProgressNow();
         state.currentArticle = null;
-        document.body.classList.remove('reading-mode');
+        setReadingMode(false);
         document.body.classList.remove('reader-bar-hidden');
         closeReader({
           readerView: nodes.readerView,

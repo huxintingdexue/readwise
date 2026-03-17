@@ -51,28 +51,34 @@ body {
   overflow-x: hidden;
 }
 
+html:not(.reading-mode),
 body:not(.reading-mode) {
   scrollbar-width: none;
 }
 
+html:not(.reading-mode)::-webkit-scrollbar,
 body:not(.reading-mode)::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
+html.reading-mode,
 body.reading-mode {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
+html.reading-mode::-webkit-scrollbar,
 body.reading-mode::-webkit-scrollbar {
   width: 6px;
 }
 
+html.reading-mode::-webkit-scrollbar-track,
 body.reading-mode::-webkit-scrollbar-track {
   background: var(--scrollbar-track);
 }
 
+html.reading-mode::-webkit-scrollbar-thumb,
 body.reading-mode::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
   border-radius: 999px;
