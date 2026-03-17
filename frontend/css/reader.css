@@ -8,6 +8,8 @@
   --muted: #888888;
   --accent: #88d6b5;
   --danger: #ff7b7b;
+  --scrollbar-track: #efebe4;
+  --scrollbar-thumb: #c7c0b2;
 }
 
 /* ── 护眼模式 ─────────────────────────────────────── */
@@ -19,6 +21,8 @@ body.theme-warm {
   --text: #1a1a1a;
   --muted: #888888;
   --accent: #88d6b5;
+  --scrollbar-track: rgba(255, 255, 255, 0.65);
+  --scrollbar-thumb: #cbb892;
 }
 
 /* ── 深色模式 ─────────────────────────────────────── */
@@ -30,6 +34,8 @@ body.theme-dark {
   --text: #c8c8c8;
   --muted: #666666;
   --accent: #88d6b5;
+  --scrollbar-track: #11151d;
+  --scrollbar-thumb: #3a4354;
 }
 
 * {
@@ -43,6 +49,34 @@ body {
   color: var(--text);
   font-family: 'Noto Serif SC', 'PingFang SC', Georgia, serif;
   overflow-x: hidden;
+}
+
+body:not(.reading-mode) {
+  scrollbar-width: none;
+}
+
+body:not(.reading-mode)::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+body.reading-mode {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+body.reading-mode::-webkit-scrollbar {
+  width: 6px;
+}
+
+body.reading-mode::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+body.reading-mode::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid var(--scrollbar-track);
 }
 
 .app-shell {

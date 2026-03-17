@@ -16,6 +16,19 @@
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
 
+## 2026-03-17 — 列表隐藏滚动条 + 阅读页滚动条配色（v2.10.5）
+
+### 已完成
+- ✅ 列表页隐藏滚动条（非阅读态）
+- ✅ 阅读页滚动条保留并跟随主题配色
+- ✅ 禁用页面缩放，避免网页感
+
+### 变更文件
+- frontend/css/reader.css
+- frontend/index.html
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-17 — 校验 Neon 待执行项（v2.10.3）
 
 ### 已完成
