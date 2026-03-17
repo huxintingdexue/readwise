@@ -143,7 +143,12 @@
               <span aria-hidden="true">←</span>
             </button>
             <div class="reader-header-right">
-              <button id="hideArticleBtn" class="header-text-btn hidden" type="button">隐藏此文章</button>
+              <button id="hideArticleBtn" class="header-icon-btn hidden" type="button" aria-label="隐藏此文章">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+                  <path d="M12 5c-5.5 0-9.5 5.5-9.5 7s4 7 9.5 7 9.5-5.5 9.5-7-4-7-9.5-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
+                  <path d="M5 19L19 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
               <button id="articleNotesBtn" class="header-icon-btn" type="button" aria-label="本文划线">
                 <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
                   <path d="M7 14l6-6 3 3-6 6H7v-3z"/>
