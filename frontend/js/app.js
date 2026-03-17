@@ -81,7 +81,6 @@ const nodes = {
   loginButton: document.querySelector('#loginButton'),
   loginError: document.querySelector('#loginError'),
   logoutBtn: document.querySelector('#logoutBtn'),
-  readerAdminActions: document.querySelector('#readerAdminActions'),
   hideArticleBtn: document.querySelector('#hideArticleBtn'),
   hideArticleModal: document.querySelector('#hideArticleModal'),
   hideArticleReasonInput: document.querySelector('#hideArticleReasonInput'),
@@ -192,8 +191,8 @@ function calcScrollPositionByBaseLength(baseLength) {
 }
 
 function setReaderAdminActionsVisible(show) {
-  if (!nodes.readerAdminActions) return;
-  nodes.readerAdminActions.classList.toggle('hidden', !show);
+  if (!nodes.hideArticleBtn) return;
+  nodes.hideArticleBtn.classList.toggle('hidden', !show);
 }
 
 async function persistReadingProgressNow() {
