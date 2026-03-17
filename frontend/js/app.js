@@ -44,6 +44,7 @@ const nodes = {
   readerMeta: document.querySelector('#readerMeta'),
   readerContent: document.querySelector('#readerContent'),
   articleNotesBtn: document.querySelector('#articleNotesBtn'),
+  readerThemeBtn: document.querySelector('#readerThemeBtn'),
   articleNotesPanel: document.querySelector('#articleNotesPanel'),
   articleNotesBody: document.querySelector('#articleNotesBody'),
   closeArticleNotes: document.querySelector('#closeArticleNotes'),
@@ -119,6 +120,15 @@ function setThemeChoice(theme) {
   localStorage.setItem('theme', normalized);
   updateTheme(normalized);
   renderThemeChoices(normalized);
+}
+
+function cycleTheme() {
+  const current = normalizeThemeValue(localStorage.getItem('theme'));
+  const order = ['light', 'eye', 'dark'];
+  const next = order[(order.indexOf(current) + 1) % order.length] || 'light';
+  setThemeChoice(next);
+  const label = next === 'eye' ? '护眼' : next === 'dark' ? '深色' : '标准';
+  showToast(`已切换为${label}`);
 }
 
 function updateTheme(theme) {
@@ -883,6 +893,9 @@ function startApp() {
   });
   nodes.articleNotesBtn.addEventListener('click', () => {
     openArticleNotes();
+  });
+  nodes.readerThemeBtn?.addEventListener('click', () => {
+    cycleTheme();
   });
   initHighlightFeature({
     readerContent: nodes.readerContent,
