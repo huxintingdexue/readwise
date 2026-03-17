@@ -113,12 +113,14 @@ async function main() {
   const pool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
   try {
     const { rows } = await pool.query(`
-      SELECT id, url, title_en, title_zh, summary_en, summary_zh, content_plain, translated_chars, translation_status
+      SELECT id, url, title_en, title_zh, summary_en, summary_zh, content_plain, content_zh, translated_chars, translation_status
       FROM articles
       WHERE content_plain IS NOT NULL
         AND length(content_plain) > 0
         AND (
           COALESCE(translated_chars, 0) < length(content_plain)
+          OR content_zh IS NULL
+          OR length(content_zh) = 0
           OR title_zh IS NULL
           OR summary_zh IS NULL
         )
@@ -136,7 +138,9 @@ async function main() {
       const label = row.url || row.title_en || row.id;
       const contentPlain = row.content_plain || '';
       const translatedChars = contentPlain.length;
-      const needsFull = Number(row.translated_chars || 0) < translatedChars;
+      const needsFull = Number(row.translated_chars || 0) < translatedChars
+        || !row.content_zh
+        || row.content_zh.length === 0;
       console.log(`[retranslate] start ${label} (full=${needsFull})`);
 
       let contentZh = row.content_zh || '';
