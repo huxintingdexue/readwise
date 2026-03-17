@@ -7,10 +7,10 @@ import { checkRateLimit } from './_utils/rateLimit.js';
 dotenv.config({ path: '.env.local' });
 
 const QA_PROMPT =
-  '你是一个技术文章问答助手。请优先基于提供的上下文回答用户问题，用中文回答，2-3 句为摘要即可。若上下文不足以回答，回复“上下文不足”。不要编造。';
+  '你是一个技术文章问答助手，场景是科技/商业/AI头部大佬博客的翻译阅读。请结合上下文（仅供参考，不必拘泥）回答用户问题，用中文回答，2-3 句即可。若无法确定，请明确标注“不确定/可能”，并指出还缺什么信息。避免编造具体事实或细节。';
 
 const QA_DIRECT_PROMPT =
-  '你是一个技术文章问答助手。请直接回答用户问题，用中文回答，2-3 句即可。无需提及上下文不足。';
+  '你是一个技术文章问答助手，场景是科技/商业/AI头部大佬博客的翻译阅读。请直接回答用户问题，用中文回答，2-3 句即可。若无法确定，请明确标注“不确定/可能”，并指出还缺什么信息。避免编造具体事实或细节。';
 
 let pool;
 
@@ -64,7 +64,14 @@ async function callDeepSeek(apiKey, question, context, prompt = QA_PROMPT) {
 
 function shouldRetryWithFallback(answer) {
   if (!answer) return false;
-  return answer.includes('上下文不足');
+  return (
+    answer.includes('上下文不足') ||
+    answer.includes('不确定') ||
+    answer.includes('无法确定') ||
+    answer.includes('无法判断') ||
+    answer.includes('可能') ||
+    answer.includes('信息不足')
+  );
 }
 
 export default async function handler(req, res) {
