@@ -318,6 +318,27 @@ body.reading-mode::-webkit-scrollbar-thumb {
   background: var(--panel-soft);
 }
 
+.admin-item-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-item-actions button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.admin-item-actions button.danger {
+  border-color: rgba(255, 123, 123, 0.5);
+  color: var(--danger);
+}
+
 .admin-item-meta {
   display: flex;
   justify-content: space-between;
@@ -1214,11 +1235,11 @@ body.reading-mode::-webkit-scrollbar-thumb {
   padding: 6px 10px;
   cursor: pointer;
   font-size: 12px;
-  display: flex;
+  display: grid;
+  grid-template-rows: 24px 16px;
   align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 6px;
+  justify-items: center;
+  row-gap: 6px;
   min-height: 54px;
   text-align: center;
   white-space: nowrap;
@@ -1236,15 +1257,16 @@ body.reading-mode::-webkit-scrollbar-thumb {
 }
 
 .selection-menu .btn-label {
-  line-height: 1;
+  line-height: 16px;
+  display: block;
 }
 
-/* 划线/删除划线/查引用的 SVG 笔画较细，视觉上偏小，放大到 28px 与其他图标平衡 */
+/* 细线图标用缩放补视觉体积，但不改变占位尺寸，避免破坏对齐 */
 .selection-menu button[data-action="highlight"] svg,
 .selection-menu button[data-action="remove-highlight"] svg,
 .selection-menu button[data-action="reference"] svg {
-  width: 28px;
-  height: 28px;
+  transform: scale(1.18);
+  transform-origin: center;
 }
 
 .selection-menu::after {
