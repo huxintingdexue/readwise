@@ -13,9 +13,14 @@ const FEEDS = [
 
 const TRANSLATE_PROMPT =
   '你是一个技术文章翻译专家。请将以下英文翻译成中文，要求：保留所有专有名词英文原文（如 Transformer、Attention、LLM），人名不翻译，翻译风格自然流畅，不要逐字直译。以下【上文参考】部分仅供理解上下文，不需要翻译。';
+const SUMMARY_CHUNK_PROMPT =
+  '你是一个技术文章编辑。请基于给定英文文章片段，提炼这一片段的关键内容，用中文写 1 句简洁总结。不要分点，不要使用标题，不要虚构片段里没有的信息。';
+const SUMMARY_MERGE_PROMPT =
+  '你是一个技术文章编辑。请基于给定的分段摘要，整合成 2-3 句中文摘要，适合显示在文章列表卡片上。要求：信息密度高、自然流畅、避免空话，不要分点，不要超过 120 个中文字符。';
 
 const DEFAULT_FETCH_PER_SOURCE = 1;
 const TRANSLATE_SEGMENT_CHARS = 1500;
+const SUMMARY_SEGMENT_CHARS = 3000;
 
 function requiredEnv(name) {
   const value = process.env[name];
@@ -296,6 +301,79 @@ async function deepseekTranslateSegment(apiKey, text, label) {
   return stripPromptPrefix(data?.choices?.[0]?.message?.content?.trim() || '');
 }
 
+async function deepseekGenerate(apiKey, systemPrompt, text, label) {
+  if (!apiKey || !text) {
+    return '';
+  }
+
+  const res = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      temperature: 0.2,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: `【${label}】\n${text}`
+        }
+      ]
+    })
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`DeepSeek ${res.status}: ${body.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  return stripPromptPrefix(data?.choices?.[0]?.message?.content?.trim() || '');
+}
+
+async function generateChineseSummary(apiKey, contentPlain, label) {
+  if (!apiKey || !contentPlain) {
+    return '';
+  }
+
+  const segments = splitByLength(contentPlain, SUMMARY_SEGMENT_CHARS);
+  const chunkSummaries = [];
+  for (let i = 0; i < segments.length; i += 1) {
+    try {
+      const chunkSummary = await deepseekGenerate(
+        apiKey,
+        SUMMARY_CHUNK_PROMPT,
+        segments[i],
+        `${label}-片段${i + 1}/${segments.length}`
+      );
+      if (chunkSummary) {
+        chunkSummaries.push(chunkSummary);
+      }
+    } catch (err) {
+      console.error(`[summary] chunk ${i + 1}/${segments.length} failed for ${label}: ${err.message}`);
+    }
+  }
+
+  if (chunkSummaries.length === 0) {
+    return '';
+  }
+
+  try {
+    return await deepseekGenerate(
+      apiKey,
+      SUMMARY_MERGE_PROMPT,
+      chunkSummaries.join('\n'),
+      `${label}-全文摘要`
+    );
+  } catch (err) {
+    console.error(`[summary] merge failed for ${label}: ${err.message}`);
+    return chunkSummaries.join(' ').trim();
+  }
+}
+
 async function translateFullContent(apiKey, contentPlain, metaLabel) {
   if (!apiKey || !contentPlain) return '';
   const segments = splitByLength(contentPlain, TRANSLATE_SEGMENT_CHARS);
@@ -336,7 +414,11 @@ async function translateArticleParts(apiKey, article) {
   }
 
   try {
-    summaryZh = await deepseekTranslateSegment(apiKey, article.summaryEn, '摘要');
+    summaryZh = await generateChineseSummary(
+      apiKey,
+      article.contentPlain,
+      article.url || article.titleEn || '摘要'
+    );
   } catch (err) {
     console.error(`[translate] summary failed for ${article.url}: ${err.message}`);
   }

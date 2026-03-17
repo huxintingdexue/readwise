@@ -160,6 +160,12 @@ function summarizeText(text, maxLen = 500) {
   return `${text.slice(0, maxLen - 1)}…`;
 }
 
+const SUMMARY_CHUNK_PROMPT =
+  '你是一个技术文章编辑。请基于给定英文文章片段，提炼这一片段的关键内容，用中文写 1 句简洁总结。不要分点，不要使用标题，不要虚构片段里没有的信息。';
+const SUMMARY_MERGE_PROMPT =
+  '你是一个技术文章编辑。请基于给定的分段摘要，整合成 2-3 句中文摘要，适合显示在文章列表卡片上。要求：信息密度高、自然流畅、避免空话，不要分点，不要超过 120 个中文字符。';
+const SUMMARY_SEGMENT_CHARS = 3000;
+
 function extractMetaContent(html, key) {
   const re = new RegExp(`<meta[^>]+(?:name|property)=["']${key}["'][^>]*content=["']([^"']+)["'][^>]*>`, 'i');
   const match = html.match(re);
@@ -342,6 +348,79 @@ async function deepseekTranslateSegment(apiKey, text, label) {
   return stripPromptPrefix(data?.choices?.[0]?.message?.content?.trim() || '');
 }
 
+async function deepseekGenerate(apiKey, systemPrompt, text, label) {
+  if (!apiKey || !text) {
+    return '';
+  }
+
+  const res = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      temperature: 0.2,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: `【${label}】\n${text}`
+        }
+      ]
+    })
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`DeepSeek ${res.status}: ${body.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  return stripPromptPrefix(data?.choices?.[0]?.message?.content?.trim() || '');
+}
+
+async function generateChineseSummary(apiKey, contentPlain, label) {
+  if (!apiKey || !contentPlain) {
+    return '';
+  }
+
+  const segments = splitByLength(contentPlain, SUMMARY_SEGMENT_CHARS);
+  const chunkSummaries = [];
+  for (let i = 0; i < segments.length; i += 1) {
+    try {
+      const chunkSummary = await deepseekGenerate(
+        apiKey,
+        SUMMARY_CHUNK_PROMPT,
+        segments[i],
+        `${label}-片段${i + 1}/${segments.length}`
+      );
+      if (chunkSummary) {
+        chunkSummaries.push(chunkSummary);
+      }
+    } catch (err) {
+      console.error(`[ingest] summary chunk ${i + 1}/${segments.length} failed for ${label}: ${err.message}`);
+    }
+  }
+
+  if (chunkSummaries.length === 0) {
+    return '';
+  }
+
+  try {
+    return await deepseekGenerate(
+      apiKey,
+      SUMMARY_MERGE_PROMPT,
+      chunkSummaries.join('\n'),
+      `${label}-全文摘要`
+    );
+  } catch (err) {
+    console.error(`[ingest] summary merge failed for ${label}: ${err.message}`);
+    return chunkSummaries.join(' ').trim();
+  }
+}
+
 async function translateNextSegment(apiKey, articleId, contentPlain, contentZh, translatedChars) {
   const safeTranslated = Math.max(0, Number.parseInt(String(translatedChars || 0), 10) || 0);
   const totalLen = contentPlain.length;
@@ -372,7 +451,6 @@ async function translateNextSegment(apiKey, articleId, contentPlain, contentZh, 
 async function translateMetaIfNeeded(apiKey, article) {
   if (!apiKey) return { titleZh: article.title_zh || '', summaryZh: article.summary_zh || '' };
   let titleZh = article.title_zh || '';
-  let summaryZh = article.summary_zh || '';
   if (!titleZh && article.title_en) {
     try {
       titleZh = await deepseekTranslateSegment(apiKey, article.title_en, '标题');
@@ -380,14 +458,7 @@ async function translateMetaIfNeeded(apiKey, article) {
       console.error(`[ingest] title translate failed for ${article.id}: ${err.message}`);
     }
   }
-  if (!summaryZh && article.summary_en) {
-    try {
-      summaryZh = await deepseekTranslateSegment(apiKey, article.summary_en, '摘要');
-    } catch (err) {
-      console.error(`[ingest] summary translate failed for ${article.id}: ${err.message}`);
-    }
-  }
-  return { titleZh, summaryZh };
+  return { titleZh, summaryZh: article.summary_zh || '' };
 }
 
 async function hasAuthorsTable(poolClient) {
@@ -585,6 +656,18 @@ async function handleTranslateStep(req, res, userId) {
   const nextTranslationStatus = step.done && article.translation_status !== 'summary_only'
     ? 'full'
     : article.translation_status;
+  let nextSummaryZh = meta.summaryZh || null;
+  if (step.done) {
+    try {
+      nextSummaryZh = await generateChineseSummary(
+        apiKey,
+        contentPlain,
+        article.id || article.title_en || '摘要'
+      ) || nextSummaryZh;
+    } catch (err) {
+      console.error(`[ingest] summary generate failed for ${article.id}: ${err.message}`);
+    }
+  }
 
   await poolClient.query(
     `
@@ -600,7 +683,7 @@ async function handleTranslateStep(req, res, userId) {
     [
       article.id,
       meta.titleZh || null,
-      meta.summaryZh || null,
+      nextSummaryZh,
       step.contentZh,
       step.translatedChars,
       nextStatus,

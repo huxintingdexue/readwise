@@ -29,6 +29,22 @@
 
 ---
 
+## 2026-03-17 — 中文摘要改为基于全文生成（v2.10.7）
+
+### 已完成
+- ✅ 固定源抓取摘要：从“前文截断翻译”改为“基于全文分段生成 2-3 句中文摘要”
+- ✅ 手动投喂摘要：在全文翻译完成后生成 2-3 句中文摘要
+- ✅ 补翻译脚本支持强制重生成摘要
+- ✅ 已对现有 26 篇文章重生成 `summary_zh`
+
+### 变更文件
+- scripts/fetch-articles.js
+- api/ingest.js
+- scripts/retranslate.js
+- frontend/index.html
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-17 — 补齐 partial 旧翻译数据
 
 ### 已完成
