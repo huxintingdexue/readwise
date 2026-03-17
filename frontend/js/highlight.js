@@ -421,12 +421,18 @@ export function initHighlightFeature({
       const selection = currentSelection;
       if (!selection) return;
       const baseText = article?.content_zh || article?.content_plain || '';
-      const contextText = buildContextText(baseText, selection.positionStart, selection.positionEnd);
+      const summaryText = article?.summary_zh || article?.summary_en || '';
+      const contextText = buildContextText(baseText, selection.positionStart, selection.positionEnd, 5);
+      const expandedContext = buildContextText(baseText, selection.positionStart, selection.positionEnd, 12);
+      const fullText = baseText.length <= 8000 ? baseText : '';
+      const fallbackContextText = fullText || expandedContext;
+      const primaryContext = [summaryText, contextText].filter(Boolean).join('\n\n');
+      const fallbackContext = [summaryText, fallbackContextText].filter(Boolean).join('\n\n');
       hideMenu();
       window.getSelection()?.removeAllRanges();
       openQaModal({
         selectionText: selection.text,
-        contextText,
+        contextText: primaryContext,
         onSubmit: async (question, context) => {
           let highlightId = null;
           if (!selection.isExistingHighlight) {
@@ -443,7 +449,8 @@ export function initHighlightFeature({
             highlight_id: highlightId,
             article_id: selection.articleId,
             question,
-            context
+            context,
+            fallback_context: fallbackContext
           });
           return result?.answer_summary || '';
         }
@@ -535,7 +542,7 @@ export function initHighlightFeature({
   });
 }
 
-function buildContextText(contentPlain, start, end) {
+function buildContextText(contentPlain, start, end, windowSize = 5) {
   const sentences = (contentPlain || '').match(/[^.!?。！？\\n]+[.!?。！？\\n]*/g) || [];
   if (sentences.length === 0) return contentPlain || '';
 
@@ -549,7 +556,7 @@ function buildContextText(contentPlain, start, end) {
     cursor = next;
   });
 
-  const from = Math.max(0, startIdx - 5);
-  const to = Math.min(sentences.length, endIdx + 6);
+  const from = Math.max(0, startIdx - windowSize);
+  const to = Math.min(sentences.length, endIdx + windowSize + 1);
   return sentences.slice(from, to).join('').trim();
 }

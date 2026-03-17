@@ -59,6 +59,11 @@ async function callDeepSeek(apiKey, question, context) {
   return data?.choices?.[0]?.message?.content?.trim() || '';
 }
 
+function shouldRetryWithFallback(answer) {
+  if (!answer) return false;
+  return answer.includes('上下文不足');
+}
+
 export default async function handler(req, res) {
   const userId = await getUserId(req, res);
   if (!userId) return;
@@ -96,7 +101,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { highlight_id, article_id, question, context } = req.body || {};
+  const { highlight_id, article_id, question, context, fallback_context } = req.body || {};
   if (!article_id || !question || !context) {
     res.status(400).json({ error: 'bad_request', message: 'article_id, question, context are required' });
     return;
@@ -109,7 +114,13 @@ export default async function handler(req, res) {
       return;
     }
 
-    const answerSummary = await callDeepSeek(apiKey, question, context);
+    let answerSummary = await callDeepSeek(apiKey, question, context);
+    if (fallback_context && shouldRetryWithFallback(answerSummary)) {
+      const nextAnswer = await callDeepSeek(apiKey, question, fallback_context);
+      if (nextAnswer) {
+        answerSummary = nextAnswer;
+      }
+    }
 
     const sql = `
       INSERT INTO qa_records (highlight_id, article_id, question, answer_summary, user_id)
