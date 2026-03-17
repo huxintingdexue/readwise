@@ -199,6 +199,65 @@ Query: `?article_id=uuid`（可选）
 ```
 前端收到 `status=not_found` 时显示："未找到来源，请尝试更完整的文字"
 
+---
+
+## POST /api/ingest
+
+新增文章（两种模式：链接抓取 / 全文直入）。
+
+### 模式 A：链接抓取（原有）
+**Body**
+```json
+{
+  "url": "https://example.com/article"
+}
+```
+
+**Response（成功）**
+```json
+{ "success": true, "articleId": "uuid", "status": "translating" }
+```
+
+**Response（已存在）**
+```json
+{ "success": false, "message": "文章已存在", "articleId": "uuid" }
+```
+
+**权限**
+- 普通用户：仅可用该模式，且每日限 5 次
+- admin / openclaw：可用且不受次数限制
+
+### 模式 B：全文直入（content_zh）
+当请求体包含 `content_zh` 时，跳过抓取与翻译，直接入库，`status=ready`。
+
+**Body**
+```json
+{
+  "title_zh": "必填",
+  "title_en": "必填",
+  "summary_zh": "必填",
+  "summary_en": "可选",
+  "content_zh": "必填，完整中文全文",
+  "content_en": "建议填，英文原文",
+  "author": "必填",
+  "source_url": "必填，用于去重",
+  "published_at": "必填，ISO格式"
+}
+```
+
+**Response（成功）**
+```json
+{ "success": true, "articleId": "uuid", "status": "ready" }
+```
+
+**Response（已存在）**
+```json
+{ "success": false, "message": "文章已存在", "articleId": "uuid" }
+```
+
+**权限**
+- 仅 admin / openclaw 可用
+
 **确认加入（文章）**
 ```json
 {
