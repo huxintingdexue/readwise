@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-03-18 — 返回列表滚动恢复无闪动（v2.10.19）
+
+### 已完成
+- ✅ 从阅读页返回时先隐藏列表，再恢复滚动位置，最后显示列表
+- ✅ 修复“先跳到顶部再回到原位置”的闪动
+
+### 变更文件
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-18 — 列表标题中英文加粗统一（v2.10.18）
 
 ### 已完成
@@ -1813,7 +1826,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 

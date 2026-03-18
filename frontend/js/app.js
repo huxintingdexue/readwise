@@ -203,8 +203,11 @@ function captureListScroll() {
 function restoreListScroll() {
   const tab = state.tab || 'today';
   const target = Number(state.listScrollTop[tab] || 0);
-  requestAnimationFrame(() => {
-    window.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
+      requestAnimationFrame(() => resolve());
+    });
   });
 }
 
@@ -229,6 +232,7 @@ async function persistReadingProgressNow() {
 async function exitReaderView(shouldReload = true) {
   await persistReadingProgressNow();
   state.currentArticle = null;
+  document.body.classList.add('restoring-list-scroll');
   setReadingMode(false);
   document.body.classList.remove('reader-bar-hidden');
   closeReader({
@@ -243,10 +247,14 @@ async function exitReaderView(shouldReload = true) {
   setReaderAdminActionsVisible(false);
   nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
   nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
-  if (shouldReload && state.tab === 'today') {
-    await loadArticles();
+  try {
+    if (shouldReload && state.tab === 'today') {
+      await loadArticles();
+    }
+    await restoreListScroll();
+  } finally {
+    document.body.classList.remove('restoring-list-scroll');
   }
-  restoreListScroll();
 }
 
 function hideLongPressMenu() {
