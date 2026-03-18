@@ -23,6 +23,15 @@ function getPool() {
   return pool;
 }
 
+function badRequest(res, errorCode, message, extra = {}) {
+  res.status(400).json({
+    success: false,
+    error: errorCode,
+    message,
+    ...extra
+  });
+}
+
 function isPrivilegedUser(userId) {
   return isAdmin(userId) || userId === 'openclaw' || userId === 'user_claw';
 }
@@ -524,10 +533,10 @@ async function handleIngestFullText(req, res, userId) {
 
   const zhLength = contentZh.length;
   if (zhLength <= 0) {
-    res.status(400).json({
-      success: false,
-      error: 'CONTENT_ZH_MISSING',
-      message: '中文译文为空，请完成全文翻译后再提交。'
+    badRequest(res, 'CONTENT_ZH_MISSING', '中文译文为空，请完成全文翻译后再提交。', {
+      details: {
+        actual_zh_length: zhLength
+      }
     });
     return;
   }
@@ -535,22 +544,41 @@ async function handleIngestFullText(req, res, userId) {
   const normalizedEnForCheck = sanitizeToPlain(contentEnRaw || '');
   const enLength = normalizedEnForCheck.length;
   if (enLength > 500 && zhLength / enLength < 0.3) {
-    res.status(400).json({
-      success: false,
-      error: 'CONTENT_RATIO_INVALID',
-      message: `中文译文字符数（${zhLength}）低于英文原文字符数（${enLength}）的30%，疑似翻译不完整或被精简，请检查后重新提交。禁止精简原文内容。`
-    });
+    badRequest(
+      res,
+      'CONTENT_RATIO_INVALID',
+      `中文译文字符数（${zhLength}）低于英文原文字符数（${enLength}）的30%，疑似翻译不完整或被精简，请检查后重新提交。禁止精简原文内容。`,
+      {
+        details: {
+          actual_zh_length: zhLength,
+          actual_en_length: enLength,
+          ratio: Number((zhLength / enLength).toFixed(4))
+        }
+      }
+    );
     return;
   }
 
-  if (!titleZh || !titleEn || !summaryZh || !contentZh || !authorRaw || !sourceUrl || !publishedAtRaw) {
-    res.status(400).json({ error: 'bad_request', message: 'missing required fields' });
+  const missingFields = [];
+  if (!titleZh) missingFields.push('title_zh');
+  if (!titleEn) missingFields.push('title_en');
+  if (!summaryZh) missingFields.push('summary_zh');
+  if (!contentZh) missingFields.push('content_zh');
+  if (!authorRaw) missingFields.push('author');
+  if (!sourceUrl) missingFields.push('source_url_or_url');
+  if (!publishedAtRaw) missingFields.push('published_at');
+  if (missingFields.length > 0) {
+    badRequest(res, 'MISSING_REQUIRED_FIELDS', '缺少必填字段，请补充后重试。', {
+      missing_fields: missingFields
+    });
     return;
   }
 
   const publishedAt = parsePublishedAt(publishedAtRaw);
   if (!publishedAt) {
-    res.status(400).json({ error: 'bad_request', message: 'published_at is invalid' });
+    badRequest(res, 'PUBLISHED_AT_INVALID', 'published_at 格式无效，请使用 ISO 8601（例如 2025-08-21T00:00:00.000Z）。', {
+      received_value: publishedAtRaw
+    });
     return;
   }
 
@@ -631,7 +659,7 @@ async function handleIngestSubmit(req, res, userId) {
   const { url } = body || {};
   const sourceUrl = String(url || '').trim();
   if (!sourceUrl) {
-    res.status(400).json({ error: 'bad_request', message: 'url is required' });
+    badRequest(res, 'URL_MISSING', 'url is required');
     return;
   }
 

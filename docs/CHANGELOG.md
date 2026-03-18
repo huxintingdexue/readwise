@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-18 — /api/ingest 错误信息结构化（v2.10.24）
+
+### 已完成
+- ✅ 全文直入模式新增结构化 400 错误：`CONTENT_ZH_MISSING`、`CONTENT_RATIO_INVALID`
+- ✅ 缺字段错误改为返回 `missing_fields`
+- ✅ `published_at` 非法时返回 `PUBLISHED_AT_INVALID` 并附带 `received_value`
+- ✅ 链接模式缺少 `url` 时返回 `URL_MISSING`
+
+### 变更文件
+- api/ingest.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
+
+---
+
 ## 2026-03-18 — openclaw 接口白名单收敛（v2.10.23）
 
 ### 已完成
@@ -1901,5 +1916,4 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 

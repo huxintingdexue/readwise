@@ -7,6 +7,7 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：/api/ingest 错误信息结构化（含 missing_fields/received_value）✅
 - 最近变更：openclaw 接口白名单收敛（仅 3 个入库相关接口）✅
 - 最近变更：列表返回无闪动 + 列表/详情本地缓存提速 ✅
 - 最近变更：QA 支持多轮对话（携带历史消息）+ Prompt 优化 + 10轮限制 ✅
@@ -277,5 +278,4 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
   - openclaw 去重接口明确为 /api/articles/urls，写入 Skill
   - 评估是否需要引入签名机制（HMAC-SHA256 + 时间戳防重放）
   - 收窄所有非 admin 邀请码的最小权限
-
 
