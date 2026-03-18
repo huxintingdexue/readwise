@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-18 — 阅读进度按最大位置保存（v2.10.15）
+
+### 已完成
+- ✅ **进度更新**：阅读进度只取最大位置，避免回退覆盖
+
+### 变更文件
+- api/reading-progress.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+
 ## 2026-03-18 — 文章列表按发表时间倒序（v2.10.14）
 
 ### 已完成
@@ -1753,5 +1764,7 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+
 
 
