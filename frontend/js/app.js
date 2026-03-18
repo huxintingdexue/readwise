@@ -171,7 +171,7 @@ function formatDate(isoString) {
 }
 
 function sourceName(sourceKey, author) {
-  if (sourceKey === 'manual') return author || '读友推荐';
+  if (sourceKey === 'manual') return author || '未知作者';
   if (sourceKey === 'sam') return 'Sam Altman';
   if (sourceKey === 'andrej') return 'Andrej Karpathy';
   if (sourceKey === 'peter') return 'Peter Steipete';
