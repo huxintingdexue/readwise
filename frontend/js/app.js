@@ -19,11 +19,16 @@ const state = {
   logoutTimer: null,
   ingestTimer: null,
   ingestBusy: false,
+  articleDetailCache: new Map(),
   listScrollTop: {
     today: 0,
     notes: 0
   }
 };
+
+const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v1';
+const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
+const MAX_DETAIL_CACHE_ITEMS = 30;
 
 function setReadingMode(enabled) {
   document.body.classList.toggle('reading-mode', enabled);
@@ -211,6 +216,67 @@ function restoreListScroll() {
   });
 }
 
+function buildListCacheKey() {
+  return JSON.stringify({
+    userId: getUserId(),
+    filters: state.filters || {}
+  });
+}
+
+function readListCache() {
+  try {
+    const raw = sessionStorage.getItem(ARTICLE_LIST_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (parsed.key !== buildListCacheKey()) return null;
+    if (!Array.isArray(parsed.articles)) return null;
+    return parsed.articles;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeListCache(articles) {
+  try {
+    sessionStorage.setItem(ARTICLE_LIST_CACHE_KEY, JSON.stringify({
+      key: buildListCacheKey(),
+      articles: Array.isArray(articles) ? articles : [],
+      savedAt: Date.now()
+    }));
+  } catch (_) {}
+}
+
+function readDetailCache(articleId) {
+  if (!articleId) return null;
+  if (state.articleDetailCache.has(articleId)) {
+    return state.articleDetailCache.get(articleId) || null;
+  }
+  try {
+    const raw = sessionStorage.getItem(`${ARTICLE_DETAIL_CACHE_PREFIX}${articleId}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || !parsed.id) return null;
+    state.articleDetailCache.set(articleId, parsed);
+    return parsed;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeDetailCache(detail) {
+  const articleId = detail?.id;
+  if (!articleId) return;
+  state.articleDetailCache.set(articleId, detail);
+  if (state.articleDetailCache.size > MAX_DETAIL_CACHE_ITEMS) {
+    const oldestKey = state.articleDetailCache.keys().next().value;
+    if (oldestKey) state.articleDetailCache.delete(oldestKey);
+  }
+  try {
+    sessionStorage.setItem(`${ARTICLE_DETAIL_CACHE_PREFIX}${articleId}`, JSON.stringify(detail));
+  } catch (_) {}
+}
+
 function setReaderAdminActionsVisible(show) {
   if (!nodes.hideArticleBtn) return;
   nodes.hideArticleBtn.classList.toggle('hidden', !show);
@@ -229,7 +295,7 @@ async function persistReadingProgressNow() {
   }
 }
 
-async function exitReaderView(shouldReload = true) {
+async function exitReaderView(shouldReload = false) {
   await persistReadingProgressNow();
   state.currentArticle = null;
   document.body.classList.add('restoring-list-scroll');
@@ -244,7 +310,6 @@ async function exitReaderView(shouldReload = true) {
   });
   setReaderAdminActionsVisible(false);
   closeHideArticleModal();
-  setReaderAdminActionsVisible(false);
   nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
   nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
   try {
@@ -327,20 +392,42 @@ function renderArticles() {
   });
 }
 
-async function loadArticles() {
+async function loadArticles(options = {}) {
+  const preferCache = options.preferCache !== false;
+  const showLoading = options.showLoading !== false;
+  const forceNetwork = options.forceNetwork === true;
+  let renderedFromCache = false;
   try {
-    nodes.articlesState.textContent = '加载中...';
+    if (preferCache) {
+      const cached = readListCache();
+      if (cached && cached.length) {
+        state.articles = cached;
+        renderArticles();
+        renderedFromCache = true;
+      }
+    }
+    if (!renderedFromCache && showLoading) {
+      nodes.articlesState.textContent = '加载中...';
+    }
+    if (!forceNetwork && renderedFromCache) {
+      ensureIngestPolling();
+    }
     state.articles = await getArticles(state.filters);
+    writeListCache(state.articles);
     renderArticles();
     ensureIngestPolling();
   } catch (err) {
-    nodes.articlesState.textContent = `加载失败：${err.message}`;
+    if (!renderedFromCache) {
+      nodes.articlesState.textContent = `加载失败：${err.message}`;
+    }
     if (String(err.message || '').includes('邀请码无效')) {
       showToast('邀请码无效，请重新登录');
       logout();
       return;
     }
-    showToast('加载失败，请稍后重试');
+    if (!renderedFromCache) {
+      showToast('加载失败，请稍后重试');
+    }
   }
 }
 
@@ -351,6 +438,38 @@ async function openArticle(id, jumpTo = null) {
       history.pushState({ view: 'reader', articleId: id }, '', `?article=${id}`);
     }
     setReaderAdminActionsVisible(false);
+    const cachedDetail = readDetailCache(id);
+    const progressPromise = getReadingProgress(id);
+    const detailPromise = getArticleById(id);
+
+    if (cachedDetail) {
+      const progress = await progressPromise;
+      state.currentArticle = cachedDetail;
+      setReadingMode(true);
+      document.body.classList.add('reader-bar-hidden');
+      setReaderAdminActionsVisible(isAdminUser());
+      renderReader(cachedDetail, {
+        readerView: nodes.readerView,
+        readerTitle: nodes.readerTitle,
+        readerMeta: nodes.readerMeta,
+        readerContent: nodes.readerContent,
+        listPanels: [nodes.todayTab, nodes.notesTab],
+        originSnippet: nodes.originSnippet,
+        originSnippetText: nodes.originSnippetText,
+        articleNotesPanel: nodes.articleNotesPanel
+      }, progress);
+      if (jumpTo != null) {
+        const baseLength = getReadingBaseLength(cachedDetail, nodes.readerContent);
+        scrollToPlainPosition(baseLength, jumpTo);
+      }
+      detailPromise
+        .then((freshDetail) => {
+          writeDetailCache(freshDetail);
+        })
+        .catch(() => {});
+      return;
+    }
+
     let loadingShown = false;
     const loadingTimer = setTimeout(() => {
       loadingShown = true;
@@ -365,8 +484,9 @@ async function openArticle(id, jumpTo = null) {
         originSnippetText: nodes.originSnippetText
       });
     }, 180);
-    const [detail, progress] = await Promise.all([getArticleById(id), getReadingProgress(id)]);
+    const [detail, progress] = await Promise.all([detailPromise, progressPromise]);
     clearTimeout(loadingTimer);
+    writeDetailCache(detail);
     state.currentArticle = detail;
     if (!loadingShown) {
       setReadingMode(true);
@@ -459,7 +579,7 @@ function bindEvents() {
   });
 
   nodes.backBtn.addEventListener('click', async () => {
-    await exitReaderView(true);
+    await exitReaderView(false);
   });
 
   nodes.closeOriginSnippet?.addEventListener('click', () => {
@@ -653,7 +773,7 @@ function bindEvents() {
         return;
       }
       if (isReadingMode()) {
-        exitReaderView(true);
+        exitReaderView(false);
       }
     });
     state.historyBound = true;

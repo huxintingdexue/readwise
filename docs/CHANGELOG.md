@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-03-18 — 列表返回无闪动 + 列表/详情本地缓存提速（v2.10.22）
+
+### 已完成
+- ✅ 阅读页返回列表默认不再触发重拉列表，避免“先到顶部再跳回”闪动
+- ✅ 列表页新增 `sessionStorage` 缓存，先展示缓存再后台刷新
+- ✅ 文章详情新增内存 + `sessionStorage` 缓存，命中时优先秒开阅读页
+- ✅ 登出时清理文章缓存，避免不同邀请码间缓存串读
+
+### 变更文件
+- frontend/js/app.js
+- frontend/js/api.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
+
+---
+
 ## 2026-03-18 — QA 多轮对话与上下文升级（v2.10.21）
 
 ### 已完成
@@ -1857,7 +1873,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 

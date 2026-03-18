@@ -56,6 +56,13 @@ export async function login(inviteCode) {
 export function logout() {
   localStorage.removeItem(INVITE_CODE_KEY);
   localStorage.removeItem(USER_ID_KEY);
+  try {
+    Object.keys(sessionStorage).forEach((key) => {
+      if (key.startsWith('rw:article-list-cache:') || key.startsWith('rw:article-detail:')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  } catch (_) {}
   window.location.reload();
 }
 
