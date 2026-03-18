@@ -648,6 +648,10 @@ function bindEvents() {
 
   if (!state.historyBound) {
     window.addEventListener('popstate', () => {
+      if (document.body.classList.contains('admin-mode')) {
+        closeAdminConsole({ fromPopstate: true });
+        return;
+      }
       if (isReadingMode()) {
         exitReaderView(true);
       }
@@ -733,6 +737,9 @@ async function openAdminConsole() {
     return;
   }
   if (!nodes.adminConsole) return;
+  if (!history.state || history.state.view !== 'admin') {
+    history.pushState({ view: 'admin' }, '', '?view=admin');
+  }
   document.body.classList.add('admin-mode');
   nodes.todayTab.classList.add('hidden');
   nodes.notesTab.classList.add('hidden');
@@ -741,12 +748,16 @@ async function openAdminConsole() {
   await Promise.all([loadAdminFeedback(), loadAdminStats(), loadInviteCodes(), loadHiddenArticles()]);
 }
 
-function closeAdminConsole() {
+function closeAdminConsole(options = {}) {
+  const fromPopstate = Boolean(options.fromPopstate);
   document.body.classList.remove('admin-mode');
   if (nodes.adminConsole) {
     nodes.adminConsole.classList.add('hidden');
   }
   switchTab('notes');
+  if (!fromPopstate && history.state?.view === 'admin') {
+    history.back();
+  }
 }
 
 async function loadAdminFeedback() {

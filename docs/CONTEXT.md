@@ -7,9 +7,11 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：QA 支持多轮对话（携带历史消息）+ Prompt 优化 + 10轮限制 ✅
 - 最近变更：/api/ingest 支持传全文直接入库（admin/user_claw）✅
 - 最近变更：管理员隐藏文章（隐藏原因/时间 + 控制台恢复）✅
 - 最后完成步骤：PRD 第十一节第 12 步：数据导出 ✅
+- 最近变更：管理员后台右滑返回回到“我的”（不退出）✅
 - 最近变更：阅读页返回列表滚动恢复无闪动 ✅
 - 最近变更：OpenCloud 可删除已隐藏文章并允许覆盖重推 ✅
 - 最近变更：列表返回保持滚动位置（进入前位置恢复）✅
@@ -227,7 +229,6 @@ Vercel Serverless Functions（/api/*）
 - ⚠️ **URL去重边界：** ON CONFLICT 无法处理同一文章URL略有差异的情况，MVP暂不处理
 - ⚠️ **Paul Graham暂未适配：** RSS只有标题，需单独开发爬虫
 - ⚠️ **Peter RSS 地址异常：** PRD 中的 `https://steipete.me/feed.xml` 当前返回 404（已从抓取配置中移除）
-- ⚠️ **QA 多轮上下文缺失：** api/qa.js 每次独立调用 DeepSeek，不携带历史消息，追问效果差。修复方式：前端把对话历史拼成 messages 数组传给后端，后端透传给 DeepSeek。
 - ⚠️ **鉴权安全债（已知）：** X-Invite-Code 在 header 中明文传输，抓包可见，MVP 阶段接受此方案，后续改为后端 Session Cookie。
 - ⚠️ **DeepSeek 会员额度与 API 额度不通：** 网页版订阅无法用于 API 调用，暂无解法。
 - ⚠️ **位置口径切换风险：** 已改为以 `content_zh` 计算位置与进度，旧数据若基于 `content_plain`，可能出现跳转/进度不一致，需要后续清理或迁移策略
@@ -267,8 +268,7 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 - [ ] 存量博客全量抓取：Sam/Andrej/Naval/Peter 历史文章
 - [ ] /api/ingest 支持传全文直接入库（小龙虾专用）
 - [ ] 小龙虾专属邀请码 openclaw:openclaw，editor 权限
-
-
+- [ ] QA 接入 Brave Search API：用户提问时先搜索相关内容，将搜索结果拼入上下文，使 AI 具备获取最新信息的能力
 
 
 
