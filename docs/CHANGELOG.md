@@ -1,8 +1,19 @@
-# Changelog
+﻿# Changelog
 
 > 每次完成开发任务后在此追加记录，格式固定，方便 AI 解析。
 
 ---
+
+## 2026-03-18 — 文章列表按发表时间倒序（v2.10.14）
+
+### 已完成
+- ✅ **列表排序**：文章列表按发表时间倒序排列
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 
 ## 2026-03-17 — 管理员控制台默认折叠（v2.10.13）
 
@@ -1742,3 +1753,5 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+

@@ -258,14 +258,12 @@ function renderArticles() {
   nodes.articlesState.textContent = '';
 
   const ordered = state.articles
-    .map((item, idx) => ({ item, idx }))
+    .slice()
     .sort((a, b) => {
-      const aManual = Boolean(a.item.submitted_by || a.item.source_key === 'manual');
-      const bManual = Boolean(b.item.submitted_by || b.item.source_key === 'manual');
-      if (aManual === bManual) return a.idx - b.idx;
-      return aManual ? -1 : 1;
-    })
-    .map((row) => row.item);
+      const aTime = Date.parse(a.published_at || '') || 0;
+      const bTime = Date.parse(b.published_at || '') || 0;
+      return bTime - aTime;
+    });
 
   ordered.forEach((item) => {
     const li = document.createElement('li');
