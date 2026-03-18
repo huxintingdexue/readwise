@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-03-18 — openclaw 接口白名单收敛（v2.10.23）
+
+### 已完成
+- ✅ 在 `api/_utils/auth.js` 新增 openclaw 白名单拦截
+- ✅ 仅允许 openclaw 访问：`POST /api/ingest`、`DELETE /api/articles/:id`、`GET /api/articles/urls`
+- ✅ 非白名单接口统一返回 `403 + PERMISSION_DENIED` 及固定文案
+- ✅ 所有依赖邀请码鉴权的 API 已接入该拦截
+
+### 变更文件
+- api/_utils/auth.js
+- api/articles.js
+- api/ingest.js
+- api/highlights.js
+- api/qa.js
+- api/reading-list.js
+- api/reading-progress.js
+- api/search-reference.js
+- api/export.js
+- api/events.js
+- api/feedback.js
+- api/admin/stats.js
+- api/admin/invite-codes.js
+- api/admin/articles.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
+
+---
+
 ## 2026-03-18 — 列表返回无闪动 + 列表/详情本地缓存提速（v2.10.22）
 
 ### 已完成
@@ -1873,6 +1901,5 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 

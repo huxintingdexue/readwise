@@ -57,6 +57,36 @@ export async function getUserIdFromInviteCode(inviteCode) {
   }
 }
 
+function getPathname(req) {
+  try {
+    const url = new URL(req.url || '/', `http://${req.headers?.host || 'localhost'}`);
+    return url.pathname;
+  } catch (_) {
+    return '';
+  }
+}
+
+export function ensureOpenClawPermission(req, res, userId) {
+  if (userId !== 'openclaw') return true;
+
+  const method = String(req.method || 'GET').toUpperCase();
+  const pathname = getPathname(req);
+  const allowed = (
+    (method === 'POST' && pathname === '/api/ingest') ||
+    (method === 'GET' && pathname === '/api/articles/urls') ||
+    (method === 'DELETE' && /^\/api\/articles\/[^/]+\/?$/.test(pathname))
+  );
+
+  if (allowed) return true;
+
+  res.status(403).json({
+    success: false,
+    error: 'PERMISSION_DENIED',
+    message: 'openclaw 账号仅限内容入库相关操作，无权访问此接口。如需扩展权限，请联系管理员。'
+  });
+  return false;
+}
+
 export function isAdmin(userId) {
   return userId === 'admin';
 }

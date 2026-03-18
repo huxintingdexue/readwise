@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
-import { getUserIdFromInviteCode, isAdmin } from '../_utils/auth.js';
+import { getUserIdFromInviteCode, isAdmin, ensureOpenClawPermission } from '../_utils/auth.js';
 
 dotenv.config({ path: '.env.local' });
 
@@ -33,6 +33,9 @@ async function getUserId(req, res) {
   const userId = await getUserIdFromInviteCode(inviteCode);
   if (!userId) {
     res.status(401).json({ error: 'unauthorized', message: '邀请码无效' });
+    return null;
+  }
+  if (!ensureOpenClawPermission(req, res, userId)) {
     return null;
   }
   return userId;
