@@ -18,7 +18,11 @@ const state = {
   appStarted: false,
   logoutTimer: null,
   ingestTimer: null,
-  ingestBusy: false
+  ingestBusy: false,
+  listScrollTop: {
+    today: 0,
+    notes: 0
+  }
 };
 
 function setReadingMode(enabled) {
@@ -191,6 +195,19 @@ function calcScrollPositionByBaseLength(baseLength) {
   return Math.round(baseLength * ratio);
 }
 
+function captureListScroll() {
+  const tab = state.tab || 'today';
+  state.listScrollTop[tab] = currentScrollTop();
+}
+
+function restoreListScroll() {
+  const tab = state.tab || 'today';
+  const target = Number(state.listScrollTop[tab] || 0);
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
+  });
+}
+
 function setReaderAdminActionsVisible(show) {
   if (!nodes.hideArticleBtn) return;
   nodes.hideArticleBtn.classList.toggle('hidden', !show);
@@ -227,8 +244,9 @@ async function exitReaderView(shouldReload = true) {
   nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
   nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
   if (shouldReload && state.tab === 'today') {
-    loadArticles();
+    await loadArticles();
   }
+  restoreListScroll();
 }
 
 function hideLongPressMenu() {
@@ -320,6 +338,7 @@ async function loadArticles() {
 
 async function openArticle(id, jumpTo = null) {
   try {
+    captureListScroll();
     if (!history.state || history.state.view !== 'reader' || history.state.articleId !== id) {
       history.pushState({ view: 'reader', articleId: id }, '', `?article=${id}`);
     }
