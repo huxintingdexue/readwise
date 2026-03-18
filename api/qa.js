@@ -6,12 +6,6 @@ import { checkRateLimit } from './_utils/rateLimit.js';
 
 dotenv.config({ path: '.env.local' });
 
-const QA_PROMPT =
-  '你是一个技术文章问答助手，场景是科技/商业/AI头部大佬博客的翻译阅读。请结合上下文（仅供参考，不必拘泥）回答用户问题，用中文回答，2-3 句即可。若无法确定，请明确标注“不确定/可能”，并指出还缺什么信息。避免编造具体事实或细节。';
-
-const QA_DIRECT_PROMPT =
-  '你是一个技术文章问答助手，场景是科技/商业/AI头部大佬博客的翻译阅读。请直接回答用户问题，用中文回答，2-3 句即可。若无法确定，请明确标注“不确定/可能”，并指出还缺什么信息。避免编造具体事实或细节。';
-
 let pool;
 
 function getPool() {
@@ -35,7 +29,86 @@ async function getUserId(req, res) {
   return userId;
 }
 
-async function callDeepSeek(apiKey, question, context, prompt = QA_PROMPT) {
+function normalizeHistory(history) {
+  if (!Array.isArray(history)) return [];
+  return history
+    .map((item) => ({
+      role: item?.role === 'assistant' ? 'assistant' : item?.role === 'user' ? 'user' : null,
+      content: String(item?.content || '').trim()
+    }))
+    .filter((item) => item.role && item.content);
+}
+
+function extractLocalContext(contentZh, selectedText) {
+  const text = String(contentZh || '');
+  const target = String(selectedText || '').trim();
+  if (!text || !target) return '';
+
+  const paragraphs = text
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  if (!paragraphs.length) return '';
+
+  let index = paragraphs.findIndex((p) => p.includes(target));
+  if (index < 0) {
+    const shortTarget = target.slice(0, Math.max(6, Math.floor(target.length * 0.6)));
+    if (shortTarget) {
+      index = paragraphs.findIndex((p) => p.includes(shortTarget));
+    }
+  }
+  if (index < 0) return '';
+
+  const from = Math.max(0, index - 3);
+  const to = Math.min(paragraphs.length, index + 4);
+  return paragraphs.slice(from, to).join('\n\n');
+}
+
+function buildSystemPrompt({ titleZh, summaryZh, selectedText, context }) {
+  return `你是「今日硅谷」App 的阅读助手，帮助用户深度理解
+AI、科技、商业领域顶尖人物的文章。
+
+## 你的知识来源（按优先级）
+1. 用户划线的文章段落（最优先）
+2. 文章标题和摘要（了解全文主旨）
+3. 划线位置前后的段落（了解局部上下文）
+4. 你自身的知识储备（解释概念、补充背景、关联延伸）
+
+## 回答原则
+- 用中文回答，语言自然流畅，像懂行的朋友在解释
+- 长度根据问题复杂度决定：简单概念2-3句，复杂问题适当展开
+- 如果问题超出文章范围，直接用你的知识回答，
+  不要说"文章中没有提到"
+- 如果涉及你不了解的最新动态，主动说明
+  "这超出了我的知识范围，建议搜索最新信息"
+- 不编造具体数字、人名、事件，不确定时明确说"我不确定"
+
+## 当前文章
+标题：${titleZh || '（无标题）'}
+摘要：${summaryZh || '（无摘要）'}
+
+【用户划线的段落】
+${selectedText || '（无）'}
+
+【划线位置前后各2-3段】
+${context || '（无）'}`;
+}
+
+async function getArticleMeta(articleId) {
+  const { rows } = await getPool().query(
+    `
+      SELECT title_zh, summary_zh, content_zh
+      FROM articles
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [articleId]
+  );
+  return rows[0] || null;
+}
+
+async function callDeepSeek(apiKey, messages) {
   const res = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
     headers: {
@@ -45,13 +118,7 @@ async function callDeepSeek(apiKey, question, context, prompt = QA_PROMPT) {
     body: JSON.stringify({
       model: 'deepseek-chat',
       temperature: 0.2,
-      messages: [
-        { role: 'system', content: prompt },
-        {
-          role: 'user',
-          content: `【问题】\n${question}\n\n【上下文】\n${context}`
-        }
-      ]
+      messages
     })
   });
 
@@ -60,18 +127,6 @@ async function callDeepSeek(apiKey, question, context, prompt = QA_PROMPT) {
   }
   const data = await res.json();
   return data?.choices?.[0]?.message?.content?.trim() || '';
-}
-
-function shouldRetryWithFallback(answer) {
-  if (!answer) return false;
-  return (
-    answer.includes('上下文不足') ||
-    answer.includes('不确定') ||
-    answer.includes('无法确定') ||
-    answer.includes('无法判断') ||
-    answer.includes('可能') ||
-    answer.includes('信息不足')
-  );
 }
 
 export default async function handler(req, res) {
@@ -111,9 +166,9 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { highlight_id, article_id, question, context, fallback_context } = req.body || {};
-  if (!article_id || !question || !context) {
-    res.status(400).json({ error: 'bad_request', message: 'article_id, question, context are required' });
+  const { highlight_id, article_id, selected_text, question, history } = req.body || {};
+  if (!article_id || !question) {
+    res.status(400).json({ error: 'bad_request', message: 'article_id and question are required' });
     return;
   }
 
@@ -124,19 +179,30 @@ export default async function handler(req, res) {
       return;
     }
 
-    let answerSummary = await callDeepSeek(apiKey, question, context);
-    if (fallback_context && shouldRetryWithFallback(answerSummary)) {
-      const nextAnswer = await callDeepSeek(apiKey, question, fallback_context);
-      if (nextAnswer) {
-        answerSummary = nextAnswer;
-      }
+    const article = await getArticleMeta(article_id);
+    if (!article) {
+      res.status(404).json({ error: 'not_found', message: 'article not found' });
+      return;
     }
-    if (shouldRetryWithFallback(answerSummary)) {
-      const directAnswer = await callDeepSeek(apiKey, question, '', QA_DIRECT_PROMPT);
-      if (directAnswer) {
-        answerSummary = directAnswer;
-      }
-    }
+
+    const selectedText = String(selected_text || '').trim();
+    const context = extractLocalContext(article.content_zh || '', selectedText);
+    const normalizedHistory = normalizeHistory(history);
+    const messages = [
+      {
+        role: 'system',
+        content: buildSystemPrompt({
+          titleZh: article.title_zh || '',
+          summaryZh: article.summary_zh || '',
+          selectedText,
+          context
+        })
+      },
+      ...normalizedHistory,
+      { role: 'user', content: String(question).trim() }
+    ];
+
+    const answerSummary = await callDeepSeek(apiKey, messages);
 
     const sql = `
       INSERT INTO qa_records (highlight_id, article_id, question, answer_summary, user_id)

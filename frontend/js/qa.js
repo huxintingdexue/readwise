@@ -1,5 +1,10 @@
 let modalNodes = null;
 let chatHistory = [];
+let conversationHistory = [];
+let conversationRound = 0;
+
+const LIMIT_MESSAGE = `不好意思，产品内测阶段，每次对话最多只支持10轮交互。
+如果有更多需求可以联系开发者Guang（微信huxinting0725）`;
 
 // Resize a textarea to fit its content.
 // Setting height to '1px' first forces the browser to recalculate scrollHeight
@@ -87,12 +92,14 @@ function ensureModal() {
   return modalNodes;
 }
 
-export function openQaModal({ selectionText, contextText, onSubmit }) {
+export function openQaModal({ selectionText, onSubmit }) {
   const nodes = ensureModal();
   nodes.errorText.textContent = '';
   nodes.questionInput.value = selectionText || '';
   nodes.chatBody.innerHTML = '';
   chatHistory = [];
+  conversationHistory = [];
+  conversationRound = 0;
   nodes.modal.classList.remove('hidden');
   // Lock background scroll while the modal is open
   document.body.style.overflow = 'hidden';
@@ -113,6 +120,8 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
     nodes.modal.classList.add('hidden');
     nodes.chatBody.innerHTML = '';
     chatHistory = [];
+    conversationHistory = [];
+    conversationRound = 0;
     document.body.style.overflow = '';
   };
 
@@ -127,33 +136,37 @@ export function openQaModal({ selectionText, contextText, onSubmit }) {
     nodes.questionInput.value = '';
     nodes.questionInput.style.height = '40px'; // reset to single-line height
     nodes.questionInput.blur(); // dismiss keyboard on Android after sending
+
+    if (conversationRound >= 10) {
+      const limitBubble = buildChatBubble('ai', LIMIT_MESSAGE);
+      nodes.chatBody.appendChild(limitBubble);
+      nodes.chatBody.scrollTop = nodes.chatBody.scrollHeight;
+      return;
+    }
+
     nodes.submitBtn.disabled = true;
     let thinkingBubble = null;
     try {
       const userBubble = buildChatBubble('user', question);
       nodes.chatBody.appendChild(userBubble);
-      chatHistory.push({ role: 'user', text: question });
-      trimHistory();
 
       thinkingBubble = buildChatBubble('ai', '思考中', true);
       nodes.chatBody.appendChild(thinkingBubble);
       nodes.chatBody.scrollTop = nodes.chatBody.scrollHeight;
 
-      const historyText = chatHistory
-        .map((item) => `${item.role === 'user' ? '用户' : 'AI'}：${item.text}`)
-        .join('\n');
-      const combinedContext = [contextText, historyText].filter(Boolean).join('\n\n');
-      const answer = await onSubmit(question, combinedContext);
+      const answer = await onSubmit({
+        selectedText: selectionText || '',
+        question,
+        history: conversationHistory.slice()
+      });
       thinkingBubble.classList.remove('thinking');
       thinkingBubble.textContent = answer || '（暂无回答）';
+      conversationRound += 1;
+      conversationHistory.push({ role: 'user', content: question });
+      conversationHistory.push({ role: 'assistant', content: answer || '（暂无回答）' });
+      chatHistory.push({ role: 'user', text: question });
       chatHistory.push({ role: 'ai', text: answer || '（暂无回答）' });
       trimHistory();
-      if (chatHistory.length > 10) {
-        nodes.chatBody.innerHTML = '';
-        chatHistory.slice(-10).forEach((item) => {
-          nodes.chatBody.appendChild(buildChatBubble(item.role, item.text));
-        });
-      }
       nodes.chatBody.scrollTop = nodes.chatBody.scrollHeight;
     } catch (err) {
       nodes.errorText.textContent = err?.message || '提交失败';

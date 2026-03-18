@@ -431,21 +431,13 @@ export function initHighlightFeature({
     }
 
     if (action === 'ask') {
-      const article = getCurrentArticle();
       const selection = currentSelection;
       if (!selection) return;
-      const baseText = article?.content_zh || article?.content_plain || '';
-      const summaryText = article?.summary_zh || article?.summary_en || '';
-      const contextText = buildContextText(baseText, selection.positionStart, selection.positionEnd, 5);
-      const fallbackContextText = buildParagraphContext(baseText, selection.positionStart, selection.positionEnd, 2);
-      const primaryContext = [summaryText, contextText].filter(Boolean).join('\n\n');
-      const fallbackContext = [summaryText, fallbackContextText].filter(Boolean).join('\n\n');
       hideMenu();
       window.getSelection()?.removeAllRanges();
       openQaModal({
         selectionText: selection.text,
-        contextText: primaryContext,
-        onSubmit: async (question, context) => {
+        onSubmit: async ({ selectedText, question, history }) => {
           let highlightId = null;
           if (!selection.isExistingHighlight) {
             const highlight = await createHighlight({
@@ -460,9 +452,9 @@ export function initHighlightFeature({
           const result = await postQa({
             highlight_id: highlightId,
             article_id: selection.articleId,
+            selected_text: selectedText,
             question,
-            context,
-            fallback_context: fallbackContext
+            history
           });
           return result?.answer_summary || '';
         }
@@ -552,46 +544,4 @@ export function initHighlightFeature({
       hideMenu();
     }
   });
-}
-
-function buildContextText(contentPlain, start, end, windowSize = 5) {
-  const sentences = (contentPlain || '').match(/[^.!?。！？\\n]+[.!?。！？\\n]*/g) || [];
-  if (sentences.length === 0) return contentPlain || '';
-
-  let cursor = 0;
-  let startIdx = 0;
-  let endIdx = 0;
-  sentences.forEach((s, idx) => {
-    const next = cursor + s.length;
-    if (start >= cursor && start < next) startIdx = idx;
-    if (end > cursor && end <= next) endIdx = idx;
-    cursor = next;
-  });
-
-  const from = Math.max(0, startIdx - windowSize);
-  const to = Math.min(sentences.length, endIdx + windowSize + 1);
-  return sentences.slice(from, to).join('').trim();
-}
-
-function buildParagraphContext(contentPlain, start, end, windowSize = 2) {
-  const text = contentPlain || '';
-  if (!text) return '';
-  const paragraphs = [];
-  const re = /[^\n]+(?:\n(?!\n)[^\n]+)*/g;
-  let match;
-  while ((match = re.exec(text))) {
-    paragraphs.push({ text: match[0], start: match.index, end: match.index + match[0].length });
-  }
-  if (paragraphs.length === 0) return text.trim();
-
-  let startIdx = 0;
-  let endIdx = 0;
-  paragraphs.forEach((p, idx) => {
-    if (start >= p.start && start < p.end) startIdx = idx;
-    if (end > p.start && end <= p.end) endIdx = idx;
-  });
-
-  const from = Math.max(0, startIdx - windowSize);
-  const to = Math.min(paragraphs.length, endIdx + windowSize + 1);
-  return paragraphs.slice(from, to).map((p) => p.text.trim()).join('\n\n').trim();
 }

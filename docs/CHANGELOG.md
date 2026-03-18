@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-03-18 — QA 多轮对话与上下文升级（v2.10.21）
+
+### 已完成
+- ✅ 前端新增 `conversationHistory` 和 `conversationRound`，新开会话重置
+- ✅ 前端新增单次会话 10 轮上限，超限直接提示且不调用 API
+- ✅ 前端发送 `/api/qa` 请求体改为 `article_id + selected_text + question + history`
+- ✅ 后端按 `article_id` 查询文章标题/摘要/正文，提取划线前后段落作为上下文
+- ✅ 后端按 `system + history + 当前问题` 组装 messages 调用 DeepSeek
+
+### 变更文件
+- frontend/js/qa.js
+- frontend/js/highlight.js
+- api/qa.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-18 — 管理员后台右滑返回回到“我的”（v2.10.20）
 
 ### 已完成
@@ -1839,7 +1857,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 
