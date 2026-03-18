@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-03-18 — 列表标题中英文加粗统一（v2.10.18）
+
+### 已完成
+- ✅ 文章列表卡片标题统一为 `700` 字重
+- ✅ 增加 `font-synthesis: weight`，确保中文在缺少粗体字重时仍表现为加粗
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
+
+---
+
 ## 2026-03-18 — OpenCloud 删除隐藏文章并允许覆盖重推（v2.10.17）
 
 ### 已完成
@@ -61,7 +74,6 @@
 - frontend/js/app.js
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 ## 2026-03-17 — 管理员控制台默认折叠（v2.10.13）
 
@@ -1801,7 +1813,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 

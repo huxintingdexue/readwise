@@ -607,7 +607,8 @@ body.reading-mode::-webkit-scrollbar-thumb {
   margin: 0 0 6px;
   line-height: 1.45;
   flex: 1;
-  font-weight: 600;
+  font-weight: 700;
+  font-synthesis: weight;
   word-break: break-word;
   overflow-wrap: anywhere;
 }
