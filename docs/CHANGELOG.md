@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-18 — OpenCloud 删除隐藏文章并允许覆盖重推（v2.10.17）
+
+### 已完成
+- ✅ **删除权限**：新增 OpenCloud 删除隐藏文章接口（仅 hidden 可删）
+- ✅ **覆盖重推**：OpenCloud 遇到 hidden 旧文章时自动删除后重推
+- ✅ **去重接口文档**：补充 /api/articles/urls 与删除接口说明
+
+### 变更文件
+- api/articles.js
+- api/ingest.js
+- docs/API.md
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+
 ## 2026-03-18 — 列表返回保持滚动位置（v2.10.17）
 
 ### 已完成
@@ -1786,6 +1801,8 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+
 
 
 

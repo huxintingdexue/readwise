@@ -1,4 +1,4 @@
-# ReadWise API 文档
+﻿# ReadWise API 文档
 
 > 所有接口均需请求头：`Authorization: Bearer <API_SECRET>`，否则返回 401。
 > 后端从 API_SECRET 映射到 DEFAULT_USER_ID，前端无需传 user_id。
@@ -41,6 +41,38 @@
 
 ---
 
+## GET /api/articles/urls
+
+获取已入库文章的 url/source_url 列表（用于去重）。
+
+**Response**
+```json
+{
+  "urls": [
+    { "url": "https://...", "source_url": "https://..." }
+  ]
+}
+```
+
+**状态：** ✅ 已实现
+
+---
+
+## DELETE /api/articles/:id
+
+OpenCloud 专用：仅允许删除 `status = hidden` 的文章（用于重推覆盖）。
+
+**权限**
+- 仅 `X-Invite-Code: openclaw`
+
+**Response**
+```json
+{ "success": true }
+```
+
+**状态：** ✅ 已实现
+
+---
 ## GET /api/articles/:id
 
 获取单篇文章详情（含全文）。
@@ -330,3 +362,4 @@ Query: `?article_id=uuid`
 ```
 
 **状态：** ✅ 已实现
+

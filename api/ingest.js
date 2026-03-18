@@ -532,12 +532,17 @@ async function handleIngestFullText(req, res, userId) {
 
   const poolClient = getPool();
   const dupCheck = await poolClient.query(
-    'SELECT id FROM articles WHERE source_url = $1 OR url = $1 LIMIT 1',
+    'SELECT id, status FROM articles WHERE source_url = $1 OR url = $1 LIMIT 1',
     [sourceUrl]
   );
   if (dupCheck.rows.length > 0) {
-    res.status(200).json({ success: false, message: '文章已存在', articleId: dupCheck.rows[0].id });
-    return;
+    const existing = dupCheck.rows[0];
+    if (userId === 'openclaw' && existing.status === 'hidden') {
+      await poolClient.query('DELETE FROM articles WHERE id = $1', [existing.id]);
+    } else {
+      res.status(200).json({ success: false, message: '文章已存在', articleId: existing.id });
+      return;
+    }
   }
 
   const author = await resolveAuthor(poolClient, authorRaw);
@@ -624,12 +629,17 @@ async function handleIngestSubmit(req, res, userId) {
   }
 
   const dupCheck = await poolClient.query(
-    'SELECT id FROM articles WHERE source_url = $1 OR url = $1 LIMIT 1',
+    'SELECT id, status FROM articles WHERE source_url = $1 OR url = $1 LIMIT 1',
     [sourceUrl]
   );
   if (dupCheck.rows.length > 0) {
-    res.status(200).json({ success: false, message: '文章已存在', articleId: dupCheck.rows[0].id });
-    return;
+    const existing = dupCheck.rows[0];
+    if (userId === 'openclaw' && existing.status === 'hidden') {
+      await poolClient.query('DELETE FROM articles WHERE id = $1', [existing.id]);
+    } else {
+      res.status(200).json({ success: false, message: '文章已存在', articleId: existing.id });
+      return;
+    }
   }
 
   const cleaned = await fetchAndCleanArticleHtml(sourceUrl);

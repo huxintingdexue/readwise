@@ -41,6 +41,10 @@ function isUrlsEndpoint(pathname) {
   return pathname === '/api/articles/urls';
 }
 
+function isOpenClaw(userId) {
+  return userId === 'openclaw';
+}
+
 async function getUserId(req, res) {
   const inviteCode = req.headers['x-invite-code'] || '';
   const userId = await getUserIdFromInviteCode(inviteCode);
@@ -183,9 +187,40 @@ async function getArticleById(res, id, userId) {
   res.status(200).json(rows[0]);
 }
 
+async function deleteHiddenArticle(res, articleId, userId) {
+  if (!isOpenClaw(userId)) {
+    res.status(403).json({ error: 'forbidden' });
+    return;
+  }
+
+  const { rows } = await getPool().query(
+    `
+      SELECT id, status
+      FROM articles a
+      WHERE id = $1
+        AND (a.user_id IS NULL OR a.user_id = $2)
+      LIMIT 1
+    `,
+    [articleId, userId]
+  );
+
+  if (!rows.length) {
+    res.status(404).json({ error: 'not_found' });
+    return;
+  }
+
+  if (rows[0].status !== 'hidden') {
+    res.status(403).json({ error: 'forbidden', message: 'only hidden can be deleted' });
+    return;
+  }
+
+  await getPool().query('DELETE FROM articles WHERE id = $1', [articleId]);
+  res.status(200).json({ success: true });
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
+  if (req.method !== 'GET' && req.method !== 'DELETE') {
+    res.setHeader('Allow', 'GET, DELETE');
     res.status(405).json({ error: 'method_not_allowed' });
     return;
   }
@@ -201,6 +236,15 @@ export default async function handler(req, res) {
     }
     const routeId = getPathId(query.pathname);
     const id = query.id || routeId;
+
+    if (req.method === 'DELETE') {
+      if (!id) {
+        res.status(400).json({ error: 'bad_request', message: 'missing article id' });
+        return;
+      }
+      await deleteHiddenArticle(res, id, userId);
+      return;
+    }
 
     if (id) {
       await getArticleById(res, id, userId);
