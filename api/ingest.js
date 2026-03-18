@@ -519,6 +519,27 @@ async function handleIngestFullText(req, res, userId) {
   const sourceUrl = String(payload.source_url || payload.url || '').trim();
   const publishedAtRaw = String(payload.published_at || '').trim();
 
+  const zhLength = contentZh.length;
+  if (zhLength <= 0) {
+    res.status(400).json({
+      success: false,
+      error: 'CONTENT_ZH_MISSING',
+      message: '中文译文为空，请完成全文翻译后再提交。'
+    });
+    return;
+  }
+
+  const normalizedEnForCheck = sanitizeToPlain(contentEnRaw || '');
+  const enLength = normalizedEnForCheck.length;
+  if (enLength > 500 && zhLength / enLength < 0.3) {
+    res.status(400).json({
+      success: false,
+      error: 'CONTENT_RATIO_INVALID',
+      message: `中文译文字符数（${zhLength}）低于英文原文字符数（${enLength}）的30%，疑似翻译不完整或被精简，请检查后重新提交。禁止精简原文内容。`
+    });
+    return;
+  }
+
   if (!titleZh || !titleEn || !summaryZh || !contentZh || !authorRaw || !sourceUrl || !publishedAtRaw) {
     res.status(400).json({ error: 'bad_request', message: 'missing required fields' });
     return;

@@ -270,7 +270,12 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 - [ ] /api/ingest 支持传全文直接入库（小龙虾专用）
 - [ ] 小龙虾专属邀请码 openclaw:openclaw，editor 权限
 - [ ] QA 接入 Brave Search API：用户提问时先搜索相关内容，将搜索结果拼入上下文，使 AI 具备获取最新信息的能力
-
+- [ ] 安全机制全面梳理：
+  - 确认 openclaw 邀请码实际权限范围（auth.js + ingest.js）
+  - 确认 Skill 文件是否公开，评估私钥/邀请码泄露风险
+  - openclaw 去重接口明确为 /api/articles/urls，写入 Skill
+  - 评估是否需要引入签名机制（HMAC-SHA256 + 时间戳防重放）
+  - 收窄所有非 admin 邀请码的最小权限
 
 
 
