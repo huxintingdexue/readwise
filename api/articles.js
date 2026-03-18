@@ -37,6 +37,10 @@ function getPathId(pathname) {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+function isUrlsEndpoint(pathname) {
+  return pathname === '/api/articles/urls';
+}
+
 async function getUserId(req, res) {
   const inviteCode = req.headers['x-invite-code'] || '';
   const userId = await getUserIdFromInviteCode(inviteCode);
@@ -129,6 +133,20 @@ async function listArticles(res, query, userId) {
   res.status(200).json({ articles: rows });
 }
 
+async function listArticleUrls(res, userId) {
+  const sql = `
+    SELECT
+      a.url,
+      a.source_url
+    FROM articles a
+    WHERE (COALESCE(a.status, 'ready') = 'ready' OR (a.status = 'translating' AND a.submitted_by = $1))
+      AND (a.user_id IS NULL OR a.user_id = $1)
+    ORDER BY a.published_at DESC NULLS LAST, a.fetched_at DESC
+  `;
+  const { rows } = await getPool().query(sql, [userId]);
+  res.status(200).json({ urls: rows });
+}
+
 async function getArticleById(res, id, userId) {
   const sql = `
     SELECT
@@ -177,6 +195,10 @@ export default async function handler(req, res) {
 
   try {
     const query = readQuery(req);
+    if (isUrlsEndpoint(query.pathname)) {
+      await listArticleUrls(res, userId);
+      return;
+    }
     const routeId = getPathId(query.pathname);
     const id = query.id || routeId;
 

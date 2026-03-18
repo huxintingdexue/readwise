@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-18 — 新增已入库 URL 列表接口（v2.10.16）
+
+### 已完成
+- ✅ **去重接口**：新增 `GET /api/articles/urls` 返回已入库 url/source_url 列表
+
+### 变更文件
+- api/articles.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+
 ## 2026-03-18 — 阅读进度按最大位置保存（v2.10.15）
 
 ### 已完成
@@ -1764,6 +1775,8 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+
 
 
 
