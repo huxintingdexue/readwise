@@ -68,6 +68,10 @@ body.reading-mode {
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
+body.reading-mode {
+  overflow: hidden;
+}
+
 html.reading-mode::-webkit-scrollbar,
 body.reading-mode::-webkit-scrollbar {
   width: 6px;
@@ -823,6 +827,7 @@ body.reading-mode::-webkit-scrollbar-thumb {
   user-select: text;
   -webkit-user-select: text;
   -webkit-touch-callout: none;
+  touch-action: pan-y;
   padding: 0 8px;
 }
 
@@ -1411,10 +1416,17 @@ body.theme-dark .bottom-nav {
 }
 
 .reading-mode .reader {
-  margin-top: 0;
+  position: fixed;
+  inset: 0;
+  margin: 0;
   border: 0;
-  background: transparent;
-  padding: 0;
+  border-radius: 0;
+  background: var(--bg);
+  padding: 0 14px max(env(safe-area-inset-bottom, 0px), 12px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  contain: layout paint;
 }
 
 .reading-mode .reader-header {

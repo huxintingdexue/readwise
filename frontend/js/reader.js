@@ -28,11 +28,17 @@ function escapeHtml(text) {
     .replace(/>/g, '&gt;');
 }
 
-function currentScrollTop() {
+function currentScrollTop(scroller = window) {
+  if (scroller && scroller !== window) {
+    return Math.max(0, scroller.scrollTop || 0);
+  }
   return Math.max(window.scrollY, document.documentElement.scrollTop, document.body.scrollTop, 0);
 }
 
-function maxScrollableDistance() {
+function maxScrollableDistance(scroller = window) {
+  if (scroller && scroller !== window) {
+    return Math.max((scroller.scrollHeight || 0) - (scroller.clientHeight || 0), 1);
+  }
   return Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
 }
 
@@ -49,17 +55,23 @@ export function getReadingBaseLength(detail, readerContent) {
   return baseText.length || 0;
 }
 
-function calcScrollPositionByBaseLength(baseLength) {
+function calcScrollPositionByBaseLength(baseLength, scroller = window) {
   if (!baseLength || baseLength <= 0) return 0;
-  const ratio = Math.min(1, Math.max(0, currentScrollTop() / maxScrollableDistance()));
+  const ratio = Math.min(1, Math.max(0, currentScrollTop(scroller) / maxScrollableDistance(scroller)));
   return Math.round(baseLength * ratio);
 }
 
-function restoreScrollByBaseLength(scrollPosition, baseLength) {
+function restoreScrollByBaseLength(scrollPosition, baseLength, scroller = window) {
   if (!baseLength || baseLength <= 0) return;
   const ratio = Math.min(1, Math.max(0, Number(scrollPosition || 0) / baseLength));
-  const targetY = Math.round(maxScrollableDistance() * ratio);
-  requestAnimationFrame(() => window.scrollTo({ top: targetY, behavior: 'auto' }));
+  const targetY = Math.round(maxScrollableDistance(scroller) * ratio);
+  requestAnimationFrame(() => {
+    if (scroller && scroller !== window) {
+      scroller.scrollTop = targetY;
+      return;
+    }
+    window.scrollTo({ top: targetY, behavior: 'auto' });
+  });
 }
 
 // Build the HTML shown in the reader.
@@ -115,7 +127,7 @@ function showOriginSnippet(nodes, text) {
 function stopReadingSession(nodes) {
   if (!readingSession) return;
 
-  window.removeEventListener('scroll', readingSession.onScroll, { passive: true });
+  readingSession.scroller.removeEventListener('scroll', readingSession.onScroll, { passive: true });
   document.removeEventListener('visibilitychange', readingSession.onVisibilityChange);
   window.removeEventListener('beforeunload', readingSession.onBeforeUnload);
   if (readingSession.debounceTimer) {
@@ -136,10 +148,11 @@ function startReadingSession(detail, nodes, initialProgress) {
 
   const articleId = detail.id;
   const baseLength = getReadingBaseLength(detail, nodes?.readerContent);
+  const scroller = nodes?.readerView || window;
   if (!articleId || !baseLength) return;
 
   const persistNow = async () => {
-    const scrollPosition = calcScrollPositionByBaseLength(baseLength);
+    const scrollPosition = calcScrollPositionByBaseLength(baseLength, scroller);
     try {
       await saveReadingProgress(articleId, scrollPosition);
     } catch (err) {
@@ -149,7 +162,7 @@ function startReadingSession(detail, nodes, initialProgress) {
 
   const maybeTrackFinish = () => {
     if (!readingSession || readingSession.finishTracked) return;
-    const currentChar = calcScrollPositionByBaseLength(baseLength);
+    const currentChar = calcScrollPositionByBaseLength(baseLength, scroller);
     if (currentChar / baseLength >= 0.8) {
       readingSession.finishTracked = true;
       trackEvent('finish_article', articleId);
@@ -176,13 +189,14 @@ function startReadingSession(detail, nodes, initialProgress) {
   };
 
   const onBeforeUnload = () => {
-    const scrollPosition = calcScrollPositionByBaseLength(baseLength);
+    const scrollPosition = calcScrollPositionByBaseLength(baseLength, scroller);
     saveReadingProgressKeepalive(articleId, scrollPosition);
   };
 
   readingSession = {
     articleId,
     baseLength,
+    scroller,
     readerContent: nodes.readerContent || null,
     debounceTimer: null,
     onScroll,
@@ -191,10 +205,10 @@ function startReadingSession(detail, nodes, initialProgress) {
     finishTracked: false
   };
 
-  window.addEventListener('scroll', onScroll, { passive: true });
+  scroller.addEventListener('scroll', onScroll, { passive: true });
   document.addEventListener('visibilitychange', onVisibilityChange);
   window.addEventListener('beforeunload', onBeforeUnload);
-  restoreScrollByBaseLength(initialProgress?.scroll_position || 0, baseLength);
+  restoreScrollByBaseLength(initialProgress?.scroll_position || 0, baseLength, scroller);
   requestAnimationFrame(() => {
     maybeTrackFinish();
   });
@@ -242,5 +256,6 @@ export function openOriginSnippetPanel(nodes, text) {
 }
 
 export function scrollToPlainPosition(baseLength, position) {
-  restoreScrollByBaseLength(position, baseLength);
+  const scroller = readingSession?.scroller || window;
+  restoreScrollByBaseLength(position, baseLength, scroller);
 }

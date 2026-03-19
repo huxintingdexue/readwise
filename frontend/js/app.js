@@ -186,17 +186,30 @@ function readStatusLabel(status, progress) {
   return '未读';
 }
 
-function currentScrollTop() {
+function getActiveReaderScroller() {
+  if (isReadingMode() && nodes.readerView) {
+    return nodes.readerView;
+  }
+  return window;
+}
+
+function currentScrollTop(scroller = window) {
+  if (scroller && scroller !== window) {
+    return Math.max(0, scroller.scrollTop || 0);
+  }
   return Math.max(window.scrollY, document.documentElement.scrollTop, document.body.scrollTop, 0);
 }
 
-function maxScrollableDistance() {
+function maxScrollableDistance(scroller = window) {
+  if (scroller && scroller !== window) {
+    return Math.max((scroller.scrollHeight || 0) - (scroller.clientHeight || 0), 1);
+  }
   return Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
 }
 
-function calcScrollPositionByBaseLength(baseLength) {
+function calcScrollPositionByBaseLength(baseLength, scroller = window) {
   if (!baseLength || baseLength <= 0) return 0;
-  const ratio = Math.min(1, Math.max(0, currentScrollTop() / maxScrollableDistance()));
+  const ratio = Math.min(1, Math.max(0, currentScrollTop(scroller) / maxScrollableDistance(scroller)));
   return Math.round(baseLength * ratio);
 }
 
@@ -287,7 +300,7 @@ async function persistReadingProgressNow() {
   if (!detail?.id) return;
   const baseLength = getReadingBaseLength(detail, nodes.readerContent);
   if (!baseLength) return;
-  const scrollPosition = calcScrollPositionByBaseLength(baseLength);
+  const scrollPosition = calcScrollPositionByBaseLength(baseLength, getActiveReaderScroller());
   try {
     await saveReadingProgress(detail.id, scrollPosition);
   } catch (err) {

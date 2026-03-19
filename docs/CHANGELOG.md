@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-19 — 阅读页惯性滚动优化（v2.10.18）
+
+### 已完成
+- ✅ 阅读页改为独立滚动容器，启用移动端惯性滚动
+- ✅ 阅读进度计算改为基于阅读容器滚动位置，避免口径偏差
+- ✅ 退出阅读时保存进度逻辑同步适配新滚动容器
+
+### 变更文件
+- frontend/css/reader.css
+- frontend/js/reader.js
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+
 ## 2026-03-18 — /api/ingest 错误信息结构化（v2.10.24）
 
 ### 已完成
@@ -1916,4 +1931,14 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+
+
+
+
+
+
+
+
+
 
