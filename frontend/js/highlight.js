@@ -49,7 +49,7 @@ function ensureMenu() {
 function hideMenu() {
   const menu = ensureMenu();
   menu.classList.add('hidden');
-  // Restore "删除划线" → "划线" if it was swapped
+  // Restore "删除划线" -> "划线" if it was swapped
   const removeBtn = menu.querySelector('[data-action="remove-highlight"]');
   if (removeBtn) {
     removeBtn.dataset.action = 'highlight';
@@ -147,75 +147,125 @@ function getPositionBaseText(article, readerContent) {
   return article?.content_plain || '';
 }
 
-/**
- * Re-apply stored highlight marks to the DOM after article content is rendered.
- * Called by reader.js after setting readerContent.innerHTML.
- */
+function isHighlightElement(el) {
+  return Boolean(el?.classList?.contains('highlight-mark') || el?.classList?.contains('highlight-mark-other'));
+}
+
+function collectPlainTextNodes(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  let node;
+  while ((node = walker.nextNode())) {
+    const content = node.textContent || '';
+    if (!content) continue;
+    if (isHighlightElement(node.parentElement)) continue;
+    textNodes.push(node);
+  }
+  return textNodes;
+}
+
+function wrapNodeSlice(node, startOffset, endOffset, className) {
+  if (!node || endOffset <= startOffset) return false;
+  let target = node;
+  let offsetEnd = endOffset;
+
+  if (startOffset > 0) {
+    target = node.splitText(startOffset);
+    offsetEnd -= startOffset;
+  }
+  if (offsetEnd < target.textContent.length) {
+    target.splitText(offsetEnd);
+  }
+
+  if (!target.textContent || isHighlightElement(target.parentElement)) return false;
+
+  const mark = document.createElement('span');
+  mark.className = className;
+  target.parentNode.insertBefore(mark, target);
+  mark.appendChild(target);
+  return true;
+}
+
+function wrapAbsoluteRangeInTextNodes(textNodes, start, end, className) {
+  if (!Array.isArray(textNodes) || !textNodes.length || end <= start) return false;
+  let pos = 0;
+  const slices = [];
+
+  for (const node of textNodes) {
+    const nodeText = node.textContent || '';
+    const len = nodeText.length;
+    if (!len) continue;
+    const nodeStart = pos;
+    const nodeEnd = pos + len;
+    const sliceStart = Math.max(start, nodeStart);
+    const sliceEnd = Math.min(end, nodeEnd);
+    if (sliceEnd > sliceStart) {
+      slices.push({
+        node,
+        startOffset: sliceStart - nodeStart,
+        endOffset: sliceEnd - nodeStart
+      });
+    }
+    pos = nodeEnd;
+    if (pos >= end) break;
+  }
+
+  let wrapped = false;
+  for (let i = slices.length - 1; i >= 0; i -= 1) {
+    const part = slices[i];
+    wrapped = wrapNodeSlice(part.node, part.startOffset, part.endOffset, className) || wrapped;
+  }
+  return wrapped;
+}
+
+function wrapSelectionRange(readerContent, range, className) {
+  if (!range) return false;
+  const textNodes = collectPlainTextNodes(readerContent);
+  if (!textNodes.length) return false;
+
+  const slices = [];
+  for (const node of textNodes) {
+    if (!range.intersectsNode(node)) continue;
+    const len = (node.textContent || '').length;
+    if (!len) continue;
+    const startOffset = node === range.startContainer ? range.startOffset : 0;
+    const endOffset = node === range.endContainer ? range.endOffset : len;
+    if (endOffset > startOffset) {
+      slices.push({ node, startOffset, endOffset });
+    }
+  }
+
+  let wrapped = false;
+  for (let i = slices.length - 1; i >= 0; i -= 1) {
+    const part = slices[i];
+    wrapped = wrapNodeSlice(part.node, part.startOffset, part.endOffset, className) || wrapped;
+  }
+  return wrapped;
+}
+
+function applyHighlightMarkByText(readerContent, text, className) {
+  if (!text) return false;
+  const textNodes = collectPlainTextNodes(readerContent);
+  if (!textNodes.length) return false;
+  const combined = textNodes.map((n) => n.textContent || '').join('');
+  const idx = combined.indexOf(text);
+  if (idx < 0) return false;
+  return wrapAbsoluteRangeInTextNodes(textNodes, idx, idx + text.length, className);
+}
+
 export function applyHighlightsToDOM(readerContent, highlights) {
   if (!highlights?.length) return;
 
   for (const hl of highlights) {
     if (hl.type !== 'highlight') continue;
     if (!hl.text) continue;
+    const className = hl.is_mine === false ? 'highlight-mark-other' : 'highlight-mark';
     try {
-      applyHighlightMark(readerContent, hl.text);
-    } catch (e) {
+      applyHighlightMarkByText(readerContent, hl.text, className);
+    } catch (_) {
       // Skip highlights that can't be placed (e.g. text no longer in DOM)
     }
   }
-}
-
-/**
- * Locate `text` inside readerContent using TreeWalker and wrap it in a
- * .highlight-mark span.  Works for single-node ranges (typical case); skips
- * highlights that span element boundaries (surroundContents restriction).
- */
-function applyHighlightMark(readerContent, text) {
-  const walker = document.createTreeWalker(readerContent, NodeFilter.SHOW_TEXT);
-  const textNodes = [];
-  let node;
-  while ((node = walker.nextNode())) {
-    // Skip text inside an already-applied highlight
-    if (!node.parentElement?.classList?.contains('highlight-mark')) {
-      textNodes.push(node);
-    }
-  }
-
-  // Build combined plain text to locate the highlight
-  const parts = textNodes.map((n) => n.textContent);
-  const combined = parts.join('');
-  const idx = combined.indexOf(text);
-  if (idx < 0) return;
-
-  const endIdx = idx + text.length;
-  let pos = 0;
-  let rangeStartNode = null;
-  let rangeStartOffset = 0;
-  let rangeEndNode = null;
-  let rangeEndOffset = 0;
-
-  for (const tn of textNodes) {
-    const nodeEnd = pos + tn.textContent.length;
-    if (rangeStartNode === null && pos <= idx && nodeEnd > idx) {
-      rangeStartNode = tn;
-      rangeStartOffset = idx - pos;
-    }
-    if (rangeEndNode === null && pos < endIdx && nodeEnd >= endIdx) {
-      rangeEndNode = tn;
-      rangeEndOffset = endIdx - pos;
-      break;
-    }
-    pos = nodeEnd;
-  }
-
-  if (!rangeStartNode || !rangeEndNode) return;
-
-  const range = document.createRange();
-  range.setStart(rangeStartNode, rangeStartOffset);
-  range.setEnd(rangeEndNode, rangeEndOffset);
-  const mark = document.createElement('span');
-  mark.className = 'highlight-mark';
-  range.surroundContents(mark); // throws if range crosses element boundary
 }
 
 export function initHighlightFeature({
@@ -225,8 +275,39 @@ export function initHighlightFeature({
   openOriginSnippet
 }) {
   const lastStartRef = { value: 0 };
+  let selectionDragActive = false;
   customMenuEnabled = true;
   document.body.classList.add('custom-selection');
+
+  function hasReaderSelection() {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return false;
+    if (!getPlainSelectionText(selection)) return false;
+    const range = selection.getRangeAt(0);
+    return readerContent.contains(range.commonAncestorContainer);
+  }
+
+  function edgeZoneHeight() {
+    const lineHeight = Number.parseFloat(getComputedStyle(readerContent).lineHeight) || 22;
+    return Math.max(18, Math.min(42, Math.round(lineHeight * 1.1)));
+  }
+
+  function maybeAutoScrollOnSelectionDrag(clientY) {
+    const zone = edgeZoneHeight();
+    const topDistance = clientY;
+    const bottomDistance = window.innerHeight - clientY;
+    if (topDistance > zone && bottomDistance > zone) return;
+
+    let delta = 0;
+    if (topDistance <= zone) {
+      const ratio = 1 - (topDistance / zone);
+      delta = -Math.max(4, Math.round(14 * ratio));
+    } else if (bottomDistance <= zone) {
+      const ratio = 1 - (bottomDistance / zone);
+      delta = Math.max(4, Math.round(14 * ratio));
+    }
+    if (delta !== 0) window.scrollBy({ top: delta, behavior: 'auto' });
+  }
 
   // Show the selection bubble for an existing .highlight-mark the user tapped
   function showMenuOnHighlight(markEl) {
@@ -241,6 +322,7 @@ export function initHighlightFeature({
     currentHighlightEl = markEl;
     currentSelection = {
       isExistingHighlight: true,
+      isForeignHighlight: markEl.classList.contains('highlight-mark-other'),
       articleId: article.id,
       text,
       positionStart: pos.start >= 0 ? pos.start : 0,
@@ -248,13 +330,18 @@ export function initHighlightFeature({
       range: null,
     };
 
-    // Swap "划线" → "删除划线" in the bubble
+    // Swap "划线" -> "删除划线" in the bubble
     const menu = ensureMenu();
     const hlBtn = menu.querySelector('[data-action="highlight"]');
     if (hlBtn) {
-      hlBtn.dataset.action = 'remove-highlight';
       const label = hlBtn.querySelector('.btn-label');
-      if (label) label.textContent = '删除划线';
+      if (currentSelection.isForeignHighlight) {
+        hlBtn.dataset.action = 'highlight';
+        if (label) label.textContent = '划线';
+      } else {
+        hlBtn.dataset.action = 'remove-highlight';
+        if (label) label.textContent = '删除划线';
+      }
     }
 
     const rect = markEl.getBoundingClientRect();
@@ -323,19 +410,20 @@ export function initHighlightFeature({
   readerContent.addEventListener('mouseup', (e) => onSelectionChange(e, 'above'));
 
   // Three-state menu positioning via selectionchange:
-  //   1. Initial long-press (currentSelection null) → show ABOVE after 300ms
-  //   2. While dragging handles                     → hide immediately
-  //   3. Drag settled (300ms silence)               → show BELOW
+  //   1. Initial long-press (currentSelection null) 鈫?show ABOVE after 300ms
+  //   2. While dragging handles                     鈫?hide immediately
+  //   3. Drag settled (300ms silence)               鈫?show BELOW
   let _selectionChangeTimer = null;
 
   // On Android, tapping a .highlight-mark sometimes selects text via the WebView's
   // built-in selection mechanism, making the `click` event unreliable. We intercept
   // `touchend` directly: if the touch ended on a highlight mark, we preventDefault
   // (suppresses the click) and check selection state after a short delay. If no text
-  // was selected it was a pure tap → show "删除划线". Otherwise treat as regular text
-  // selection → show the normal bubble.
+  // was selected it was a pure tap 鈫?show "鍒犻櫎鍒掔嚎". Otherwise treat as regular text
+  // selection 鈫?show the normal bubble.
   readerContent.addEventListener('touchend', (e) => {
-    const mark = e.target.closest('.highlight-mark');
+    selectionDragActive = false;
+    const mark = e.target.closest('.highlight-mark, .highlight-mark-other');
     if (mark) {
       e.preventDefault(); // suppress the resulting click event
       setTimeout(() => {
@@ -345,7 +433,7 @@ export function initHighlightFeature({
           // The user long-pressed to start a text selection on/around the mark
           onSelectionChange(null, 'above');
         } else {
-          // Pure tap: show the "删除划线" bubble
+          // Pure tap: show the "鍒犻櫎鍒掔嚎" bubble
           showMenuOnHighlight(mark);
         }
       }, 50);
@@ -354,16 +442,36 @@ export function initHighlightFeature({
     onSelectionChange(e, 'above');
   }, { passive: false });
 
-  // Desktop fallback: click on existing highlight mark shows "删除划线" bubble.
+  // Desktop fallback: click on existing highlight mark shows "鍒犻櫎鍒掔嚎" bubble.
   // (On mobile, touchend + preventDefault above suppresses the click, so this
   // handler only fires for mouse users.)
   readerContent.addEventListener('click', (e) => {
-    const mark = e.target.closest('.highlight-mark');
+    const mark = e.target.closest('.highlight-mark, .highlight-mark-other');
     if (!mark) return;
     if (window.getSelection()?.toString()?.trim()) return;
     e.stopPropagation();
     showMenuOnHighlight(mark);
   });
+
+  readerContent.addEventListener('touchstart', () => {
+    selectionDragActive = hasReaderSelection();
+  }, { passive: true });
+
+  readerContent.addEventListener('touchcancel', () => {
+    selectionDragActive = false;
+  }, { passive: true });
+
+  readerContent.addEventListener('touchmove', (event) => {
+    if (!selectionDragActive) return;
+    if (!hasReaderSelection()) {
+      selectionDragActive = false;
+      return;
+    }
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    event.preventDefault();
+    maybeAutoScrollOnSelectionDrag(touch.clientY);
+  }, { passive: false });
 
   readerContent.addEventListener('contextmenu', (event) => {
     event.preventDefault();
@@ -486,7 +594,7 @@ export function initHighlightFeature({
           showToast
         });
       } catch (err) {
-        showToast(err?.message || '引用识别失败，请稍后重试');
+        showToast(err?.message || '寮曠敤璇嗗埆澶辫触锛岃绋嶅悗閲嶈瘯');
       }
       return;
     }
@@ -495,31 +603,29 @@ export function initHighlightFeature({
       // Snapshot before hideMenu() nulls out currentSelection.
       const sel = currentSelection;
 
-      // ① Temporarily disable showMenu() for 600ms so that ANY re-triggering
-      //    path (selectionchange timer, touchend→onSelectionChange, etc.) is
-      //    blocked at the gate — regardless of event ordering on the device.
+      // 鈶?Temporarily disable showMenu() for 600ms so that ANY re-triggering
+      //    path (selectionchange timer, touchend鈫抩nSelectionChange, etc.) is
+      //    blocked at the gate 鈥?regardless of event ordering on the device.
       //    showMenu() already checks `if (!customMenuEnabled) return`, so this
       //    is the single choke-point that covers all paths.
       customMenuEnabled = false;
       setTimeout(() => { customMenuEnabled = true; }, 600);
 
-      // ② Cancel any in-flight selectionchange debounce timer.
+      // 鈶?Cancel any in-flight selectionchange debounce timer.
       clearTimeout(_selectionChangeTimer);
 
-      // ③ Wrap the selected text in the DOM (synchronous).
+      // 鈶?Wrap the selected text in the DOM (synchronous).
       try {
         if (sel.range) {
-          const mark = document.createElement('span');
-          mark.className = 'highlight-mark';
-          sel.range.surroundContents(mark);
+          wrapSelectionRange(readerContent, sel.range, 'highlight-mark');
         }
       } catch (_) {}
 
-      // ④ Clear selection and hide the bubble.
+      // 鈶?Clear selection and hide the bubble.
       window.getSelection()?.removeAllRanges();
       hideMenu();
 
-      // ⑤ Persist to backend (non-blocking, silent on error).
+      // 鈶?Persist to backend (non-blocking, silent on error).
       createHighlight({
         article_id: sel.articleId,
         text: sel.text,
@@ -545,3 +651,5 @@ export function initHighlightFeature({
     }
   });
 }
+
+

@@ -589,6 +589,10 @@ body.reading-mode::-webkit-scrollbar-thumb {
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   max-width: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .article-card-head {
@@ -1335,6 +1339,15 @@ body.reading-mode::-webkit-scrollbar-thumb {
   box-shadow: 0 0 0 2px rgba(255, 193, 80, 0.2);
   border-radius: 4px;
   padding: 4px 0;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.highlight-mark-other {
+  background: transparent;
+  border-bottom: 2px dashed rgba(255, 193, 80, 0.9);
+  border-radius: 0;
+  padding: 0;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }

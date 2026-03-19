@@ -232,7 +232,7 @@ export function renderReader(detail, nodes, initialProgress = null) {
 
   // Re-apply stored highlights after content renders
   if (detail.id) {
-    getHighlights(detail.id)
+    getHighlights(detail.id, { includeOthers: true })
       .then((highlights) => applyHighlightsToDOM(readerContent, highlights))
       .catch(() => {});
   }

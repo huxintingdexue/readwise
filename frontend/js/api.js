@@ -137,10 +137,13 @@ export function saveReadingProgressKeepalive(articleId, scrollPosition) {
   }).catch(() => {});
 }
 
-export async function getHighlights(articleId) {
-  const url = articleId
-    ? `/api/highlights?article_id=${encodeURIComponent(articleId)}`
-    : '/api/highlights';
+export async function getHighlights(articleId, options = {}) {
+  const includeOthers = options.includeOthers === true;
+  const query = toQuery({
+    article_id: articleId || '',
+    include_others: includeOthers ? '1' : ''
+  });
+  const url = query ? `/api/highlights?${query}` : '/api/highlights';
   const data = await requestJson(url);
   return data.highlights || [];
 }

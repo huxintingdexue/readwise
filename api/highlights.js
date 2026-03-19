@@ -32,20 +32,42 @@ async function getUserId(req, res) {
 
 function readQuery(req) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const includeOthersRaw = req.query?.include_others || url.searchParams.get('include_others') || '';
   return {
-    articleId: req.query?.article_id || url.searchParams.get('article_id') || null
+    articleId: req.query?.article_id || url.searchParams.get('article_id') || null,
+    includeOthers: ['1', 'true', 'yes'].includes(String(includeOthersRaw).toLowerCase())
   };
 }
 
 async function getHighlights(req, res, userId) {
-  const { articleId } = readQuery(req);
+  const { articleId, includeOthers } = readQuery(req);
   if (articleId) {
+    if (!includeOthers) {
+      const ownSql = `
+        SELECT id, article_id, text, position_start, position_end, type, created_at
+        FROM highlights
+        WHERE article_id = $1
+          AND user_id = $2
+        ORDER BY created_at DESC
+      `;
+      const { rows } = await getPool().query(ownSql, [articleId, userId]);
+      res.status(200).json({ highlights: rows });
+      return;
+    }
+
     const sql = `
-      SELECT id, article_id, text, position_start, position_end, type, created_at
+      SELECT
+        id,
+        article_id,
+        text,
+        position_start,
+        position_end,
+        type,
+        created_at,
+        (user_id = $2) AS is_mine
       FROM highlights
       WHERE article_id = $1
-        AND user_id = $2
-      ORDER BY created_at DESC
+      ORDER BY position_start ASC, created_at ASC
     `;
     const { rows } = await getPool().query(sql, [articleId, userId]);
     res.status(200).json({ highlights: rows });
