@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
-import { getUserIdFromInviteCode, isAdmin, ensureOpenClawPermission } from '../_utils/auth.js';
+import { resolveUserId, isAdmin, ensureUsersTable, generateUid } from '../_utils/auth.js';
 
 dotenv.config({ path: '.env.local' });
 
@@ -29,16 +29,7 @@ async function ensureInviteTable() {
 }
 
 async function getUserId(req, res) {
-  const inviteCode = req.headers['x-invite-code'] || '';
-  const userId = await getUserIdFromInviteCode(inviteCode);
-  if (!userId) {
-    res.status(401).json({ error: 'unauthorized', message: '邀请码无效' });
-    return null;
-  }
-  if (!ensureOpenClawPermission(req, res, userId)) {
-    return null;
-  }
-  return userId;
+  return resolveUserId(req, res);
 }
 
 export default async function handler(req, res) {
@@ -52,10 +43,22 @@ export default async function handler(req, res) {
 
   try {
     await ensureInviteTable();
+    await ensureUsersTable();
 
     if (req.method === 'GET') {
       const { rows } = await getPool().query(
-        'SELECT id, code, user_id, created_at FROM invite_codes ORDER BY created_at DESC'
+        `
+          SELECT
+            ic.id,
+            ic.code,
+            ic.user_id,
+            ic.created_at,
+            COALESCE(u.source, 'manual_invite') AS source,
+            u.nickname
+          FROM invite_codes ic
+          LEFT JOIN users u ON u.invite_code = ic.code
+          ORDER BY ic.created_at DESC
+        `
       );
       res.status(200).json({ items: rows });
       return;
@@ -73,6 +76,14 @@ export default async function handler(req, res) {
         await getPool().query(
           'INSERT INTO invite_codes (code, user_id) VALUES ($1, $2)',
           [code, newUserId]
+        );
+        await getPool().query(
+          `
+            INSERT INTO users (id, nickname, contact, invite_code, source, legacy_user_id, register_ip)
+            VALUES ($1, NULL, NULL, $2, 'manual_invite', $3, NULL)
+            ON CONFLICT (invite_code) DO NOTHING
+          `,
+          [generateUid(), code, newUserId]
         );
         res.status(200).json({ success: true });
       } catch (err) {
