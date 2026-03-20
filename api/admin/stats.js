@@ -85,6 +85,17 @@ export default async function handler(req, res) {
         )
       : { rows: [{ count: 0 }] };
 
+    const todayActiveUsers = eventsReady
+      ? await safeQuery(
+          `SELECT DISTINCT user_id
+           FROM events
+           WHERE event = 'open_app'
+             AND created_at >= date_trunc('day', now())
+           ORDER BY user_id ASC`,
+          []
+        )
+      : { rows: [] };
+
     const weeklyUser = eventsReady
       ? await safeQuery(
           `SELECT user_id, COUNT(*)::int AS count
@@ -142,6 +153,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       today_active_users: todayActive.rows[0]?.count ?? 0,
+      today_active_user_ids: todayActiveUsers.rows.map((row) => row.user_id).filter(Boolean),
       today_open_articles: todayOpen.rows[0]?.count ?? 0,
       weekly_user_finishes: weeklyUser.rows,
       article_completion: articleCompletion.rows,

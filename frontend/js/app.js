@@ -924,9 +924,13 @@ async function loadAdminStats() {
   nodes.adminStatsList.innerHTML = '';
   try {
     const data = await getAdminStats();
+    const activeUsers = Array.isArray(data.today_active_user_ids)
+      ? data.today_active_user_ids.filter(Boolean)
+      : [];
     nodes.adminStatsList.appendChild(
       renderStatBlock('今日概览', [
         { label: '今日活跃用户数', value: String(data.today_active_users ?? 0) },
+        { label: '今日活跃用户', value: activeUsers.length ? activeUsers.join(', ') : '-' },
         { label: '今日文章打开次数', value: String(data.today_open_articles ?? 0) }
       ])
     );
