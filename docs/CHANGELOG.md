@@ -4,6 +4,58 @@
 
 ---
 
+## 2026-03-20 — 前端 UID 登录迁移 + 软引导补昵称（Phase 3/5，v2.11.0）
+
+### 已完成
+- ✅ 登录页升级为「昵称必填 + 邀请码选填」，接入 `POST /api/user/register`
+- ✅ 启动鉴权支持静默迁移：本地有旧 `inviteCode` 时自动调 `POST /api/user/migrate` 换取 UID
+- ✅ 前端请求头升级为 `X-Uid` 优先，保留 `X-Invite-Code` 兼容
+- ✅ 「我的」页新增昵称展示与软引导补填，接入 `PATCH /api/user/profile`
+
+### 变更文件
+- frontend/index.html
+- frontend/js/api.js
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+---
+
+## 2026-03-20 — 邀请码体系升级为 UID 主身份（Phase 1/2/4/6，v2.10.27）
+
+### 已完成
+- ✅ 新增 `users` 身份能力与迁移脚本 `scripts/migrate-users.js`（幂等）
+- ✅ 新增用户接口：`/api/user/register`、`/api/user/migrate`、`/api/user/me`、`/api/user/profile`
+- ✅ 全站鉴权升级为 UID 优先（`X-Uid`），并兼容旧邀请码头
+- ✅ 管理员邀请码管理同步 `users` 元数据（来源 source / 昵称 nickname）
+- ✅ 管理员创建邀请码时同步写入 `users` 记录
+
+### 变更文件
+- api/_utils/auth.js
+- api/index.js
+- api/user/register.js
+- api/user/migrate.js
+- api/user/me.js
+- api/user/profile.js
+- api/articles.js
+- api/highlights.js
+- api/qa.js
+- api/reading-list.js
+- api/reading-progress.js
+- api/search-reference.js
+- api/export.js
+- api/feedback.js
+- api/events.js
+- api/ingest.js
+- api/admin/stats.js
+- api/admin/articles.js
+- api/admin/invite-codes.js
+- scripts/migrate-users.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-19 — 文章列表摘要改为三行（v2.10.26）
 
 ### 已完成

@@ -7,6 +7,11 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：用户身份升级为 UID 主鉴权（X-Uid 优先，兼容 X-Invite-Code）✅
+- 最近变更：新增 users 体系与老用户静默迁移（register/migrate/me/profile）✅
+- 最近变更：前端登录升级为昵称必填 + 邀请码选填 ✅
+- 最近变更：我的页面新增昵称展示与软引导补填 ✅
+- 最近变更：管理员邀请码列表新增用户来源/昵称并与 users 同步 ✅
 - 最近变更：/api/ingest 错误信息结构化（含 missing_fields/received_value）✅
 - 最近变更：openclaw 接口白名单收敛（仅 3 个入库相关接口）✅
 - 最近变更：列表返回无闪动 + 列表/详情本地缓存提速 ✅
@@ -128,10 +133,10 @@ GitHub Actions（每天北京时间 22:00）
     ↓ 抓取+AI清洗+翻译
     ↓ 飞书确认（B/C类）
     ↓ POST /api/ingest（传全文）
-Neon PostgreSQL（五张表）
-    ↓ REST API（Bearer Token 鉴权，后端映射 DEFAULT_USER_ID）
+Neon PostgreSQL（核心表 + users 身份表）
+    ↓ REST API（UID 鉴权优先，兼容邀请码）
 Vercel Serverless Functions（/api/*）
-    ↓ fetch（api.js 封装，自动带 Authorization header，不传 user_id）
+    ↓ fetch（api.js 封装，自动带 X-Uid，兼容 X-Invite-Code）
 前端 PWA（GitHub Pages）
     → 用户手机浏览器
     → 进度每10秒防抖保存 + 退出前保存
@@ -163,12 +168,16 @@ Vercel Serverless Functions（/api/*）
 | api/reading-progress.js | GET/POST /api/reading-progress | ✅ 已完成 |
 | api/search-reference.js | POST /api/search-reference（每日限流） | ✅ 已完成 |
 | api/auth/verify.js | POST /api/auth/verify（邀请码校验） | ✅ 已完成 |
+| api/user/register.js | POST /api/user/register（昵称注册，邀请码选填） | ✅ 已完成 |
+| api/user/migrate.js | POST /api/user/migrate（老邀请码静默迁移 UID） | ✅ 已完成 |
+| api/user/me.js | GET /api/user/me（当前用户信息） | ✅ 已完成 |
+| api/user/profile.js | PATCH /api/user/profile（昵称/联系方式更新） | ✅ 已完成 |
 | api/feedback.js | GET/POST /api/feedback（用户反馈） | ✅ 已完成 |
 | api/events.js | POST /api/events（用户行为埋点） | ✅ 已完成 |
 | api/admin/stats.js | GET /api/admin/stats（数据面板） | ✅ 已完成 |
 | api/admin/invite-codes.js | GET/POST /api/admin/invite-codes（邀请码管理） | ✅ 已完成 |
 | api/ingest.js | POST /api/ingest（手动投喂+翻译推进） | ✅ 已完成 |
-| api/_utils/auth.js | 邀请码解析工具（含 isAdmin） | ✅ 已完成 |
+| api/_utils/auth.js | UID/邀请码双通道鉴权工具（含 isAdmin） | ✅ 已完成 |
 | api/_utils/rateLimit.js | 限流统计工具 | ✅ 已完成 |
 | api/export.js | GET /api/export | ✅ 已完成 |
 | frontend/js/app.js | 主逻辑、Tab 切换 | ✅ 已完成（前端基础） |
@@ -177,10 +186,11 @@ Vercel Serverless Functions（/api/*）
 | frontend/js/qa.js | 提问弹窗、降级提示 | ✅ 已完成 |
 | frontend/js/reference.js | 查引用、Banner、失败提示"未找到来源" | ✅ 已完成 |
 | frontend/js/notes.js | 笔记 Tab、本文划线面板 | ✅ 已完成 |
-| frontend/js/api.js | 所有fetch封装，自动带 X-Invite-Code | ✅ 已完成 |
+| frontend/js/api.js | 所有fetch封装，自动带 X-Uid（兼容 X-Invite-Code） | ✅ 已完成 |
 | frontend/js/app.js | “我的”页 + 反馈/管理员面板 | ✅ 已完成 |
 | frontend/sw.js | 列表NetworkFirst，详情CacheFirst，图片不缓存 | ✅ 已完成 |
 | frontend/manifest.json | PWA 配置 | ✅ 已完成 |
+| scripts/migrate-users.js | 邀请码老用户 -> users 迁移脚本（手动执行、幂等） | ✅ 已完成 |
 
 ## 已完成功能
 - ✅ 完成项目初始化：创建前后端目录骨架、Serverless API 骨架、GitHub Actions 目录骨架
@@ -243,6 +253,7 @@ Vercel Serverless Functions（/api/*）
 - ⚠️ **AI 提问质量一般：** 当前仅取前后各 5 句作为上下文，Prompt 也未做结构化优化，需后续统一调优
 - ⚠️ **抓取内容排版问题：** 部分文章通篇纯文本，段落/标题结构丢失。原因是抓取时剥离了所有HTML标签。修复方向：保留结构性标签（h1-h4/p/blockquote/ul/li），前端渲染时保留排版。
 - ⚠️ **标题/作者识别不准：** 固定规则抓取导致部分文章标题包含作者名或格式异常。待引入AI清洗层解决。
+- ⚠️ **老用户昵称为空：** UID 迁移后老用户 `nickname` 为空，当前通过“我的”页软引导补填，后续可增加更自然的首次引导。
 
 ## 环境变量
 
@@ -267,6 +278,7 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 - [ ] AI 提问质量优化：改进上下文策略和 Prompt 结构
 - [ ] Paul Graham 适配：RSS 只有标题，需单独开发爬虫
 - [ ] 多用户支持：鉴权改为 Cookie/Token 方案
+- [ ] 老带新裂变码：用户可生成专属邀请链接并追踪传播链路
 - [ ] 文章列表增强：显示作者头像、点赞和分享按钮
 - [ ] 文章列表卡片长按交互（操作暂隐藏，后续再开放）
 - [ ] 气泡"原文"功能：选中中文翻译后点"原文"，展示对应 content_plain 英文片段，帮助核对原文；之前已有实现但被移除，待重新加回气泡菜单
