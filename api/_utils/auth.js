@@ -32,6 +32,15 @@ function parseInviteCodes(raw) {
   return map;
 }
 
+function getEnvInviteMap() {
+  const raw = process.env.INVITE_CODES || '';
+  if (raw !== cachedRaw) {
+    cachedInviteMap = parseInviteCodes(raw);
+    cachedRaw = raw;
+  }
+  return cachedInviteMap || new Map();
+}
+
 export async function ensureUsersTable() {
   await getPool().query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -53,15 +62,11 @@ export async function ensureUsersTable() {
 }
 
 export async function getUserIdFromInviteCode(inviteCode) {
-  const raw = process.env.INVITE_CODES || '';
-  if (raw !== cachedRaw) {
-    cachedInviteMap = parseInviteCodes(raw);
-    cachedRaw = raw;
-  }
+  const envInviteMap = getEnvInviteMap();
   const code = String(inviteCode || '').trim();
   if (!code) return null;
 
-  const envMatch = cachedInviteMap.get(code);
+  const envMatch = envInviteMap.get(code);
   if (envMatch) {
     return envMatch;
   }
@@ -92,12 +97,24 @@ async function ensureInviteUserRecord(inviteCode) {
 
   await ensureUsersTable();
 
+  let legacyUserId = null;
+  let inviteCreatedAt = null;
+
   const inviteQuery = await getPool().query(
     'SELECT code, user_id, created_at FROM invite_codes WHERE code = $1 LIMIT 1',
     [code]
   );
   const invite = inviteQuery.rows[0];
-  if (!invite) return null;
+  if (invite) {
+    legacyUserId = invite.user_id || null;
+    inviteCreatedAt = invite.created_at || null;
+  } else {
+    // 兼容仅配置在 INVITE_CODES 环境变量中的老邀请码（例如 admin）。
+    const envInviteMap = getEnvInviteMap();
+    legacyUserId = envInviteMap.get(code) || null;
+  }
+
+  if (!legacyUserId) return null;
 
   let userRow = await getPool().query(
     'SELECT id, nickname, contact, invite_code, source, legacy_user_id, register_ip, created_at, last_seen_at FROM users WHERE invite_code = $1 LIMIT 1',
@@ -112,7 +129,7 @@ async function ensureInviteUserRecord(inviteCode) {
         VALUES ($1, NULL, NULL, $2, 'manual_invite', $3, NULL, COALESCE($4::timestamptz, NOW()))
         ON CONFLICT (invite_code) DO NOTHING
       `,
-      [uid, code, invite.user_id, invite.created_at || null]
+      [uid, code, legacyUserId, inviteCreatedAt]
     );
 
     userRow = await getPool().query(
