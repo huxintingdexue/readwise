@@ -51,6 +51,32 @@ body {
   overflow-x: hidden;
 }
 
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: #f6f5f2;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 260ms ease, visibility 260ms ease;
+}
+
+.splash-screen.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 html:not(.reading-mode),
 body:not(.reading-mode) {
   scrollbar-width: none;

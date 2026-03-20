@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-03-20 — 新增开屏加载页（v2.11.1）
+
+### 已完成
+- ✅ 新增开屏层并接入 `splash.webp` 资源
+- ✅ App 初始化完成后自动淡出开屏，不额外等待
+- ✅ 增加 5 秒兜底超时，避免异常情况下开屏不消失
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- frontend/assets/splash.webp
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+
 ## 2026-03-20 — 前端 UID 登录迁移 + 软引导补昵称（Phase 3/5，v2.11.0）
 
 ### 已完成

@@ -1,4 +1,4 @@
-import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, updateAdminArticleStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth } from './api.js';
+﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, updateAdminArticleStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth } from './api.js';
 import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 import { initArticleNotesPanel } from './notes.js';
@@ -30,6 +30,8 @@ const state = {
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v1';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
 const MAX_DETAIL_CACHE_ITEMS = 30;
+const SPLASH_FALLBACK_MS = 5000;
+let splashFallbackTimer = null;
 
 function setReadingMode(enabled) {
   document.body.classList.toggle('reading-mode', enabled);
@@ -42,6 +44,7 @@ function isReadingMode() {
 
 const nodes = {
   tabButtons: [...document.querySelectorAll('.tab-btn')],
+  splashScreen: document.querySelector('#splashScreen'),
   todayTab: document.querySelector('#tab-today'),
   notesTab: document.querySelector('#tab-notes'),
   statusFilter: document.querySelector('#statusFilter'),
@@ -123,6 +126,15 @@ function showToast(message, duration = 2200) {
   setTimeout(() => nodes.toast.classList.add('hidden'), duration);
 }
 
+function hideSplashScreen() {
+  if (!nodes.splashScreen) return;
+  nodes.splashScreen.classList.add('is-hidden');
+  if (splashFallbackTimer) {
+    clearTimeout(splashFallbackTimer);
+    splashFallbackTimer = null;
+  }
+}
+
 function applyTheme(theme) {
   document.body.classList.remove('theme-warm', 'theme-dark');
   if (theme === 'eye') document.body.classList.add('theme-warm');
@@ -148,8 +160,8 @@ function cycleTheme() {
   const order = ['light', 'eye', 'dark'];
   const next = order[(order.indexOf(current) + 1) % order.length] || 'light';
   setThemeChoice(next);
-  const label = next === 'eye' ? '护眼' : next === 'dark' ? '深色' : '标准';
-  showToast(`已切换为${label}`);
+  const label = next === 'eye' ? '鎶ょ溂' : next === 'dark' ? '娣辫壊' : '鏍囧噯';
+  showToast(`宸插垏鎹负${label}`);
 }
 function updateTheme(theme) {
   applyTheme(theme);
@@ -168,9 +180,9 @@ function initTheme() {
 }
 
 function formatDate(isoString) {
-  if (!isoString) return '未知时间';
+  if (!isoString) return '鏈煡鏃堕棿';
   const d = new Date(isoString);
-  if (Number.isNaN(d.getTime())) return '未知时间';
+  if (Number.isNaN(d.getTime())) return '鏈煡鏃堕棿';
   return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
 }
 function sourceName(sourceKey, author) {
@@ -179,13 +191,13 @@ function sourceName(sourceKey, author) {
   if (sourceKey === 'andrej') return 'Andrej Karpathy';
   if (sourceKey === 'peter') return 'Peter Steipete';
   if (sourceKey === 'naval') return 'Naval Ravikant';
-  return sourceKey || '未知来源';
+  return sourceKey || '鏈煡鏉ユ簮';
 }
 function readStatusLabel(status, progress) {
-  if (status === 'archived') return '存档';
-  if (status === 'read') return `已读 ${progress}%`;
-  if (progress > 0) return `已读 ${progress}%`;
-  return '未读';
+  if (status === 'archived') return '瀛樻。';
+  if (status === 'read') return `宸茶 ${progress}%`;
+  if (progress > 0) return `宸茶 ${progress}%`;
+  return '鏈';
 }
 function getActiveReaderScroller() {
   if (isReadingMode() && nodes.readerView) {
@@ -356,7 +368,7 @@ function renderArticles() {
   nodes.articlesList.innerHTML = '';
 
   if (state.articles.length === 0) {
-    nodes.articlesState.textContent = '暂无文章';
+    nodes.articlesState.textContent = '鏆傛棤鏂囩珷';
     return;
   }
 
@@ -375,7 +387,7 @@ function renderArticles() {
     const progress = Math.max(0, Math.min(100, Number(item.read_progress || 0)));
     const progressLabel = Math.round(progress);
     const isTranslating = item.status === 'translating';
-    const statusLabel = isTranslating ? '翻译中...' : readStatusLabel(item.read_status, progressLabel);
+    const statusLabel = isTranslating ? '缈昏瘧涓?..' : readStatusLabel(item.read_status, progressLabel);
     const isOwner = item.submitted_by && item.submitted_by === getUserId();
     const showBadge = Boolean(isOwner);
     const badgeLabel = isTranslating ? '导入中' : '已导入';
@@ -392,8 +404,8 @@ function renderArticles() {
             <span class="${isTranslating ? 'article-status' : 'read-status'}">${escapeHtml(statusLabel)}</span>
           </div>
         </div>
-        <div class="article-meta">${escapeHtml(sourceName(item.source_key, item.author))} · ${escapeHtml(formatDate(item.published_at))}</div>
-        <p class="article-summary">${escapeHtml(item.summary_zh || item.summary_en || '暂无摘要')}</p>
+        <div class="article-meta">${escapeHtml(sourceName(item.source_key, item.author))} 路 ${escapeHtml(formatDate(item.published_at))}</div>
+        <p class="article-summary">${escapeHtml(item.summary_zh || item.summary_en || '鏆傛棤鎽樿')}</p>
       </article>
     `;
 
@@ -420,7 +432,7 @@ async function loadArticles(options = {}) {
       }
     }
     if (!renderedFromCache && showLoading) {
-      nodes.articlesState.textContent = '加载中...';
+      nodes.articlesState.textContent = '鍔犺浇涓?..';
     }
     if (!forceNetwork && renderedFromCache) {
       ensureIngestPolling();
@@ -431,7 +443,7 @@ async function loadArticles(options = {}) {
     ensureIngestPolling();
   } catch (err) {
     if (!renderedFromCache) {
-      nodes.articlesState.textContent = `加载失败：${err.message}`;
+      nodes.articlesState.textContent = `鍔犺浇澶辫触锛?{err.message}`;
     }
     const message = String(err.message || '');
     const authFailed = message.includes('UID') || message.includes('unauthorized');
@@ -441,7 +453,7 @@ async function loadArticles(options = {}) {
       return;
     }
     if (!renderedFromCache) {
-      showToast('加载失败，请稍后重试');
+      showToast('鍔犺浇澶辫触锛岃绋嶅悗閲嶈瘯');
     }
   }
 }
@@ -522,7 +534,7 @@ async function openArticle(id, jumpTo = null) {
       scrollToPlainPosition(baseLength, jumpTo);
     }
   } catch (err) {
-    showToast(`打开文章失败：${err.message}`);
+    showToast(`鎵撳紑鏂囩珷澶辫触锛?{err.message}`);
     setReadingMode(false);
     document.body.classList.remove('reader-bar-hidden');
     setReaderAdminActionsVisible(false);
@@ -618,7 +630,7 @@ function bindEvents() {
   });
 
   nodes.exportEntry?.addEventListener('click', () => {
-    showToast('功能开发中，敬请期待～着急可微信联系 Guang', 2000);
+    showToast('鍔熻兘寮€鍙戜腑锛屾暚璇锋湡寰咃綖鐫€鎬ュ彲寰俊鑱旂郴 Guang', 2000);
   });
 
   nodes.feedbackEntry?.addEventListener('click', () => {
@@ -689,7 +701,7 @@ function bindEvents() {
     try {
       await postFeedback(content);
       closeFeedbackModal();
-      showToast('发送成功，感谢反馈！', 2000);
+      showToast('发送成功，感谢反馈', 2000);
     } catch (_) {
       showToast('发送失败，请重试', 2000);
     }
@@ -722,9 +734,9 @@ function bindEvents() {
       }
     } catch (err) {
       const message = String(err.message || '');
-      if (message.includes('上限')) {
-        showToast('今日投喂次数已达上限（5篇）', 2000);
-      } else if (message.includes('存在')) {
+      if (message.includes('涓婇檺')) {
+        showToast('今日投喂次数已达上限（3篇）', 2000);
+      } else if (message.includes('瀛樺湪')) {
         showToast('文章已存在', 2000);
       } else {
         showToast('添加失败，请检查链接是否有效', 2000);
@@ -925,7 +937,7 @@ async function loadAdminFeedback() {
   try {
     const items = await getFeedback();
     if (!items.length) {
-      nodes.adminFeedbackList.innerHTML = '<div class="state-text">暂无反馈</div>';
+      nodes.adminFeedbackList.innerHTML = '<div class="state-text">鏆傛棤鍙嶉</div>';
       return;
     }
     items.forEach((item) => {
@@ -933,7 +945,7 @@ async function loadAdminFeedback() {
       div.className = 'admin-item';
       div.innerHTML = `
         <div class="admin-item-meta">
-          <span>${escapeHtml(item.user_id || '未知用户')}</span>
+          <span>${escapeHtml(item.user_id || '鏈煡鐢ㄦ埛')}</span>
           <span>${escapeHtml(formatAdminTime(item.created_at))}</span>
         </div>
         <div>${escapeHtml(item.content || '')}</div>
@@ -941,7 +953,7 @@ async function loadAdminFeedback() {
       nodes.adminFeedbackList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminFeedbackList.innerHTML = '<div class="state-text">加载失败</div>';
+    nodes.adminFeedbackList.innerHTML = '<div class="state-text">鍔犺浇澶辫触</div>';
   }
 }
 
@@ -997,7 +1009,7 @@ async function loadAdminStats() {
       )
     );
   } catch (err) {
-    const message = err?.message ? `?????${escapeHtml(err.message)}` : '????';
+    const message = err?.message ? `加载失败：${escapeHtml(err.message)}` : '加载失败';
     nodes.adminStatsList.innerHTML = `<div class="state-text">${message}</div>`;
   }
 }
@@ -1008,13 +1020,13 @@ async function loadInviteCodes() {
   try {
     const items = await getInviteCodes();
     if (!items.length) {
-      nodes.adminInviteList.innerHTML = '<div class="state-text">暂无邀请码</div>';
+      nodes.adminInviteList.innerHTML = '<div class="state-text">鏆傛棤閭€璇风爜</div>';
       return;
     }
     items.forEach((item) => {
       const div = document.createElement('div');
       div.className = 'admin-item';
-      const sourceLabel = item.source === 'self_register' ? '自助注册' : '手动创建';
+      const sourceLabel = item.source === 'self_register' ? '鑷姪娉ㄥ唽' : '鎵嬪姩鍒涘缓';
       const nickname = item.nickname ? `昵称：${item.nickname}` : '昵称：-';
       div.innerHTML = `
         <div class="admin-item-meta">
@@ -1027,7 +1039,7 @@ async function loadInviteCodes() {
       nodes.adminInviteList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminInviteList.innerHTML = '<div class="state-text">加载失败</div>';
+    nodes.adminInviteList.innerHTML = '<div class="state-text">鍔犺浇澶辫触</div>';
   }
 }
 async function loadHiddenArticles() {
@@ -1036,7 +1048,7 @@ async function loadHiddenArticles() {
   try {
     const items = await getHiddenArticles();
     if (!items.length) {
-      nodes.adminHiddenList.innerHTML = '<div class="state-text">暂无隐藏文章</div>';
+      nodes.adminHiddenList.innerHTML = '<div class="state-text">鏆傛棤闅愯棌鏂囩珷</div>';
       return;
     }
     items.forEach((item) => {
@@ -1049,7 +1061,7 @@ async function loadHiddenArticles() {
         </div>
         <div>${escapeHtml(item.hidden_reason || '（无原因）')}</div>
         <div class="admin-item-actions">
-          <button class="danger" type="button" data-id="${escapeHtml(item.id)}">取消隐藏</button>
+          <button class="danger" type="button" data-id="${escapeHtml(item.id)}">鍙栨秷闅愯棌</button>
         </div>
       `;
       const btn = div.querySelector('button');
@@ -1065,7 +1077,7 @@ async function loadHiddenArticles() {
       nodes.adminHiddenList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminHiddenList.innerHTML = '<div class="state-text">加载失败</div>';
+    nodes.adminHiddenList.innerHTML = '<div class="state-text">鍔犺浇澶辫触</div>';
   }
 }
 
@@ -1073,20 +1085,20 @@ async function handleInviteAdd() {
   const code = String(nodes.adminInviteCode?.value || '').trim();
   const userId = String(nodes.adminInviteUserId?.value || '').trim();
   if (!code || !userId) {
-    showToast('请填写邀请码和用户ID', 2000);
+    showToast('璇峰～鍐欓個璇风爜鍜岀敤鎴稩D', 2000);
     return;
   }
   try {
     await addInviteCode(code, userId);
     if (nodes.adminInviteCode) nodes.adminInviteCode.value = '';
     if (nodes.adminInviteUserId) nodes.adminInviteUserId.value = '';
-    showToast('邀请码已添加，立即生效', 2000);
+    showToast('閭€璇风爜宸叉坊鍔狅紝绔嬪嵆鐢熸晥', 2000);
     await loadInviteCodes();
   } catch (err) {
     if (String(err.message || '').includes('conflict')) {
       showToast('code or userId exists', 2000);
     } else {
-      showToast('添加失败，请重试', 2000);
+      showToast('娣诲姞澶辫触锛岃閲嶈瘯', 2000);
     }
   }
 }
@@ -1132,7 +1144,7 @@ function closeHideArticleModal() {
 function setIngestSubmitting(isSubmitting) {
   if (!nodes.ingestSubmitBtn) return;
   nodes.ingestSubmitBtn.disabled = isSubmitting;
-  nodes.ingestSubmitBtn.textContent = isSubmitting ? '处理中...' : '添加';
+  nodes.ingestSubmitBtn.textContent = isSubmitting ? '澶勭悊涓?..' : '娣诲姞';
 }
 
 function ensureIngestPolling() {
@@ -1167,9 +1179,9 @@ async function pollIngestTranslation() {
 }
 
 function formatAdminTime(isoString) {
-  if (!isoString) return '未知时间';
+  if (!isoString) return '鏈煡鏃堕棿';
   const d = new Date(isoString);
-  if (Number.isNaN(d.getTime())) return '未知时间';
+  if (Number.isNaN(d.getTime())) return '鏈煡鏃堕棿';
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   const hh = String(d.getHours()).padStart(2, '0');
@@ -1201,7 +1213,7 @@ async function loadCurrentUserProfile() {
 
 async function promptForNickname() {
   const current = String(state.currentUser?.nickname || '').trim();
-  const input = window.prompt('设置昵称（1-20 字）', current);
+  const input = window.prompt('璁剧疆鏄电О锛?-20 瀛楋級', current);
   if (input == null) return;
   const nickname = String(input || '').trim();
   if (!nickname) {
@@ -1219,7 +1231,7 @@ async function promptForNickname() {
       showToast('昵称已更新', 1500);
     }
   } catch (err) {
-    showToast(err.message || '更新失败', 2000);
+    showToast(err.message || '鏇存柊澶辫触', 2000);
   }
 }
 
@@ -1261,9 +1273,9 @@ function bindLoginEvents() {
       await registerUser(nickname, inviteCode);
       await loadCurrentUserProfile();
       hideLoginOverlay();
-      startApp();
+      await startApp();
     } catch (err) {
-      const message = String(err.message || '注册失败');
+      const message = String(err.message || '娉ㄥ唽澶辫触');
       if (message.includes('invite') || message.toLowerCase().includes('invite')) {
         nodes.loginInput.value = '';
       }
@@ -1284,7 +1296,7 @@ function bindLoginEvents() {
   });
 }
 
-function startApp() {
+async function startApp() {
   if (state.appStarted) return;
   state.appStarted = true;
   trackEvent('open_app');
@@ -1315,10 +1327,17 @@ function startApp() {
       )
   });
   switchTab('today');
-  loadArticles();
+  try {
+    await loadArticles();
+  } finally {
+    hideSplashScreen();
+  }
 }
 
 async function init() {
+  splashFallbackTimer = setTimeout(() => {
+    hideSplashScreen();
+  }, SPLASH_FALLBACK_MS);
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch((err) => {
       console.warn('[sw] register failed', err.message);
@@ -1331,16 +1350,20 @@ async function init() {
   const authed = await bootstrapAuth();
   if (authed) {
     hideLoginOverlay();
-    startApp();
+    await startApp();
     return;
   }
 
   if (isLoggedIn()) {
     hideLoginOverlay();
-    startApp();
+    await startApp();
   } else {
+    hideSplashScreen();
     showLoginOverlay('请输入昵称（邀请码可选）');
   }
 }
 
 init();
+
+
+
