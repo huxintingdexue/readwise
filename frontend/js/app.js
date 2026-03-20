@@ -1202,7 +1202,7 @@ function closeHideArticleModal() {
 function setIngestSubmitting(isSubmitting) {
   if (!nodes.ingestSubmitBtn) return;
   nodes.ingestSubmitBtn.disabled = isSubmitting;
-  nodes.ingestSubmitBtn.textContent = isSubmitting ? '澶勭悊涓?..' : '娣诲姞';
+  nodes.ingestSubmitBtn.textContent = isSubmitting ? '处理中...' : '确定';
 }
 
 function ensureIngestPolling() {
