@@ -216,8 +216,8 @@ function cycleTheme() {
   const order = ['light', 'eye', 'dark'];
   const next = order[(order.indexOf(current) + 1) % order.length] || 'light';
   setThemeChoice(next);
-  const label = next === 'eye' ? '鎶ょ溂' : next === 'dark' ? '娣辫壊' : '鏍囧噯';
-  showToast(`宸插垏鎹负${label}`);
+  const label = next === 'eye' ? '护眼' : next === 'dark' ? '深色' : '标准';
+  showToast(`已切换为${label}`);
 }
 function updateTheme(theme) {
   applyTheme(theme);
@@ -236,9 +236,9 @@ function initTheme() {
 }
 
 function formatDate(isoString) {
-  if (!isoString) return '鏈煡鏃堕棿';
+  if (!isoString) return '未知时间';
   const d = new Date(isoString);
-  if (Number.isNaN(d.getTime())) return '鏈煡鏃堕棿';
+  if (Number.isNaN(d.getTime())) return '未知时间';
   return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
 }
 function sourceName(sourceKey, author) {
@@ -250,10 +250,10 @@ function sourceName(sourceKey, author) {
   return sourceKey || '鏈煡鏉ユ簮';
 }
 function readStatusLabel(status, progress) {
-  if (status === 'archived') return '瀛樻。';
-  if (status === 'read') return `宸茶 ${progress}%`;
-  if (progress > 0) return `宸茶 ${progress}%`;
-  return '鏈';
+  if (status === 'archived') return '存档';
+  if (status === 'read') return `已读 ${progress}%`;
+  if (progress > 0) return `已读 ${progress}%`;
+  return '未读';
 }
 function getActiveReaderScroller() {
   if (isReadingMode() && nodes.readerView) {
@@ -424,7 +424,7 @@ function renderArticles() {
   nodes.articlesList.innerHTML = '';
 
   if (state.articles.length === 0) {
-    nodes.articlesState.textContent = '鏆傛棤鏂囩珷';
+    nodes.articlesState.textContent = '暂无文章';
     return;
   }
 
@@ -443,7 +443,7 @@ function renderArticles() {
     const progress = Math.max(0, Math.min(100, Number(item.read_progress || 0)));
     const progressLabel = Math.round(progress);
     const isTranslating = item.status === 'translating';
-    const statusLabel = isTranslating ? '缈昏瘧涓?..' : readStatusLabel(item.read_status, progressLabel);
+    const statusLabel = isTranslating ? '翻译中...' : readStatusLabel(item.read_status, progressLabel);
     const isOwner = item.submitted_by && item.submitted_by === getUserId();
     const showBadge = Boolean(isOwner);
     const badgeLabel = isTranslating ? '导入中' : '已导入';
@@ -461,7 +461,7 @@ function renderArticles() {
           </div>
         </div>
         <div class="article-meta">${escapeHtml(sourceName(item.source_key, item.author))} 路 ${escapeHtml(formatDate(item.published_at))}</div>
-        <p class="article-summary">${escapeHtml(item.summary_zh || item.summary_en || '鏆傛棤鎽樿')}</p>
+        <p class="article-summary">${escapeHtml(item.summary_zh || item.summary_en || '暂无摘要')}</p>
       </article>
     `;
 
@@ -488,7 +488,7 @@ async function loadArticles(options = {}) {
       }
     }
     if (!renderedFromCache && showLoading) {
-      nodes.articlesState.textContent = '鍔犺浇涓?..';
+      nodes.articlesState.textContent = '加载中...';
     }
     if (!forceNetwork && renderedFromCache) {
       ensureIngestPolling();
@@ -499,7 +499,7 @@ async function loadArticles(options = {}) {
     ensureIngestPolling();
   } catch (err) {
     if (!renderedFromCache) {
-      nodes.articlesState.textContent = `鍔犺浇澶辫触锛?{err.message}`;
+      nodes.articlesState.textContent = `加载失败：${err.message}`;
     }
     const message = String(err.message || '');
     const authFailed = message.includes('UID') || message.includes('unauthorized');
@@ -509,7 +509,7 @@ async function loadArticles(options = {}) {
       return;
     }
     if (!renderedFromCache) {
-      showToast('鍔犺浇澶辫触锛岃绋嶅悗閲嶈瘯');
+      showToast('加载失败，请稍后重试');
     }
   }
 }
@@ -592,7 +592,7 @@ async function openArticle(id, jumpTo = null) {
       scrollToPlainPosition(baseLength, jumpTo);
     }
   } catch (err) {
-    showToast(`鎵撳紑鏂囩珷澶辫触锛?{err.message}`);
+    showToast(`打开文章失败：${err.message}`);
     setReadingMode(false);
     document.body.classList.remove('reader-bar-hidden');
     setReaderAdminActionsVisible(false);
@@ -688,7 +688,7 @@ function bindEvents() {
   });
 
   nodes.exportEntry?.addEventListener('click', () => {
-    showToast('鍔熻兘寮€鍙戜腑锛屾暚璇锋湡寰咃綖鐫€鎬ュ彲寰俊鑱旂郴 Guang', 2000);
+    showToast('功能开发中，敬请期待。着急可微信联系 Guang', 2000);
   });
 
   nodes.feedbackEntry?.addEventListener('click', () => {
@@ -995,7 +995,7 @@ async function loadAdminFeedback() {
   try {
     const items = await getFeedback();
     if (!items.length) {
-      nodes.adminFeedbackList.innerHTML = '<div class="state-text">鏆傛棤鍙嶉</div>';
+      nodes.adminFeedbackList.innerHTML = '<div class="state-text">暂无反馈</div>';
       return;
     }
     items.forEach((item) => {
@@ -1011,7 +1011,7 @@ async function loadAdminFeedback() {
       nodes.adminFeedbackList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminFeedbackList.innerHTML = '<div class="state-text">鍔犺浇澶辫触</div>';
+    nodes.adminFeedbackList.innerHTML = '<div class="state-text">加载失败</div>';
   }
 }
 
@@ -1078,13 +1078,13 @@ async function loadInviteCodes() {
   try {
     const items = await getInviteCodes();
     if (!items.length) {
-      nodes.adminInviteList.innerHTML = '<div class="state-text">鏆傛棤閭€璇风爜</div>';
+      nodes.adminInviteList.innerHTML = '<div class="state-text">暂无邀请码</div>';
       return;
     }
     items.forEach((item) => {
       const div = document.createElement('div');
       div.className = 'admin-item';
-      const sourceLabel = item.source === 'self_register' ? '鑷姪娉ㄥ唽' : '鎵嬪姩鍒涘缓';
+      const sourceLabel = item.source === 'self_register' ? '自助注册' : '手动创建';
       const nickname = item.nickname ? `昵称：${item.nickname}` : '昵称：-';
       div.innerHTML = `
         <div class="admin-item-meta">
@@ -1097,7 +1097,7 @@ async function loadInviteCodes() {
       nodes.adminInviteList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminInviteList.innerHTML = '<div class="state-text">鍔犺浇澶辫触</div>';
+    nodes.adminInviteList.innerHTML = '<div class="state-text">加载失败</div>';
   }
 }
 async function loadHiddenArticles() {
@@ -1106,7 +1106,7 @@ async function loadHiddenArticles() {
   try {
     const items = await getHiddenArticles();
     if (!items.length) {
-      nodes.adminHiddenList.innerHTML = '<div class="state-text">鏆傛棤闅愯棌鏂囩珷</div>';
+      nodes.adminHiddenList.innerHTML = '<div class="state-text">暂无隐藏文章</div>';
       return;
     }
     items.forEach((item) => {
@@ -1119,7 +1119,7 @@ async function loadHiddenArticles() {
         </div>
         <div>${escapeHtml(item.hidden_reason || '（无原因）')}</div>
         <div class="admin-item-actions">
-          <button class="danger" type="button" data-id="${escapeHtml(item.id)}">鍙栨秷闅愯棌</button>
+          <button class="danger" type="button" data-id="${escapeHtml(item.id)}">取消隐藏</button>
         </div>
       `;
       const btn = div.querySelector('button');
@@ -1135,7 +1135,7 @@ async function loadHiddenArticles() {
       nodes.adminHiddenList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminHiddenList.innerHTML = '<div class="state-text">鍔犺浇澶辫触</div>';
+    nodes.adminHiddenList.innerHTML = '<div class="state-text">加载失败</div>';
   }
 }
 
@@ -1143,14 +1143,14 @@ async function handleInviteAdd() {
   const code = String(nodes.adminInviteCode?.value || '').trim();
   const userId = String(nodes.adminInviteUserId?.value || '').trim();
   if (!code || !userId) {
-    showToast('璇峰～鍐欓個璇风爜鍜岀敤鎴稩D', 2000);
+    showToast('请填写邀请码和用户ID', 2000);
     return;
   }
   try {
     await addInviteCode(code, userId);
     if (nodes.adminInviteCode) nodes.adminInviteCode.value = '';
     if (nodes.adminInviteUserId) nodes.adminInviteUserId.value = '';
-    showToast('閭€璇风爜宸叉坊鍔狅紝绔嬪嵆鐢熸晥', 2000);
+    showToast('邀请码已添加，立即生效', 2000);
     await loadInviteCodes();
   } catch (err) {
     if (String(err.message || '').includes('conflict')) {
@@ -1237,9 +1237,9 @@ async function pollIngestTranslation() {
 }
 
 function formatAdminTime(isoString) {
-  if (!isoString) return '鏈煡鏃堕棿';
+  if (!isoString) return '未知时间';
   const d = new Date(isoString);
-  if (Number.isNaN(d.getTime())) return '鏈煡鏃堕棿';
+  if (Number.isNaN(d.getTime())) return '未知时间';
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   const hh = String(d.getHours()).padStart(2, '0');
@@ -1271,7 +1271,7 @@ async function loadCurrentUserProfile() {
 
 async function promptForNickname() {
   const current = String(state.currentUser?.nickname || '').trim();
-  const input = window.prompt('璁剧疆鏄电О锛?-20 瀛楋級', current);
+  const input = window.prompt('设置昵称（1-20 字）', current);
   if (input == null) return;
   const nickname = String(input || '').trim();
   if (!nickname) {
