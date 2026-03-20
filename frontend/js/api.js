@@ -107,7 +107,7 @@ export async function registerUser(nickname, inviteCode = '', contact = '') {
 
 export async function migrateLegacyUser(inviteCode) {
   const code = String(inviteCode || '').trim();
-  if (!code) throw new Error('missing inviteCode');
+  if (!code) throw new Error('缺少邀请码');
   const data = await requestJson('/api/user/migrate', {
     method: 'POST',
     body: { inviteCode: code }
@@ -136,14 +136,14 @@ export async function updateUserProfile(payload) {
 export async function login(inviteCode) {
   const code = String(inviteCode || '').trim();
   if (!code) {
-    throw new Error('invite code required');
+    throw new Error('请输入邀请码');
   }
   const data = await requestJson('/api/auth/verify', {
     method: 'POST',
     body: { inviteCode: code }
   });
   if (!data?.success || !data?.userId) {
-    throw new Error(data?.message || 'invalid invite code');
+    throw new Error(data?.message || '邀请码无效');
   }
   setLegacyAuth(code, data.userId);
   return data;

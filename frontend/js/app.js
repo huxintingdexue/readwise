@@ -179,7 +179,7 @@ function sourceName(sourceKey, author) {
   if (sourceKey === 'andrej') return 'Andrej Karpathy';
   if (sourceKey === 'peter') return 'Peter Steipete';
   if (sourceKey === 'naval') return 'Naval Ravikant';
-  return sourceKey || 'Unknown';
+  return sourceKey || '未知来源';
 }
 function readStatusLabel(status, progress) {
   if (status === 'archived') return '存档';
@@ -933,7 +933,7 @@ async function loadAdminFeedback() {
       div.className = 'admin-item';
       div.innerHTML = `
         <div class="admin-item-meta">
-          <span>${escapeHtml(item.user_id || 'unknown')}</span>
+          <span>${escapeHtml(item.user_id || '未知用户')}</span>
           <span>${escapeHtml(formatAdminTime(item.created_at))}</span>
         </div>
         <div>${escapeHtml(item.content || '')}</div>
@@ -941,7 +941,7 @@ async function loadAdminFeedback() {
       nodes.adminFeedbackList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminFeedbackList.innerHTML = '<div class="state-text">load failed</div>';
+    nodes.adminFeedbackList.innerHTML = '<div class="state-text">加载失败</div>';
   }
 }
 
@@ -964,7 +964,7 @@ async function loadAdminStats() {
       renderStatBlock(
         '本周阅读排行（按用户）',
         (data.weekly_user_finishes || []).map((item) => ({
-          label: item.user_id || 'unknown',
+          label: item.user_id || '未知用户',
           value: `${item.count || 0} 篇`
         }))
       )
@@ -982,7 +982,7 @@ async function loadAdminStats() {
       renderStatBlock(
         '核心功能使用（划线）',
         (data.highlights_by_user || []).map((item) => ({
-          label: item.user_id || 'unknown',
+          label: item.user_id || '未知用户',
           value: `${item.count || 0} 次`
         }))
       )
@@ -991,7 +991,7 @@ async function loadAdminStats() {
       renderStatBlock(
         '核心功能使用（提问）',
         (data.qa_by_user || []).map((item) => ({
-          label: item.user_id || 'unknown',
+          label: item.user_id || '未知用户',
           value: `${item.count || 0} 次`
         }))
       )
@@ -1027,7 +1027,7 @@ async function loadInviteCodes() {
       nodes.adminInviteList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminInviteList.innerHTML = '<div class="state-text">load failed</div>';
+    nodes.adminInviteList.innerHTML = '<div class="state-text">加载失败</div>';
   }
 }
 async function loadHiddenArticles() {
@@ -1044,7 +1044,7 @@ async function loadHiddenArticles() {
       div.className = 'admin-item';
       div.innerHTML = `
         <div class="admin-item-meta">
-          <span>${escapeHtml(item.title_zh || item.title_en || 'untitled')}</span>
+          <span>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</span>
           <span>${escapeHtml(formatAdminTime(item.hidden_at))}</span>
         </div>
         <div>${escapeHtml(item.hidden_reason || '（无原因）')}</div>
@@ -1065,7 +1065,7 @@ async function loadHiddenArticles() {
       nodes.adminHiddenList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminHiddenList.innerHTML = '<div class="state-text">load failed</div>';
+    nodes.adminHiddenList.innerHTML = '<div class="state-text">加载失败</div>';
   }
 }
 
