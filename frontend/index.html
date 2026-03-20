@@ -71,6 +71,12 @@
             <div class="me-item">
               <span class="me-value" id="inviteCodeDisplay">邀请码：-</span>
             </div>
+            <div class="me-item">
+              <span class="me-value" id="nicknameDisplay">nickname: -</span>
+            </div>
+            <div class="me-item hidden" id="nicknameHintRow">
+              <button id="nicknameHintBtn" class="me-ghost-btn" type="button">set nickname</button>
+            </div>
           </div>
           <div class="me-section">
             <h2>颜色</h2>
@@ -194,10 +200,11 @@
 
     <div id="loginOverlay" class="login-overlay hidden" role="dialog" aria-modal="true">
       <div class="login-card">
-        <h2>邀请码登录</h2>
-        <p>请输入管理员提供的邀请码</p>
-        <input id="loginInput" type="text" placeholder="如：GUANG-ALEX" autocomplete="off" />
-        <button id="loginButton" type="button">确认</button>
+        <h2>Start Reading</h2>
+        <p>nickname required, invite code optional</p>
+        <input id="nicknameInput" type="text" placeholder="your nickname (required)" autocomplete="off" />
+        <input id="loginInput" type="text" placeholder="invite code (optional)" autocomplete="off" />
+        <button id="loginButton" type="button">Go</button>
         <div id="loginError" class="login-error"></div>
       </div>
     </div>

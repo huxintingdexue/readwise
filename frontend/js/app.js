@@ -1,4 +1,4 @@
-import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, login, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, updateAdminArticleStatus, ingestUrl, translateIngestStep, trackEvent } from './api.js';
+import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, updateAdminArticleStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth } from './api.js';
 import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 import { initArticleNotesPanel } from './notes.js';
@@ -19,6 +19,7 @@ const state = {
   logoutTimer: null,
   ingestTimer: null,
   ingestBusy: false,
+  currentUser: null,
   articleDetailCache: new Map(),
   listScrollTop: {
     today: 0,
@@ -58,6 +59,9 @@ const nodes = {
   articleNotesBody: document.querySelector('#articleNotesBody'),
   closeArticleNotes: document.querySelector('#closeArticleNotes'),
   inviteCodeDisplay: document.querySelector('#inviteCodeDisplay'),
+  nicknameDisplay: document.querySelector('#nicknameDisplay'),
+  nicknameHintRow: document.querySelector('#nicknameHintRow'),
+  nicknameHintBtn: document.querySelector('#nicknameHintBtn'),
   exportEntry: document.querySelector('#exportEntry'),
   feedbackEntry: document.querySelector('#feedbackEntry'),
   adminSection: document.querySelector('#adminSection'),
@@ -87,6 +91,7 @@ const nodes = {
   closeOriginSnippet: document.querySelector('#closeOriginSnippet'),
   topbarTitle: document.querySelector('#topbarTitle'),
   loginOverlay: document.querySelector('#loginOverlay'),
+  nicknameInput: document.querySelector('#nicknameInput'),
   loginInput: document.querySelector('#loginInput'),
   loginButton: document.querySelector('#loginButton'),
   loginError: document.querySelector('#loginError'),
@@ -146,7 +151,6 @@ function cycleTheme() {
   const label = next === 'eye' ? '护眼' : next === 'dark' ? '深色' : '标准';
   showToast(`已切换为${label}`);
 }
-
 function updateTheme(theme) {
   applyTheme(theme);
 }
@@ -169,7 +173,6 @@ function formatDate(isoString) {
   if (Number.isNaN(d.getTime())) return '未知时间';
   return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
 }
-
 function sourceName(sourceKey, author) {
   if (sourceKey === 'manual') return author || '未知作者';
   if (sourceKey === 'sam') return 'Sam Altman';
@@ -178,14 +181,12 @@ function sourceName(sourceKey, author) {
   if (sourceKey === 'naval') return 'Naval Ravikant';
   return sourceKey || 'Unknown';
 }
-
 function readStatusLabel(status, progress) {
   if (status === 'archived') return '存档';
   if (status === 'read') return `已读 ${progress}%`;
   if (progress > 0) return `已读 ${progress}%`;
   return '未读';
 }
-
 function getActiveReaderScroller() {
   if (isReadingMode() && nodes.readerView) {
     return nodes.readerView;
@@ -231,7 +232,7 @@ function restoreListScroll() {
 
 function buildListCacheKey() {
   return JSON.stringify({
-    userId: getUserId(),
+    identity: getAuthIdentity(),
     filters: state.filters || {}
   });
 }
@@ -404,7 +405,6 @@ function renderArticles() {
     nodes.articlesList.appendChild(li);
   });
 }
-
 async function loadArticles(options = {}) {
   const preferCache = options.preferCache !== false;
   const showLoading = options.showLoading !== false;
@@ -433,8 +433,10 @@ async function loadArticles(options = {}) {
     if (!renderedFromCache) {
       nodes.articlesState.textContent = `加载失败：${err.message}`;
     }
-    if (String(err.message || '').includes('邀请码无效')) {
-      showToast('邀请码无效，请重新登录');
+    const message = String(err.message || '');
+    const authFailed = message.includes('UID') || message.includes('unauthorized');
+    if (authFailed) {
+      showToast('登录态失效，请重新登录');
       logout();
       return;
     }
@@ -443,7 +445,6 @@ async function loadArticles(options = {}) {
     }
   }
 }
-
 async function openArticle(id, jumpTo = null) {
   try {
     captureListScroll();
@@ -578,20 +579,22 @@ function bindEvents() {
     nodes.filterPanel?.classList.toggle('hidden');
   });
 
-  nodes.statusFilter.addEventListener('change', () => {
+  nodes.statusFilter?.addEventListener('change', () => {
     state.filters.status = nodes.statusFilter.value;
     loadArticles();
   });
-  nodes.authorFilter.addEventListener('change', () => {
+
+  nodes.authorFilter?.addEventListener('change', () => {
     state.filters.author = nodes.authorFilter.value;
     loadArticles();
   });
-  nodes.sortFilter.addEventListener('change', () => {
-    state.filters.sort = nodes.sortFilter.value;
+
+  nodes.sortFilter?.addEventListener('change', () => {
+    state.filters.sort = nodes.sortFilter.value || 'date_desc';
     loadArticles();
   });
 
-  nodes.backBtn.addEventListener('click', async () => {
+  nodes.backBtn?.addEventListener('click', async () => {
     await exitReaderView(false);
   });
 
@@ -604,7 +607,7 @@ function bindEvents() {
 
   nodes.themeChoices.forEach((btn) => {
     btn.addEventListener('click', () => {
-      setThemeChoice(btn.dataset.theme || 'system');
+      setThemeChoice(btn.dataset.theme || 'light');
     });
   });
 
@@ -620,6 +623,10 @@ function bindEvents() {
 
   nodes.feedbackEntry?.addEventListener('click', () => {
     openFeedbackModal();
+  });
+
+  nodes.nicknameHintBtn?.addEventListener('click', () => {
+    promptForNickname();
   });
 
   nodes.ingestToggle?.addEventListener('click', () => {
@@ -668,7 +675,6 @@ function bindEvents() {
   nodes.hideArticleSubmitBtn?.addEventListener('click', () => {
     handleHideArticleSubmit();
   });
-
 
   nodes.feedbackCloseBtn?.addEventListener('click', () => {
     closeFeedbackModal();
@@ -772,7 +778,7 @@ function bindEvents() {
     nodes.longPressMenu.classList.add('hidden');
   }
 
-  nodes.readerContent.addEventListener('click', () => {
+  nodes.readerContent?.addEventListener('click', () => {
     if (!isReadingMode()) return;
     const selectionText = window.getSelection()?.toString()?.trim();
     if (selectionText) return;
@@ -792,14 +798,28 @@ function bindEvents() {
     state.historyBound = true;
   }
 }
-
 function getInviteCodeLabel() {
-  const inviteCode = localStorage.getItem('inviteCode') || '-';
+  const inviteCode = getStoredInviteCode() || '-';
   return `邀请码：${inviteCode}`;
 }
 
 function getUserId() {
-  return localStorage.getItem('userId') || '';
+  if (state.currentUser?.userId) return state.currentUser.userId;
+  return getStoredUserId();
+}
+
+function getUid() {
+  if (state.currentUser?.uid) return state.currentUser.uid;
+  return getStoredUid();
+}
+
+function getAuthIdentity() {
+  return getUid() || getUserId() || getStoredInviteCode() || '';
+}
+
+function getNicknameLabel() {
+  const nickname = String(state.currentUser?.nickname || '').trim();
+  return `昵称：${nickname || '-'}`;
 }
 
 function isAdminUser() {
@@ -810,13 +830,19 @@ function refreshMeTab() {
   if (nodes.inviteCodeDisplay) {
     nodes.inviteCodeDisplay.textContent = getInviteCodeLabel();
   }
+  if (nodes.nicknameDisplay) {
+    nodes.nicknameDisplay.textContent = getNicknameLabel();
+  }
+  if (nodes.nicknameHintRow) {
+    const shouldShow = !String(state.currentUser?.nickname || '').trim();
+    nodes.nicknameHintRow.classList.toggle('hidden', !shouldShow);
+  }
   const userId = getUserId();
   if (nodes.adminSection) {
     nodes.adminSection.classList.toggle('hidden', userId !== 'admin');
   }
   renderThemeChoices(normalizeThemeValue(localStorage.getItem('theme')));
 }
-
 function renderStatBlock(title, lines) {
   const block = document.createElement('div');
   block.className = 'me-stat-block';
@@ -915,7 +941,7 @@ async function loadAdminFeedback() {
       nodes.adminFeedbackList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminFeedbackList.innerHTML = '<div class="state-text">加载失败</div>';
+    nodes.adminFeedbackList.innerHTML = '<div class="state-text">load failed</div>';
   }
 }
 
@@ -971,7 +997,7 @@ async function loadAdminStats() {
       )
     );
   } catch (err) {
-    const message = err?.message ? `加载失败：${escapeHtml(err.message)}` : '加载失败';
+    const message = err?.message ? `?????${escapeHtml(err.message)}` : '????';
     nodes.adminStatsList.innerHTML = `<div class="state-text">${message}</div>`;
   }
 }
@@ -988,20 +1014,22 @@ async function loadInviteCodes() {
     items.forEach((item) => {
       const div = document.createElement('div');
       div.className = 'admin-item';
+      const sourceLabel = item.source === 'self_register' ? '自助注册' : '手动创建';
+      const nickname = item.nickname ? `昵称：${item.nickname}` : '昵称：-';
       div.innerHTML = `
         <div class="admin-item-meta">
           <span>${escapeHtml(item.code || '')}</span>
           <span>${escapeHtml(item.user_id || '')}</span>
         </div>
+        <div>${escapeHtml(sourceLabel)} | ${escapeHtml(nickname)}</div>
         <div>${escapeHtml(formatAdminTime(item.created_at))}</div>
       `;
       nodes.adminInviteList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminInviteList.innerHTML = '<div class="state-text">加载失败</div>';
+    nodes.adminInviteList.innerHTML = '<div class="state-text">load failed</div>';
   }
 }
-
 async function loadHiddenArticles() {
   if (!nodes.adminHiddenList) return;
   nodes.adminHiddenList.innerHTML = '';
@@ -1016,7 +1044,7 @@ async function loadHiddenArticles() {
       div.className = 'admin-item';
       div.innerHTML = `
         <div class="admin-item-meta">
-          <span>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</span>
+          <span>${escapeHtml(item.title_zh || item.title_en || 'untitled')}</span>
           <span>${escapeHtml(formatAdminTime(item.hidden_at))}</span>
         </div>
         <div>${escapeHtml(item.hidden_reason || '（无原因）')}</div>
@@ -1037,7 +1065,7 @@ async function loadHiddenArticles() {
       nodes.adminHiddenList.appendChild(div);
     });
   } catch (_) {
-    nodes.adminHiddenList.innerHTML = '<div class="state-text">加载失败</div>';
+    nodes.adminHiddenList.innerHTML = '<div class="state-text">load failed</div>';
   }
 }
 
@@ -1056,7 +1084,7 @@ async function handleInviteAdd() {
     await loadInviteCodes();
   } catch (err) {
     if (String(err.message || '').includes('conflict')) {
-      showToast('邀请码或用户ID已存在', 2000);
+      showToast('code or userId exists', 2000);
     } else {
       showToast('添加失败，请重试', 2000);
     }
@@ -1149,7 +1177,6 @@ function formatAdminTime(isoString) {
   return `${mm}/${dd} ${hh}:${mi}`;
 }
 
-
 function showLoginOverlay(message = '') {
   if (!nodes.loginOverlay) return;
   nodes.loginOverlay.classList.remove('hidden');
@@ -1163,28 +1190,96 @@ function hideLoginOverlay() {
   if (nodes.loginError) nodes.loginError.textContent = '';
 }
 
-function bindLoginEvents() {
-  if (!nodes.loginButton || !nodes.loginInput) return;
+async function loadCurrentUserProfile() {
+  try {
+    const user = await getCurrentUser();
+    state.currentUser = user || null;
+  } catch (_) {
+    state.currentUser = null;
+  }
+}
 
-  const attemptLogin = async () => {
-    const code = nodes.loginInput.value.trim();
-    if (!code) {
-      showLoginOverlay('请输入邀请码');
+async function promptForNickname() {
+  const current = String(state.currentUser?.nickname || '').trim();
+  const input = window.prompt('设置昵称（1-20 字）', current);
+  if (input == null) return;
+  const nickname = String(input || '').trim();
+  if (!nickname) {
+    showToast('请输入昵称', 2000);
+    return;
+  }
+  try {
+    const updated = await updateUserProfile({ nickname });
+    if (updated) {
+      state.currentUser = {
+        ...(state.currentUser || {}),
+        nickname: updated.nickname || nickname
+      };
+      refreshMeTab();
+      showToast('昵称已更新', 1500);
+    }
+  } catch (err) {
+    showToast(err.message || '更新失败', 2000);
+  }
+}
+
+async function bootstrapAuth() {
+  const uid = getStoredUid();
+  if (uid) {
+    await loadCurrentUserProfile();
+    return true;
+  }
+
+  const legacyInviteCode = getStoredInviteCode();
+  if (legacyInviteCode) {
+    try {
+      await migrateLegacyUser(legacyInviteCode);
+      clearLegacyAuth();
+      await loadCurrentUserProfile();
+      return true;
+    } catch (_) {
+      clearLegacyAuth();
+      return false;
+    }
+  }
+
+  return false;
+}
+
+function bindLoginEvents() {
+  if (!nodes.loginButton || !nodes.loginInput || !nodes.nicknameInput) return;
+
+  const attemptRegister = async () => {
+    const nickname = nodes.nicknameInput.value.trim();
+    const inviteCode = nodes.loginInput.value.trim();
+    if (!nickname) {
+      showLoginOverlay('请输入昵称');
       return;
     }
+
     try {
-      await login(code);
+      await registerUser(nickname, inviteCode);
+      await loadCurrentUserProfile();
       hideLoginOverlay();
       startApp();
     } catch (err) {
-      showLoginOverlay(err.message || '邀请码无效，请联系管理员');
+      const message = String(err.message || '注册失败');
+      if (message.includes('invite') || message.toLowerCase().includes('invite')) {
+        nodes.loginInput.value = '';
+      }
+      showLoginOverlay(message);
     }
   };
 
-  nodes.loginButton.addEventListener('click', attemptLogin);
+  nodes.loginButton.addEventListener('click', attemptRegister);
+  nodes.nicknameInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      attemptRegister();
+    }
+  });
   nodes.loginInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
-      attemptLogin();
+      attemptRegister();
     }
   });
 }
@@ -1223,7 +1318,7 @@ function startApp() {
   loadArticles();
 }
 
-function init() {
+async function init() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch((err) => {
       console.warn('[sw] register failed', err.message);
@@ -1232,11 +1327,19 @@ function init() {
 
   initTheme();
   bindLoginEvents();
+
+  const authed = await bootstrapAuth();
+  if (authed) {
+    hideLoginOverlay();
+    startApp();
+    return;
+  }
+
   if (isLoggedIn()) {
     hideLoginOverlay();
     startApp();
   } else {
-    showLoginOverlay('请输入邀请码');
+    showLoginOverlay('请输入昵称（邀请码可选）');
   }
 }
 

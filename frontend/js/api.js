@@ -1,18 +1,30 @@
 const INVITE_CODE_KEY = 'inviteCode';
 const USER_ID_KEY = 'userId';
+const UID_KEY = 'uid';
 
 function getInviteCode() {
   return localStorage.getItem(INVITE_CODE_KEY) || '';
+}
+
+function getUid() {
+  return localStorage.getItem(UID_KEY) || '';
 }
 
 function buildHeaders() {
   const headers = {
     'Content-Type': 'application/json'
   };
+
+  const uid = getUid();
+  if (uid) {
+    headers['X-Uid'] = uid;
+  }
+
   const inviteCode = getInviteCode();
   if (inviteCode) {
     headers['X-Invite-Code'] = inviteCode;
   }
+
   return headers;
 }
 
@@ -32,30 +44,7 @@ async function requestJson(path, options = {}) {
   return data;
 }
 
-export function isLoggedIn() {
-  return Boolean(localStorage.getItem(INVITE_CODE_KEY) && localStorage.getItem(USER_ID_KEY));
-}
-
-export async function login(inviteCode) {
-  const code = String(inviteCode || '').trim();
-  if (!code) {
-    throw new Error('请输入邀请码');
-  }
-  const data = await requestJson('/api/auth/verify', {
-    method: 'POST',
-    body: { inviteCode: code }
-  });
-  if (!data?.success || !data?.userId) {
-    throw new Error(data?.message || '邀请码无效');
-  }
-  localStorage.setItem(INVITE_CODE_KEY, code);
-  localStorage.setItem(USER_ID_KEY, data.userId);
-  return data;
-}
-
-export function logout() {
-  localStorage.removeItem(INVITE_CODE_KEY);
-  localStorage.removeItem(USER_ID_KEY);
+function clearSessionStorageCache() {
   try {
     Object.keys(sessionStorage).forEach((key) => {
       if (key.startsWith('rw:article-list-cache:') || key.startsWith('rw:article-detail:')) {
@@ -63,6 +52,107 @@ export function logout() {
       }
     });
   } catch (_) {}
+}
+
+export function getStoredUid() {
+  return getUid();
+}
+
+export function getStoredInviteCode() {
+  return getInviteCode();
+}
+
+export function getStoredUserId() {
+  return localStorage.getItem(USER_ID_KEY) || '';
+}
+
+export function setUid(uid) {
+  const normalized = String(uid || '').trim();
+  if (!normalized) return;
+  localStorage.setItem(UID_KEY, normalized);
+}
+
+export function setLegacyAuth(inviteCode, userId) {
+  const code = String(inviteCode || '').trim();
+  const legacyUserId = String(userId || '').trim();
+  if (code) {
+    localStorage.setItem(INVITE_CODE_KEY, code);
+  }
+  if (legacyUserId) {
+    localStorage.setItem(USER_ID_KEY, legacyUserId);
+  }
+}
+
+export function clearLegacyAuth() {
+  localStorage.removeItem(INVITE_CODE_KEY);
+  localStorage.removeItem(USER_ID_KEY);
+}
+
+export function isLoggedIn() {
+  return Boolean(getUid() || (getInviteCode() && localStorage.getItem(USER_ID_KEY)));
+}
+
+export async function registerUser(nickname, inviteCode = '', contact = '') {
+  const data = await requestJson('/api/user/register', {
+    method: 'POST',
+    body: { nickname, inviteCode, contact }
+  });
+  const uid = String(data?.data?.uid || '').trim();
+  if (!data?.success || !uid) {
+    throw new Error(data?.message || 'register failed');
+  }
+  setUid(uid);
+  return uid;
+}
+
+export async function migrateLegacyUser(inviteCode) {
+  const code = String(inviteCode || '').trim();
+  if (!code) throw new Error('missing inviteCode');
+  const data = await requestJson('/api/user/migrate', {
+    method: 'POST',
+    body: { inviteCode: code }
+  });
+  const uid = String(data?.data?.uid || '').trim();
+  if (!uid) {
+    throw new Error(data?.message || 'migrate failed');
+  }
+  setUid(uid);
+  return uid;
+}
+
+export async function getCurrentUser() {
+  const data = await requestJson('/api/user/me');
+  return data?.data || null;
+}
+
+export async function updateUserProfile(payload) {
+  const data = await requestJson('/api/user/profile', {
+    method: 'PATCH',
+    body: payload
+  });
+  return data?.data || null;
+}
+
+export async function login(inviteCode) {
+  const code = String(inviteCode || '').trim();
+  if (!code) {
+    throw new Error('invite code required');
+  }
+  const data = await requestJson('/api/auth/verify', {
+    method: 'POST',
+    body: { inviteCode: code }
+  });
+  if (!data?.success || !data?.userId) {
+    throw new Error(data?.message || 'invalid invite code');
+  }
+  setLegacyAuth(code, data.userId);
+  return data;
+}
+
+export function logout() {
+  localStorage.removeItem(UID_KEY);
+  clearLegacyAuth();
+  clearSessionStorageCache();
   window.location.reload();
 }
 
@@ -102,7 +192,6 @@ export async function getReadingProgress(articleId) {
       last_read_at: data.last_read_at || null
     };
   } catch (_) {
-    // Progress fetch failure should not block article reading.
     return { article_id: articleId, scroll_position: 0, last_read_at: null };
   }
 }
@@ -184,7 +273,7 @@ export async function getReadingList(status) {
 }
 
 export async function postFeedback(content) {
-  const userId = localStorage.getItem('userId') || '';
+  const userId = localStorage.getItem(USER_ID_KEY) || '';
   return requestJson('/api/feedback', {
     method: 'POST',
     body: { content, userId }
