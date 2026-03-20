@@ -1,7 +1,5 @@
 ﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, updateAdminArticleStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth } from './api.js';
-import { initHighlightFeature } from './highlight.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
-import { initArticleNotesPanel } from './notes.js';
 
 const state = {
   tab: 'today',
@@ -31,7 +29,12 @@ const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v1';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
+const SW_REGISTER_DELAY_MS = 1200;
 let splashFallbackTimer = null;
+let swRegisterTimer = null;
+let readerFeaturesReady = false;
+let readerFeaturesInitPromise = null;
+let openArticleNotesHandler = null;
 
 function setReadingMode(enabled) {
   document.body.classList.toggle('reading-mode', enabled);
@@ -132,6 +135,59 @@ function hideSplashScreen() {
   if (splashFallbackTimer) {
     clearTimeout(splashFallbackTimer);
     splashFallbackTimer = null;
+  }
+}
+
+function scheduleServiceWorkerRegistration() {
+  if (!('serviceWorker' in navigator) || swRegisterTimer) return;
+  swRegisterTimer = setTimeout(() => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('[sw] register failed', err.message);
+    });
+    swRegisterTimer = null;
+  }, SW_REGISTER_DELAY_MS);
+}
+
+async function ensureReaderFeaturesInitialized() {
+  if (readerFeaturesReady) return;
+  if (readerFeaturesInitPromise) {
+    await readerFeaturesInitPromise;
+    return;
+  }
+
+  readerFeaturesInitPromise = (async () => {
+    const [{ initHighlightFeature }, { initArticleNotesPanel }] = await Promise.all([
+      import('./highlight.js'),
+      import('./notes.js')
+    ]);
+
+    openArticleNotesHandler = initArticleNotesPanel({
+      panel: nodes.articleNotesPanel,
+      body: nodes.articleNotesBody,
+      closeBtn: nodes.closeArticleNotes,
+      getCurrentArticle: () => state.currentArticle,
+      showToast,
+      scrollToPosition: scrollToPlainPosition
+    });
+
+    initHighlightFeature({
+      readerContent: nodes.readerContent,
+      getCurrentArticle: () => state.currentArticle,
+      showToast,
+      openOriginSnippet: (text) =>
+        openOriginSnippetPanel(
+          { originSnippet: nodes.originSnippet, originSnippetText: nodes.originSnippetText },
+          text
+        )
+    });
+
+    readerFeaturesReady = true;
+  })();
+
+  try {
+    await readerFeaturesInitPromise;
+  } finally {
+    readerFeaturesInitPromise = null;
   }
 }
 
@@ -459,6 +515,7 @@ async function loadArticles(options = {}) {
 }
 async function openArticle(id, jumpTo = null) {
   try {
+    const readerFeaturesPromise = ensureReaderFeaturesInitialized();
     captureListScroll();
     if (!history.state || history.state.view !== 'reader' || history.state.articleId !== id) {
       history.pushState({ view: 'reader', articleId: id }, '', `?article=${id}`);
@@ -470,6 +527,7 @@ async function openArticle(id, jumpTo = null) {
 
     if (cachedDetail) {
       const progress = await progressPromise;
+      await readerFeaturesPromise;
       state.currentArticle = cachedDetail;
       setReadingMode(true);
       document.body.classList.add('reader-bar-hidden');
@@ -510,7 +568,7 @@ async function openArticle(id, jumpTo = null) {
         originSnippetText: nodes.originSnippetText
       });
     }, 180);
-    const [detail, progress] = await Promise.all([detailPromise, progressPromise]);
+    const [detail, progress] = await Promise.all([detailPromise, progressPromise, readerFeaturesPromise.then(() => null)]);
     clearTimeout(loadingTimer);
     writeDetailCache(detail);
     state.currentArticle = detail;
@@ -1302,47 +1360,28 @@ async function startApp() {
   trackEvent('open_app');
   bindEvents();
   bindAdminBlockAccordion();
-  const openArticleNotes = initArticleNotesPanel({
-    panel: nodes.articleNotesPanel,
-    body: nodes.articleNotesBody,
-    closeBtn: nodes.closeArticleNotes,
-    getCurrentArticle: () => state.currentArticle,
-    showToast,
-    scrollToPosition: scrollToPlainPosition
-  });
-  nodes.articleNotesBtn.addEventListener('click', () => {
-    openArticleNotes();
+  nodes.articleNotesBtn.addEventListener('click', async () => {
+    await ensureReaderFeaturesInitialized();
+    if (openArticleNotesHandler) {
+      openArticleNotesHandler();
+    }
   });
   nodes.readerThemeBtn?.addEventListener('click', () => {
     cycleTheme();
   });
-  initHighlightFeature({
-    readerContent: nodes.readerContent,
-    getCurrentArticle: () => state.currentArticle,
-    showToast,
-    openOriginSnippet: (text) =>
-      openOriginSnippetPanel(
-        { originSnippet: nodes.originSnippet, originSnippetText: nodes.originSnippetText },
-        text
-      )
-  });
   switchTab('today');
-  try {
-    await loadArticles();
-  } finally {
+  const loadPromise = loadArticles();
+  requestAnimationFrame(() => {
     hideSplashScreen();
-  }
+  });
+  loadPromise.catch(() => {});
+  scheduleServiceWorkerRegistration();
 }
 
 async function init() {
   splashFallbackTimer = setTimeout(() => {
     hideSplashScreen();
   }, SPLASH_FALLBACK_MS);
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.warn('[sw] register failed', err.message);
-    });
-  }
 
   initTheme();
   bindLoginEvents();
