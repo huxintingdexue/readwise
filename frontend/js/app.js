@@ -799,8 +799,8 @@ function bindEvents() {
   }
 }
 function getInviteCodeLabel() {
-  const inviteCode = getStoredInviteCode() || '-';
-  return `邀请码：${inviteCode}`;
+  const inviteCode = String(state.currentUser?.inviteCode || '').trim() || getStoredInviteCode() || '-';
+  return `\u9080\u8bf7\u7801\uff1a${inviteCode}`;
 }
 
 function getUserId() {
@@ -819,7 +819,7 @@ function getAuthIdentity() {
 
 function getNicknameLabel() {
   const nickname = String(state.currentUser?.nickname || '').trim();
-  return `昵称：${nickname || '-'}`;
+  return `\u6635\u79f0\uff1a${nickname || '-'}`;
 }
 
 function isAdminUser() {
