@@ -460,7 +460,7 @@ function renderArticles() {
             <span class="${isTranslating ? 'article-status' : 'read-status'}">${escapeHtml(statusLabel)}</span>
           </div>
         </div>
-        <div class="article-meta">${escapeHtml(sourceName(item.source_key, item.author))} 路 ${escapeHtml(formatDate(item.published_at))}</div>
+        <div class="article-meta">${escapeHtml(sourceName(item.source_key, item.author))} \u00B7 ${escapeHtml(formatDate(item.published_at))}</div>
         <p class="article-summary">${escapeHtml(item.summary_zh || item.summary_en || '暂无摘要')}</p>
       </article>
     `;
