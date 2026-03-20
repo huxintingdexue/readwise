@@ -29,9 +29,15 @@ async function ensureTable() {
       id SERIAL PRIMARY KEY,
       user_id VARCHAR(50),
       event VARCHAR(50),
-      article_id UUID,
+      article_id TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     )
+  `);
+  // Older environments created article_id as integer/uuid; normalize to text for compatibility.
+  await getPool().query(`
+    ALTER TABLE events
+    ALTER COLUMN article_id TYPE TEXT
+    USING article_id::text
   `);
 }
 

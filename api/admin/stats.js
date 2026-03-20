@@ -88,15 +88,15 @@ export default async function handler(req, res) {
     const articleCompletion = eventsReady
       ? await getPool().query(
           `WITH open_counts AS (
-             SELECT article_id, COUNT(*)::int AS open_count
+             SELECT article_id::text AS article_id, COUNT(*)::int AS open_count
              FROM events
              WHERE event = 'open_article'
-             GROUP BY article_id
+             GROUP BY article_id::text
            ), finish_counts AS (
-             SELECT article_id, COUNT(*)::int AS finish_count
+             SELECT article_id::text AS article_id, COUNT(*)::int AS finish_count
              FROM events
              WHERE event = 'finish_article'
-             GROUP BY article_id
+             GROUP BY article_id::text
            )
            SELECT COALESCE(a.title_zh, a.title_en, '鏈懡鍚嶆枃绔?) AS title,
                   COALESCE(f.finish_count, 0) AS finish_count,
@@ -106,8 +106,8 @@ export default async function handler(req, res) {
                     ELSE ROUND((COALESCE(f.finish_count, 0)::numeric / o.open_count) * 100)::int
                   END AS rate
            FROM articles a
-           LEFT JOIN open_counts o ON o.article_id = a.id
-           LEFT JOIN finish_counts f ON f.article_id = a.id
+           LEFT JOIN open_counts o ON o.article_id = a.id::text
+           LEFT JOIN finish_counts f ON f.article_id = a.id::text
            WHERE COALESCE(o.open_count, 0) > 0
            ORDER BY rate DESC, open_count DESC
            LIMIT 20`
