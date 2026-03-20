@@ -6,6 +6,10 @@ import readingProgress from './reading-progress.js';
 import searchReference from './search-reference.js';
 import exportHandler from './export.js';
 import authVerify from './auth/verify.js';
+import userRegister from './user/register.js';
+import userMigrate from './user/migrate.js';
+import userMe from './user/me.js';
+import userProfile from './user/profile.js';
 import feedback from './feedback.js';
 import events from './events.js';
 import adminStats from './admin/stats.js';
@@ -44,6 +48,18 @@ export default async function handler(req, res) {
   }
   if (pathname === '/api/auth/verify') {
     return authVerify(req, res);
+  }
+  if (pathname === '/api/user/register') {
+    return userRegister(req, res);
+  }
+  if (pathname === '/api/user/migrate') {
+    return userMigrate(req, res);
+  }
+  if (pathname === '/api/user/me') {
+    return userMe(req, res);
+  }
+  if (pathname === '/api/user/profile') {
+    return userProfile(req, res);
   }
   if (pathname === '/api/feedback') {
     return feedback(req, res);
