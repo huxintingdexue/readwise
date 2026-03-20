@@ -33,6 +33,15 @@ async function ensureEventsTable() {
   `);
 }
 
+async function safeQuery(sql, fallbackRows = []) {
+  try {
+    return await getPool().query(sql);
+  } catch (err) {
+    console.warn('[api/admin/stats] query degraded', err?.message || err);
+    return { rows: fallbackRows };
+  }
+}
+
 export default async function handler(req, res) {
   const userId = await getUserId(req, res);
   if (!userId) return;
@@ -57,25 +66,27 @@ export default async function handler(req, res) {
     }
 
     const todayActive = eventsReady
-      ? await getPool().query(
+      ? await safeQuery(
           `SELECT COUNT(DISTINCT user_id)::int AS count
            FROM events
            WHERE event = 'open_app'
-             AND created_at >= date_trunc('day', now())`
+             AND created_at >= date_trunc('day', now())`,
+          [{ count: 0 }]
         )
       : { rows: [{ count: 0 }] };
 
     const todayOpen = eventsReady
-      ? await getPool().query(
+      ? await safeQuery(
           `SELECT COUNT(*)::int AS count
            FROM events
            WHERE event = 'open_article'
-             AND created_at >= date_trunc('day', now())`
+             AND created_at >= date_trunc('day', now())`,
+          [{ count: 0 }]
         )
       : { rows: [{ count: 0 }] };
 
     const weeklyUser = eventsReady
-      ? await getPool().query(
+      ? await safeQuery(
           `SELECT user_id, COUNT(*)::int AS count
            FROM events
            WHERE event = 'finish_article'
@@ -86,7 +97,7 @@ export default async function handler(req, res) {
       : { rows: [] };
 
     const articleCompletion = eventsReady
-      ? await getPool().query(
+      ? await safeQuery(
           `WITH open_counts AS (
              SELECT article_id::text AS article_id, COUNT(*)::int AS open_count
              FROM events
@@ -114,14 +125,14 @@ export default async function handler(req, res) {
         )
       : { rows: [] };
 
-    const highlightsByUser = await getPool().query(
+    const highlightsByUser = await safeQuery(
       `SELECT user_id, COUNT(*)::int AS count
        FROM highlights
        GROUP BY user_id
        ORDER BY count DESC`
     );
 
-    const qaByUser = await getPool().query(
+    const qaByUser = await safeQuery(
       `SELECT user_id, COUNT(*)::int AS count
        FROM qa_records
        WHERE answer_summary IS NULL OR answer_summary NOT LIKE '__reference__:%'

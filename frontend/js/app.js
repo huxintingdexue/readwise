@@ -966,8 +966,9 @@ async function loadAdminStats() {
         }))
       )
     );
-  } catch (_) {
-    nodes.adminStatsList.innerHTML = '<div class="state-text">加载失败</div>';
+  } catch (err) {
+    const message = err?.message ? `加载失败：${escapeHtml(err.message)}` : '加载失败';
+    nodes.adminStatsList.innerHTML = `<div class="state-text">${message}</div>`;
   }
 }
 
