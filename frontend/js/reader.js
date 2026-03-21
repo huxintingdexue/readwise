@@ -28,6 +28,111 @@ function escapeHtml(text) {
     .replace(/>/g, '&gt;');
 }
 
+function escapeHtmlAttr(text) {
+  return escapeHtml(text).replace(/"/g, '&quot;');
+}
+
+function renderInlineMarkdown(text) {
+  let html = escapeHtml(text || '');
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, label, url) =>
+    `<a href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+  return html;
+}
+
+function renderMarkdown(markdown) {
+  const src = String(markdown || '').replace(/\r\n/g, '\n');
+  const lines = src.split('\n');
+  const blocks = [];
+  let i = 0;
+
+  const isListItem = (line) => /^\s*[-*+]\s+/.test(line);
+  const isOrderedItem = (line) => /^\s*\d+\.\s+/.test(line);
+  const isSpecial = (line) =>
+    /^#{1,6}\s+/.test(line)
+    || /^>\s?/.test(line)
+    || /^```/.test(line)
+    || /^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)
+    || isListItem(line)
+    || isOrderedItem(line);
+
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line || !line.trim()) {
+      i += 1;
+      continue;
+    }
+
+    if (/^```/.test(line)) {
+      const codeLines = [];
+      i += 1;
+      while (i < lines.length && !/^```/.test(lines[i])) {
+        codeLines.push(lines[i]);
+        i += 1;
+      }
+      if (i < lines.length) i += 1;
+      blocks.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) {
+      const level = Math.max(1, Math.min(6, heading[1].length));
+      blocks.push(`<h${level}>${renderInlineMarkdown(heading[2].trim())}</h${level}>`);
+      i += 1;
+      continue;
+    }
+
+    if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
+      blocks.push('<hr />');
+      i += 1;
+      continue;
+    }
+
+    if (/^>\s?/.test(line)) {
+      const quoteLines = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        quoteLines.push(lines[i].replace(/^>\s?/, ''));
+        i += 1;
+      }
+      blocks.push(`<blockquote><p>${quoteLines.map(renderInlineMarkdown).join('<br />')}</p></blockquote>`);
+      continue;
+    }
+
+    if (isListItem(line)) {
+      const items = [];
+      while (i < lines.length && isListItem(lines[i])) {
+        items.push(lines[i].replace(/^\s*[-*+]\s+/, ''));
+        i += 1;
+      }
+      blocks.push(`<ul>${items.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join('')}</ul>`);
+      continue;
+    }
+
+    if (isOrderedItem(line)) {
+      const items = [];
+      while (i < lines.length && isOrderedItem(lines[i])) {
+        items.push(lines[i].replace(/^\s*\d+\.\s+/, ''));
+        i += 1;
+      }
+      blocks.push(`<ol>${items.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join('')}</ol>`);
+      continue;
+    }
+
+    const paraLines = [];
+    while (i < lines.length && lines[i].trim() && !isSpecial(lines[i])) {
+      paraLines.push(lines[i].trim());
+      i += 1;
+    }
+    blocks.push(`<p>${paraLines.map(renderInlineMarkdown).join('<br />')}</p>`);
+  }
+
+  return blocks.join('');
+}
+
 function currentScrollTop(scroller = window) {
   if (scroller && scroller !== window) {
     return Math.max(0, scroller.scrollTop || 0);
@@ -43,11 +148,13 @@ function maxScrollableDistance(scroller = window) {
 }
 
 export function getReadingBaseText(detail, readerContent) {
+  const renderedText = (readerContent?.textContent || '').trim();
+  if (renderedText) return renderedText;
   const zhText = (detail?.content_zh || '').trim();
   if (zhText) return zhText;
   const plainText = detail?.content_plain || '';
   if (plainText) return plainText;
-  return readerContent?.textContent || '';
+  return '';
 }
 
 export function getReadingBaseLength(detail, readerContent) {
@@ -88,8 +195,8 @@ function renderContent(detail) {
     return `<p>${escapeHtml(plainText || '暂无内容').replace(/\n/g, '<br/>')}</p>`;
   }
 
-  // Wrap zh text in proper paragraphs
-  const zhHtml = `<p>${escapeHtml(zhText).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`;
+  // Render zh content as Markdown to support headings/lists/inline emphasis.
+  const zhHtml = renderMarkdown(zhText);
   if (!enHtml) return zhHtml;
   return zhHtml;
 }

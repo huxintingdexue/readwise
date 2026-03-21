@@ -142,8 +142,8 @@ function inferPosition(content, selectedText, lastStartRef) {
 }
 
 function getPositionBaseText(article, readerContent) {
-  if (article?.content_zh) return article.content_zh;
   if (readerContent?.textContent) return readerContent.textContent;
+  if (article?.content_zh) return article.content_zh;
   return article?.content_plain || '';
 }
 
@@ -651,5 +651,4 @@ export function initHighlightFeature({
     }
   });
 }
-
 

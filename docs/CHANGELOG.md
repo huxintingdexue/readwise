@@ -233,6 +233,21 @@
 
 ---
 
+## 2026-03-21 — 阅读页支持 Markdown 渲染（v2.10.21）
+
+### 已完成
+- ✅ 阅读页 `content_zh` 支持 Markdown 语法渲染（标题、列表、引用、代码、粗斜体、链接）
+- ✅ 增加 Markdown 版式样式，避免继续按纯文本显示
+- ✅ 划线/进度基准优先使用渲染后文本，保持与展示一致
+
+### 变更文件
+- frontend/js/reader.js
+- frontend/js/highlight.js
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+
+---
+
 ## 2026-03-18 — 管理员后台右滑返回回到“我的”（v2.10.20）
 
 ### 已完成
@@ -2068,7 +2083,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 
