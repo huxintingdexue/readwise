@@ -124,6 +124,7 @@ async function listArticles(res, query, userId) {
     WHERE ($2::text IS NULL OR a.read_status = $2)
       AND ($3::text IS NULL OR a.source_key = $3)
       AND (COALESCE(a.status, 'ready') = 'ready' OR (a.status = 'translating' AND a.submitted_by = $1))
+      AND COALESCE(a.publish_status, 'published') <> 'hidden'
       AND (
         $4::boolean = TRUE
         OR COALESCE(a.publish_status, 'published') = 'published'
@@ -182,6 +183,7 @@ async function getArticleById(res, id, userId) {
     FROM articles a
     WHERE a.id = $1
       AND (COALESCE(a.status, 'ready') = 'ready' OR (a.status = 'translating' AND a.submitted_by = $2))
+      AND COALESCE(a.publish_status, 'published') <> 'hidden'
       AND (
         $3::boolean = TRUE
         OR COALESCE(a.publish_status, 'published') = 'published'
