@@ -10,6 +10,7 @@
   --danger: #ff7b7b;
   --scrollbar-track: #efebe4;
   --scrollbar-thumb: #c7c0b2;
+  --font-family-base: 'Noto Serif SC', 'PingFang SC', Georgia, serif;
 }
 
 /* ── 护眼模式 ─────────────────────────────────────── */
@@ -47,8 +48,20 @@ body {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Noto Serif SC', 'PingFang SC', Georgia, serif;
+  font-family: var(--font-family-base);
   overflow-x: hidden;
+}
+
+body.font-serif {
+  --font-family-base: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+}
+
+body.font-sans {
+  --font-family-base: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+}
+
+body.font-system {
+  --font-family-base: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 .splash-screen {
@@ -542,7 +555,18 @@ body.reading-mode::-webkit-scrollbar-thumb {
   gap: 8px;
 }
 
-.theme-choice {
+.me-appearance-group + .me-appearance-group {
+  margin-top: 12px;
+}
+
+.me-appearance-title {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.theme-choice,
+.font-choice {
   border: 1px solid var(--line);
   background: var(--panel-soft);
   color: var(--text);
@@ -554,7 +578,8 @@ body.reading-mode::-webkit-scrollbar-thumb {
   cursor: pointer;
 }
 
-.theme-choice.is-active {
+.theme-choice.is-active,
+.font-choice.is-active {
   background: var(--text);
   color: var(--bg);
   border-color: var(--text);
@@ -784,7 +809,7 @@ body.reading-mode::-webkit-scrollbar-thumb {
   z-index: 5;
 }
 
-/* Right-side button group (highlights + theme toggle) */
+/* Right-side button group (highlights + appearance) */
 .reader-header-right {
   display: flex;
   gap: 8px;
@@ -1207,6 +1232,28 @@ body.reading-mode::-webkit-scrollbar-thumb {
 
 #ingestModal {
   background: var(--bg);
+}
+
+#appearanceModal {
+  background: var(--bg);
+}
+
+.appearance-panel .me-panel-head button {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+}
+
+.appearance-panel .me-panel-body {
+  align-content: start;
+}
+
+.appearance-panel .me-section {
+  margin-top: 0;
 }
 
 .qa-sheet {

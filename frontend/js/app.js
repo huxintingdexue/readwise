@@ -27,6 +27,7 @@ const state = {
 
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v1';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
+const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
 const SW_REGISTER_DELAY_MS = 1200;
@@ -60,7 +61,7 @@ const nodes = {
   readerMeta: document.querySelector('#readerMeta'),
   readerContent: document.querySelector('#readerContent'),
   articleNotesBtn: document.querySelector('#articleNotesBtn'),
-  readerThemeBtn: document.querySelector('#readerThemeBtn'),
+  readerAppearanceBtn: document.querySelector('#readerAppearanceBtn'),
   articleNotesPanel: document.querySelector('#articleNotesPanel'),
   articleNotesBody: document.querySelector('#articleNotesBody'),
   closeArticleNotes: document.querySelector('#closeArticleNotes'),
@@ -112,7 +113,11 @@ const nodes = {
   feedbackInput: document.querySelector('#feedbackInput'),
   feedbackSubmitBtn: document.querySelector('#feedbackSubmitBtn'),
   feedbackCloseBtn: document.querySelector('#feedbackCloseBtn'),
-  themeChoices: [...document.querySelectorAll('.theme-choice')]
+  appearanceModal: document.querySelector('#appearanceModal'),
+  appearanceCloseBtn: document.querySelector('#appearanceCloseBtn'),
+  meAppearanceEntry: document.querySelector('#meAppearanceEntry'),
+  themeChoices: [...document.querySelectorAll('.theme-choice')],
+  fontChoices: [...document.querySelectorAll('.font-choice')]
 };
 
 function escapeHtml(text) {
@@ -198,6 +203,19 @@ function applyTheme(theme) {
   if (theme === 'dark') document.body.classList.add('theme-dark');
 }
 
+function applyFontPreset(preset) {
+  document.body.classList.remove('font-serif', 'font-sans', 'font-system');
+  if (preset === 'sans') {
+    document.body.classList.add('font-sans');
+    return;
+  }
+  if (preset === 'system') {
+    document.body.classList.add('font-system');
+    return;
+  }
+  document.body.classList.add('font-serif');
+}
+
 function normalizeThemeValue(value) {
   if (value === 'day') return 'light';
   if (value === 'warm') return 'eye';
@@ -212,16 +230,23 @@ function setThemeChoice(theme) {
   renderThemeChoices(normalized);
 }
 
-function cycleTheme() {
-  const current = normalizeThemeValue(localStorage.getItem('theme'));
-  const order = ['light', 'eye', 'dark'];
-  const next = order[(order.indexOf(current) + 1) % order.length] || 'light';
-  setThemeChoice(next);
-  const label = next === 'eye' ? '护眼' : next === 'dark' ? '深色' : '标准';
-  showToast(`已切换为${label}`);
+function normalizeFontPresetValue(value) {
+  if (value === 'serif' || value === 'sans' || value === 'system') return value;
+  return 'serif';
+}
+
+function setFontChoice(preset) {
+  const normalized = normalizeFontPresetValue(preset);
+  localStorage.setItem(FONT_PRESET_STORAGE_KEY, normalized);
+  updateFontPreset(normalized);
+  renderFontChoices(normalized);
 }
 function updateTheme(theme) {
   applyTheme(theme);
+}
+
+function updateFontPreset(preset) {
+  applyFontPreset(preset);
 }
 
 function renderThemeChoices(active) {
@@ -230,10 +255,22 @@ function renderThemeChoices(active) {
   });
 }
 
+function renderFontChoices(active) {
+  nodes.fontChoices.forEach((btn) => {
+    btn.classList.toggle('is-active', btn.dataset.font === active);
+  });
+}
+
 function initTheme() {
   const saved = normalizeThemeValue(localStorage.getItem('theme'));
   updateTheme(saved);
   renderThemeChoices(saved);
+}
+
+function initFontPreset() {
+  const saved = normalizeFontPresetValue(localStorage.getItem(FONT_PRESET_STORAGE_KEY));
+  updateFontPreset(saved);
+  renderFontChoices(saved);
 }
 
 function formatDate(isoString) {
@@ -682,6 +719,12 @@ function bindEvents() {
     });
   });
 
+  nodes.fontChoices.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setFontChoice(btn.dataset.font || 'serif');
+    });
+  });
+
   nodes.logoutBtn?.addEventListener('click', () => {
     const confirmed = window.confirm('确定退出登录吗？');
     if (!confirmed) return;
@@ -694,6 +737,20 @@ function bindEvents() {
 
   nodes.feedbackEntry?.addEventListener('click', () => {
     openFeedbackModal();
+  });
+
+  nodes.meAppearanceEntry?.addEventListener('click', () => {
+    openAppearanceModal();
+  });
+
+  nodes.appearanceCloseBtn?.addEventListener('click', () => {
+    closeAppearanceModal();
+  });
+
+  nodes.appearanceModal?.addEventListener('click', (event) => {
+    if (event.target === nodes.appearanceModal) {
+      closeAppearanceModal();
+    }
   });
 
   nodes.nicknameHintBtn?.addEventListener('click', () => {
@@ -913,6 +970,7 @@ function refreshMeTab() {
     nodes.adminSection.classList.toggle('hidden', userId !== 'admin');
   }
   renderThemeChoices(normalizeThemeValue(localStorage.getItem('theme')));
+  renderFontChoices(normalizeFontPresetValue(localStorage.getItem(FONT_PRESET_STORAGE_KEY)));
 }
 function renderStatBlock(title, lines) {
   const block = document.createElement('div');
@@ -1228,6 +1286,16 @@ function closeFeedbackModal() {
   nodes.feedbackModal?.classList.add('hidden');
 }
 
+function openAppearanceModal() {
+  renderThemeChoices(normalizeThemeValue(localStorage.getItem('theme')));
+  renderFontChoices(normalizeFontPresetValue(localStorage.getItem(FONT_PRESET_STORAGE_KEY)));
+  nodes.appearanceModal?.classList.remove('hidden');
+}
+
+function closeAppearanceModal() {
+  nodes.appearanceModal?.classList.add('hidden');
+}
+
 function openIngestModal() {
   nodes.ingestModal?.classList.remove('hidden');
   if (nodes.ingestInput) {
@@ -1421,8 +1489,8 @@ async function startApp() {
       openArticleNotesHandler();
     }
   });
-  nodes.readerThemeBtn?.addEventListener('click', () => {
-    cycleTheme();
+  nodes.readerAppearanceBtn?.addEventListener('click', () => {
+    openAppearanceModal();
   });
   switchTab('today');
   const loadPromise = loadArticles();
@@ -1439,6 +1507,7 @@ async function init() {
   }, SPLASH_FALLBACK_MS);
 
   initTheme();
+  initFontPreset();
   bindLoginEvents();
 
   const authed = await bootstrapAuth();
@@ -1458,5 +1527,3 @@ async function init() {
 }
 
 init();
-
-

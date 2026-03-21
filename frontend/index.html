@@ -82,11 +82,25 @@
             </div>
           </div>
           <div class="me-section">
-            <h2>颜色</h2>
-            <div class="me-theme-row">
-              <button class="theme-choice" data-theme="light" type="button">标准</button>
-              <button class="theme-choice" data-theme="eye" type="button">护眼</button>
-              <button class="theme-choice" data-theme="dark" type="button">深色</button>
+            <div class="me-section-head">
+              <h2>阅读外观</h2>
+              <button id="meAppearanceEntry" class="me-ghost-btn" type="button">快捷设置</button>
+            </div>
+            <div class="me-appearance-group">
+              <div class="me-appearance-title">主题</div>
+              <div class="me-theme-row">
+                <button class="theme-choice" data-theme="light" type="button">标准</button>
+                <button class="theme-choice" data-theme="eye" type="button">护眼</button>
+                <button class="theme-choice" data-theme="dark" type="button">深色</button>
+              </div>
+            </div>
+            <div class="me-appearance-group">
+              <div class="me-appearance-title">字体</div>
+              <div class="me-theme-row">
+                <button class="font-choice" data-font="serif" type="button">阅读宋体</button>
+                <button class="font-choice" data-font="sans" type="button">清晰黑体</button>
+                <button class="font-choice" data-font="system" type="button">系统默认</button>
+              </div>
             </div>
           </div>
           <div class="me-section">
@@ -168,9 +182,11 @@
                   <path d="M5 19h14v2H5z"/>
                 </svg>
               </button>
-              <button id="readerThemeBtn" class="header-icon-btn" type="button" aria-label="切换颜色">
+              <button id="readerAppearanceBtn" class="header-icon-btn" type="button" aria-label="阅读外观">
                 <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
-                  <path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 0 0-18zm0 2a7 7 0 0 1 0 14V5z"/>
+                  <path d="M12 4a8 8 0 0 0-8 8h2a6 6 0 1 1 6 6v2a8 8 0 0 0 0-16z"/>
+                  <path d="M13 7h4v2h-2v8h-2V7z"/>
+                  <path d="M7 13h4v2H7z"/>
                 </svg>
               </button>
             </div>
@@ -255,6 +271,33 @@
         </div>
         <textarea id="feedbackInput" class="feedback-input" placeholder="非常欢迎提出改进建议！大家的每条建议我都会认真读的！也欢迎微信跟我讨论！"></textarea>
         <button id="feedbackSubmitBtn" class="feedback-submit" type="button">发送</button>
+      </div>
+    </div>
+
+    <div id="appearanceModal" class="qa-modal hidden" role="dialog" aria-modal="true">
+      <div class="me-panel appearance-panel">
+        <div class="me-panel-head">
+          <strong>阅读外观</strong>
+          <button id="appearanceCloseBtn" type="button" aria-label="关闭">✕</button>
+        </div>
+        <div class="me-panel-body">
+          <div class="me-section">
+            <h2>主题</h2>
+            <div class="me-theme-row">
+              <button class="theme-choice" data-theme="light" type="button">标准</button>
+              <button class="theme-choice" data-theme="eye" type="button">护眼</button>
+              <button class="theme-choice" data-theme="dark" type="button">深色</button>
+            </div>
+          </div>
+          <div class="me-section">
+            <h2>字体</h2>
+            <div class="me-theme-row">
+              <button class="font-choice" data-font="serif" type="button">阅读宋体</button>
+              <button class="font-choice" data-font="sans" type="button">清晰黑体</button>
+              <button class="font-choice" data-font="system" type="button">系统默认</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
