@@ -7,6 +7,9 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：文章状态拆分为双轴（`status` 翻译流程 + `publish_status` 发布可见性）✅
+- 最近变更：新增待主编确认流转（`pending_review`）+ 管理端审核发布接口 ✅
+- 最近变更：新增 4 小时自动发布定时任务（pending -> published）✅
 - 最近变更：用户身份升级为 UID 主鉴权（X-Uid 优先，兼容 X-Invite-Code）✅
 - 最近变更：新增 users 体系与老用户静默迁移（register/migrate/me/profile）✅
 - 最近变更：前端登录升级为昵称必填 + 邀请码选填 ✅
@@ -196,6 +199,9 @@ Vercel Serverless Functions（/api/*）
 | frontend/sw.js | 列表NetworkFirst，详情CacheFirst，图片不缓存 | ✅ 已完成 |
 | frontend/manifest.json | PWA 配置 | ✅ 已完成 |
 | scripts/migrate-users.js | 邀请码老用户 -> users 迁移脚本（手动执行、幂等） | ✅ 已完成 |
+| scripts/migrate-publish-status.js | 发布状态轴数据库迁移脚本（一次性） | ✅ 已完成 |
+| scripts/publish-pending.js | 将超 4 小时的 `pending_review` 自动发布 | ✅ 已完成 |
+| .github/workflows/publish-pending.yml | 每 10 分钟执行一次 pending 自动发布 | ✅ 已完成 |
 
 ## 已完成功能
 - ✅ 完成项目初始化：创建前后端目录骨架、Serverless API 骨架、GitHub Actions 目录骨架
@@ -301,5 +307,4 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
   - openclaw 去重接口明确为 /api/articles/urls，写入 Skill
   - 评估是否需要引入签名机制（HMAC-SHA256 + 时间戳防重放）
   - 收窄所有非 admin 邀请码的最小权限
-
 

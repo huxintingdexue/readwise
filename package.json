@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vercel dev",
     "start": "vercel dev",
-    "fetch:articles": "node scripts/fetch-articles.js"
+    "fetch:articles": "node scripts/fetch-articles.js",
+    "migrate:publish-status": "node scripts/migrate-publish-status.js",
+    "publish:pending": "node scripts/publish-pending.js"
   },
   "dependencies": {
     "@vercel/node": "^5.3.25",

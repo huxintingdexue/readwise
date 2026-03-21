@@ -36,6 +36,15 @@ function isPrivilegedUser(userId) {
   return isAdmin(userId) || userId === 'openclaw' || userId === 'user_claw';
 }
 
+function normalizePublishStatus(rawValue) {
+  const value = String(rawValue || '').trim();
+  if (!value) return 'published';
+  if (value === 'published' || value === 'pending_review') {
+    return value;
+  }
+  return null;
+}
+
 async function getUserId(req, res) {
   return resolveUserId(req, res);
 }
@@ -521,6 +530,16 @@ async function handleIngestFullText(req, res, userId) {
   const authorRaw = String(payload.author || '').trim();
   const sourceUrl = String(payload.source_url || payload.url || '').trim();
   const publishedAtRaw = String(payload.published_at || '').trim();
+  const publishStatus = normalizePublishStatus(payload.publish_status);
+
+  if (!publishStatus) {
+    badRequest(
+      res,
+      'PUBLISH_STATUS_INVALID',
+      "publish_status 仅支持 'published' 或 'pending_review'"
+    );
+    return;
+  }
 
   const zhLength = contentZh.length;
   if (zhLength <= 0) {
@@ -575,12 +594,12 @@ async function handleIngestFullText(req, res, userId) {
 
   const poolClient = getPool();
   const dupCheck = await poolClient.query(
-    'SELECT id, status FROM articles WHERE source_url = $1 OR url = $1 LIMIT 1',
+    'SELECT id, publish_status FROM articles WHERE source_url = $1 OR url = $1 LIMIT 1',
     [sourceUrl]
   );
   if (dupCheck.rows.length > 0) {
     const existing = dupCheck.rows[0];
-    if (userId === 'openclaw' && existing.status === 'hidden') {
+    if (userId === 'openclaw' && existing.publish_status === 'hidden') {
       await poolClient.query('DELETE FROM articles WHERE id = $1', [existing.id]);
     } else {
       res.status(200).json({ success: false, message: '文章已存在', articleId: existing.id });
@@ -611,10 +630,11 @@ async function handleIngestFullText(req, res, userId) {
       source_url,
       published_at,
       status,
+      publish_status,
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, 'full', $10, 'unread', $11, $12, $13, 'ready', $14, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, 'full', $10, 'unread', $11, $12, $13, 'ready', $14, $15, NULL
     )
     RETURNING id
   `;
@@ -633,6 +653,7 @@ async function handleIngestFullText(req, res, userId) {
     sourceUrl,
     sourceUrl,
     publishedAt,
+    publishStatus,
     userId
   ]);
 
@@ -651,6 +672,15 @@ async function handleIngestSubmit(req, res, userId) {
   const sourceUrl = String(url || '').trim();
   if (!sourceUrl) {
     badRequest(res, 'URL_MISSING', 'url is required');
+    return;
+  }
+  const publishStatus = normalizePublishStatus(body.publish_status);
+  if (!publishStatus) {
+    badRequest(
+      res,
+      'PUBLISH_STATUS_INVALID',
+      "publish_status 仅支持 'published' 或 'pending_review'"
+    );
     return;
   }
 
@@ -672,12 +702,12 @@ async function handleIngestSubmit(req, res, userId) {
   }
 
   const dupCheck = await poolClient.query(
-    'SELECT id, status FROM articles WHERE source_url = $1 OR url = $1 LIMIT 1',
+    'SELECT id, publish_status FROM articles WHERE source_url = $1 OR url = $1 LIMIT 1',
     [sourceUrl]
   );
   if (dupCheck.rows.length > 0) {
     const existing = dupCheck.rows[0];
-    if (userId === 'openclaw' && existing.status === 'hidden') {
+    if (userId === 'openclaw' && existing.publish_status === 'hidden') {
       await poolClient.query('DELETE FROM articles WHERE id = $1', [existing.id]);
     } else {
       res.status(200).json({ success: false, message: '文章已存在', articleId: existing.id });
@@ -721,10 +751,11 @@ async function handleIngestSubmit(req, res, userId) {
       source_url,
       published_at,
       status,
+      publish_status,
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, NULL, $3, NULL, $4, $5, $6, '', $7, 0, 'unread', $8, $9, $10, 'translating', $11, NULL
+      $1, $2, NULL, $3, NULL, $4, $5, $6, '', $7, 0, 'unread', $8, $9, $10, 'translating', $11, $12, NULL
     )
     RETURNING id
   `;
@@ -741,6 +772,7 @@ async function handleIngestSubmit(req, res, userId) {
     sourceUrl,
     sourceUrl,
     finalPublishedAt,
+    publishStatus,
     userId
   ]);
 

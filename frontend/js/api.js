@@ -307,6 +307,11 @@ export async function getHiddenArticles() {
   return data.items || [];
 }
 
+export async function getPendingArticles() {
+  const data = await requestJson('/api/admin/articles?status=pending');
+  return data.items || [];
+}
+
 export async function updateAdminArticleStatus(articleId, status, hiddenReason = '') {
   if (!articleId) {
     throw new Error('Missing article id');
@@ -320,10 +325,30 @@ export async function updateAdminArticleStatus(articleId, status, hiddenReason =
   });
 }
 
+export async function updatePendingPublishStatus(articleId, publishStatus, hiddenReason = '') {
+  if (!articleId) {
+    throw new Error('Missing article id');
+  }
+  return requestJson(`/api/admin/articles/${encodeURIComponent(articleId)}/publish`, {
+    method: 'PATCH',
+    body: {
+      publish_status: publishStatus,
+      hidden_reason: hiddenReason
+    }
+  });
+}
+
 export async function ingestUrl(url) {
   return requestJson('/api/ingest', {
     method: 'POST',
     body: { url }
+  });
+}
+
+export async function ingestUrlWithPublishStatus(url, publishStatus = 'published') {
+  return requestJson('/api/ingest', {
+    method: 'POST',
+    body: { url, publish_status: publishStatus }
   });
 }
 

@@ -1,4 +1,4 @@
-﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, updateAdminArticleStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth } from './api.js';
+﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth } from './api.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 
 const state = {
@@ -81,6 +81,7 @@ const nodes = {
   adminInviteCode: document.querySelector('#adminInviteCode'),
   adminInviteUserId: document.querySelector('#adminInviteUserId'),
   adminInviteAdd: document.querySelector('#adminInviteAdd'),
+  adminPendingList: document.querySelector('#adminPendingList'),
   adminHiddenList: document.querySelector('#adminHiddenList'),
   backBtn: document.querySelector('#backBtn'),
   filterToggle: document.querySelector('#filterToggle'),
@@ -974,7 +975,7 @@ async function openAdminConsole() {
   nodes.notesTab.classList.add('hidden');
   resetAdminBlocksCollapsed();
   nodes.adminConsole.classList.remove('hidden');
-  await Promise.all([loadAdminFeedback(), loadAdminStats(), loadInviteCodes(), loadHiddenArticles()]);
+  await Promise.all([loadAdminFeedback(), loadAdminStats(), loadInviteCodes(), loadPendingArticles(), loadHiddenArticles()]);
 }
 
 function closeAdminConsole(options = {}) {
@@ -1136,6 +1137,60 @@ async function loadHiddenArticles() {
     });
   } catch (_) {
     nodes.adminHiddenList.innerHTML = '<div class="state-text">加载失败</div>';
+  }
+}
+
+async function loadPendingArticles() {
+  if (!nodes.adminPendingList) return;
+  nodes.adminPendingList.innerHTML = '';
+  try {
+    const items = await getPendingArticles();
+    if (!items.length) {
+      nodes.adminPendingList.innerHTML = '<div class="state-text">暂无待确认文章</div>';
+      return;
+    }
+    items.forEach((item) => {
+      const div = document.createElement('div');
+      div.className = 'admin-item';
+      div.innerHTML = `
+        <div class="admin-item-meta">
+          <span>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</span>
+          <span>${escapeHtml(formatAdminTime(item.fetched_at || item.published_at))}</span>
+        </div>
+        <div>提交者：${escapeHtml(item.submitted_by || '-')}</div>
+        <div class="admin-item-actions">
+          <button class="ok" type="button" data-action="publish">发布</button>
+          <button class="danger" type="button" data-action="hide">隐藏</button>
+        </div>
+      `;
+      const publishBtn = div.querySelector('button[data-action="publish"]');
+      const hideBtn = div.querySelector('button[data-action="hide"]');
+      publishBtn?.addEventListener('click', async () => {
+        try {
+          await updatePendingPublishStatus(item.id, 'published');
+          showToast('已发布', 2000);
+          await Promise.all([loadPendingArticles(), loadArticles()]);
+        } catch (err) {
+          showToast(`操作失败：${err.message}`, 2000);
+        }
+      });
+      hideBtn?.addEventListener('click', async () => {
+        const reason = window.prompt('请输入隐藏原因');
+        if (!reason || !String(reason).trim()) {
+          return;
+        }
+        try {
+          await updatePendingPublishStatus(item.id, 'hidden', String(reason).trim());
+          showToast('已隐藏', 2000);
+          await Promise.all([loadPendingArticles(), loadHiddenArticles(), loadArticles()]);
+        } catch (err) {
+          showToast(`操作失败：${err.message}`, 2000);
+        }
+      });
+      nodes.adminPendingList.appendChild(div);
+    });
+  } catch (_) {
+    nodes.adminPendingList.innerHTML = '<div class="state-text">加载失败</div>';
   }
 }
 
@@ -1403,6 +1458,5 @@ async function init() {
 }
 
 init();
-
 
 

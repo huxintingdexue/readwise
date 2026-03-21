@@ -68,6 +68,7 @@ function normalizeFilters(query) {
 }
 
 async function listArticles(res, query, userId) {
+  const isAdminUser = userId === 'admin';
   const filters = normalizeFilters(query);
   if (filters.error) {
     res.status(400).json({ error: 'bad_request', message: filters.error });
@@ -92,6 +93,7 @@ async function listArticles(res, query, userId) {
       a.translation_status,
       a.translated_chars,
       a.status,
+      a.publish_status,
       a.submitted_by,
       a.read_status,
       CASE
@@ -122,11 +124,16 @@ async function listArticles(res, query, userId) {
     WHERE ($2::text IS NULL OR a.read_status = $2)
       AND ($3::text IS NULL OR a.source_key = $3)
       AND (COALESCE(a.status, 'ready') = 'ready' OR (a.status = 'translating' AND a.submitted_by = $1))
+      AND (
+        $4::boolean = TRUE
+        OR COALESCE(a.publish_status, 'published') = 'published'
+        OR (a.status = 'translating' AND a.submitted_by = $1)
+      )
       AND (a.user_id IS NULL OR a.user_id = $1)
     ORDER BY ${orderClause}
   `;
 
-  const params = [userId, filters.status, filters.author];
+  const params = [userId, filters.status, filters.author, isAdminUser];
   const { rows } = await getPool().query(sql, params);
   res.status(200).json({ articles: rows });
 }
@@ -137,7 +144,11 @@ async function listArticleUrls(res, userId) {
       a.url,
       a.source_url
     FROM articles a
-    WHERE (COALESCE(a.status, 'ready') = 'ready' OR (a.status = 'translating' AND a.submitted_by = $1))
+    WHERE (
+        COALESCE(a.status, 'ready') = 'ready'
+        OR (a.status = 'translating' AND a.submitted_by = $1)
+      )
+      AND COALESCE(a.publish_status, 'published') IN ('published', 'pending_review')
       AND (a.user_id IS NULL OR a.user_id = $1)
     ORDER BY a.published_at DESC NULLS LAST, a.fetched_at DESC
   `;
@@ -146,6 +157,7 @@ async function listArticleUrls(res, userId) {
 }
 
 async function getArticleById(res, id, userId) {
+  const isAdminUser = userId === 'admin';
   const sql = `
     SELECT
       a.id,
@@ -165,15 +177,21 @@ async function getArticleById(res, id, userId) {
       a.published_at,
       a.fetched_at,
       a.status,
+      a.publish_status,
       a.submitted_by
     FROM articles a
     WHERE a.id = $1
       AND (COALESCE(a.status, 'ready') = 'ready' OR (a.status = 'translating' AND a.submitted_by = $2))
+      AND (
+        $3::boolean = TRUE
+        OR COALESCE(a.publish_status, 'published') = 'published'
+        OR (a.status = 'translating' AND a.submitted_by = $2)
+      )
       AND (a.user_id IS NULL OR a.user_id = $2)
     LIMIT 1
   `;
 
-  const { rows } = await getPool().query(sql, [id, userId]);
+  const { rows } = await getPool().query(sql, [id, userId, isAdminUser]);
   if (rows.length === 0) {
     res.status(404).json({ error: 'not_found' });
     return;
@@ -189,7 +207,7 @@ async function deleteHiddenArticle(res, articleId, userId) {
 
   const { rows } = await getPool().query(
     `
-      SELECT id, status
+      SELECT id, publish_status
       FROM articles a
       WHERE id = $1
         AND (a.user_id IS NULL OR a.user_id = $2)
@@ -203,7 +221,7 @@ async function deleteHiddenArticle(res, articleId, userId) {
     return;
   }
 
-  if (rows[0].status !== 'hidden') {
+  if (rows[0].publish_status !== 'hidden') {
     res.status(403).json({ error: 'forbidden', message: 'only hidden can be deleted' });
     return;
   }

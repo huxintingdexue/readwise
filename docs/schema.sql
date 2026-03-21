@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS articles (
   fetched_at          TIMESTAMP DEFAULT NOW(),
   user_id             TEXT NULL,                            -- 预留多用户，MVP 阶段由后端映射默认用户
   submitted_by        TEXT,                                 -- 手动投喂者 user_id
-  status              VARCHAR(20) DEFAULT 'ready',           -- 'translating' | 'ready' | 'hidden'
+  status              VARCHAR(20) DEFAULT 'ready',           -- 翻译流程：'translating' | 'ready'
+  publish_status      VARCHAR(20) DEFAULT 'published',       -- 'published' | 'pending_review' | 'hidden'
   hidden_reason       TEXT,                                 -- 隐藏原因（管理员）
   hidden_at           TIMESTAMP                             -- 隐藏时间
 );
@@ -105,6 +106,7 @@ CREATE TABLE IF NOT EXISTS invite_codes (
 CREATE INDEX IF NOT EXISTS idx_articles_source_key ON articles(source_key);
 CREATE INDEX IF NOT EXISTS idx_articles_read_status ON articles(read_status);
 CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_articles_publish_status ON articles(publish_status, published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_highlights_article_id ON highlights(article_id);
 CREATE INDEX IF NOT EXISTS idx_qa_records_article_id ON qa_records(article_id);
 CREATE INDEX IF NOT EXISTS idx_reading_list_status ON reading_list(status);

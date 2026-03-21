@@ -16,6 +16,30 @@
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
 
+## 2026-03-21 — 发布状态轴拆分 + 待主编确认流转（v2.12.0）
+
+### 已完成
+- ✅ 数据库新增 `articles.publish_status`（`published` / `pending_review` / `hidden`）并加约束与索引
+- ✅ 历史数据迁移：`hidden_at` 非空文章回填为 `publish_status='hidden'`
+- ✅ 清理 `users.invite_code` 重复索引（保留约束自动索引）
+- ✅ `/api/ingest` 支持 `publish_status` 入参（默认 `published`）
+- ✅ 普通用户文章列表仅返回 `publish_status='published'`，管理员可查看待确认
+- ✅ 管理端新增待确认列表与发布审核接口：`PATCH /api/admin/articles/:id/publish`
+- ✅ 新增自动发布脚本与定时工作流：4 小时后自动将 `pending_review` 发布
+
+### 变更文件
+- api/ingest.js
+- api/articles.js
+- api/admin/articles.js
+- frontend/js/api.js
+- frontend/js/app.js
+- frontend/index.html
+- scripts/migrate-publish-status.js
+- scripts/publish-pending.js
+- .github/workflows/publish-pending.yml
+- docs/schema.sql
+- package.json
+
 
 ## 2026-03-21 — 添加文章按钮文案修正（v2.11.3）
 
@@ -2083,7 +2107,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 

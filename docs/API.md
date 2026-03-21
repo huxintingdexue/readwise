@@ -60,7 +60,7 @@
 
 ## DELETE /api/articles/:id
 
-OpenCloud 专用：仅允许删除 `status = hidden` 的文章（用于重推覆盖）。
+OpenCloud 专用：仅允许删除 `publish_status = hidden` 的文章（用于重推覆盖）。
 
 **权限**
 - 仅 `X-Invite-Code: openclaw`
@@ -241,9 +241,12 @@ Query: `?article_id=uuid`（可选）
 **Body**
 ```json
 {
-  "url": "https://example.com/article"
+  "url": "https://example.com/article",
+  "publish_status": "published"
 }
 ```
+
+`publish_status` 可选：`published`（默认）或 `pending_review`。
 
 **Response（成功）**
 ```json
@@ -362,4 +365,3 @@ Query: `?article_id=uuid`
 ```
 
 **状态：** ✅ 已实现
-
