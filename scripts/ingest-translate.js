@@ -118,9 +118,9 @@ async function main() {
   try {
     const { rows } = await pool.query(
       `
-        SELECT id, title_en, title_zh, summary_en, summary_zh, content_plain, content_zh, translated_chars, translation_status
+        SELECT id, title_en, title_zh, summary_en, summary_zh, content_plain, content_zh, translated_chars, translation_status, status, translation_job_status
         FROM articles
-        WHERE status = 'translating'
+        WHERE COALESCE(translation_job_status, status, 'ready') = 'translating'
         ORDER BY fetched_at ASC
         LIMIT $1
       `,
@@ -136,7 +136,7 @@ async function main() {
       const contentPlain = article.content_plain || '';
       if (!contentPlain) {
         await pool.query(
-          'UPDATE articles SET status = $2 WHERE id = $1',
+          'UPDATE articles SET status = $2, translation_job_status = $2 WHERE id = $1',
           [article.id, 'ready']
         );
         console.log(`[ingest-translate] marked ready (empty content) ${article.id}`);
@@ -175,6 +175,7 @@ async function main() {
               content_zh = $4,
               translated_chars = $5,
               status = $6,
+              translation_job_status = $6,
               translation_status = $7
           WHERE id = $1
         `,

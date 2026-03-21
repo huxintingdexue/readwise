@@ -16,6 +16,22 @@
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
 
+## 2026-03-21 — 翻译状态字段平滑迁移（v2.12.1）
+
+### 已完成
+- ✅ 新增 `articles.translation_job_status`（`translating` / `ready`）并回填历史数据
+- ✅ 翻译流程代码改为新字段优先（兼容旧 `status`），写入时双写
+- ✅ `/api/articles` 对外返回的 `status` 继续保持不变（由新字段计算）
+- ✅ 新增一次性迁移脚本 `scripts/migrate-translation-job-status.js`
+
+### 变更文件
+- api/articles.js
+- api/ingest.js
+- scripts/ingest-translate.js
+- scripts/migrate-translation-job-status.js
+- docs/schema.sql
+- package.json
+
 ## 2026-03-21 — 发布状态轴拆分 + 待主编确认流转（v2.12.0）
 
 ### 已完成
@@ -2107,7 +2123,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 

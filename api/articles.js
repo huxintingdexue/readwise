@@ -92,7 +92,7 @@ async function listArticles(res, query, userId) {
       a.published_at,
       a.translation_status,
       a.translated_chars,
-      a.status,
+      COALESCE(a.translation_job_status, a.status, 'ready') AS status,
       a.publish_status,
       a.submitted_by,
       a.read_status,
@@ -123,12 +123,15 @@ async function listArticles(res, query, userId) {
       AND rp.user_id = $1
     WHERE ($2::text IS NULL OR a.read_status = $2)
       AND ($3::text IS NULL OR a.source_key = $3)
-      AND (COALESCE(a.status, 'ready') = 'ready' OR (a.status = 'translating' AND a.submitted_by = $1))
+      AND (
+        COALESCE(a.translation_job_status, a.status, 'ready') = 'ready'
+        OR (COALESCE(a.translation_job_status, a.status, 'ready') = 'translating' AND a.submitted_by = $1)
+      )
       AND COALESCE(a.publish_status, 'published') <> 'hidden'
       AND (
         $4::boolean = TRUE
         OR COALESCE(a.publish_status, 'published') = 'published'
-        OR (a.status = 'translating' AND a.submitted_by = $1)
+        OR (COALESCE(a.translation_job_status, a.status, 'ready') = 'translating' AND a.submitted_by = $1)
       )
       AND (a.user_id IS NULL OR a.user_id = $1)
     ORDER BY ${orderClause}
@@ -146,8 +149,8 @@ async function listArticleUrls(res, userId) {
       a.source_url
     FROM articles a
     WHERE (
-        COALESCE(a.status, 'ready') = 'ready'
-        OR (a.status = 'translating' AND a.submitted_by = $1)
+        COALESCE(a.translation_job_status, a.status, 'ready') = 'ready'
+        OR (COALESCE(a.translation_job_status, a.status, 'ready') = 'translating' AND a.submitted_by = $1)
       )
       AND COALESCE(a.publish_status, 'published') IN ('published', 'pending_review')
       AND (a.user_id IS NULL OR a.user_id = $1)
@@ -177,17 +180,20 @@ async function getArticleById(res, id, userId) {
       a.url,
       a.published_at,
       a.fetched_at,
-      a.status,
+      COALESCE(a.translation_job_status, a.status, 'ready') AS status,
       a.publish_status,
       a.submitted_by
     FROM articles a
     WHERE a.id = $1
-      AND (COALESCE(a.status, 'ready') = 'ready' OR (a.status = 'translating' AND a.submitted_by = $2))
+      AND (
+        COALESCE(a.translation_job_status, a.status, 'ready') = 'ready'
+        OR (COALESCE(a.translation_job_status, a.status, 'ready') = 'translating' AND a.submitted_by = $2)
+      )
       AND COALESCE(a.publish_status, 'published') <> 'hidden'
       AND (
         $3::boolean = TRUE
         OR COALESCE(a.publish_status, 'published') = 'published'
-        OR (a.status = 'translating' AND a.submitted_by = $2)
+        OR (COALESCE(a.translation_job_status, a.status, 'ready') = 'translating' AND a.submitted_by = $2)
       )
       AND (a.user_id IS NULL OR a.user_id = $2)
     LIMIT 1

@@ -7,7 +7,7 @@
 
 ## 当前状态（每次任务后必须更新）
 
-- 最近变更：文章状态拆分为双轴（`status` 翻译流程 + `publish_status` 发布可见性）✅
+- 最近变更：文章状态拆分为双轴（`translation_job_status` 翻译流程 + `publish_status` 发布可见性）✅
 - 最近变更：新增待主编确认流转（`pending_review`）+ 管理端审核发布接口 ✅
 - 最近变更：新增 4 小时自动发布定时任务（pending -> published）✅
 - 最近变更：用户身份升级为 UID 主鉴权（X-Uid 优先，兼容 X-Invite-Code）✅
@@ -82,7 +82,7 @@
 - 最近变更：reading_progress 改为按 (article_id, user_id) 唯一 ✅
 - 最近变更：Neon reading_progress 唯一键已确认 ✅
 - 最近变更：Neon invite_codes 表已确认 ✅
-- 最近变更：Neon articles 字段已确认（submitted_by/status/source_url/author）✅
+- 最近变更：Neon articles 字段已确认（submitted_by/translation_job_status/publish_status/source_url/author）✅
 - 最近变更："我的"页 + 反馈/管理员入口 ✅
 - 最近变更：反馈发送成功提示文案优化 ✅
 - 最近变更：反馈发送改为一次点击提交 ✅
@@ -200,6 +200,7 @@ Vercel Serverless Functions（/api/*）
 | frontend/manifest.json | PWA 配置 | ✅ 已完成 |
 | scripts/migrate-users.js | 邀请码老用户 -> users 迁移脚本（手动执行、幂等） | ✅ 已完成 |
 | scripts/migrate-publish-status.js | 发布状态轴数据库迁移脚本（一次性） | ✅ 已完成 |
+| scripts/migrate-translation-job-status.js | 翻译流程状态字段迁移脚本（status -> translation_job_status） | ✅ 已完成 |
 | scripts/publish-pending.js | 将超 4 小时的 `pending_review` 自动发布 | ✅ 已完成 |
 | .github/workflows/publish-pending.yml | 每 10 分钟执行一次 pending 自动发布 | ✅ 已完成 |
 
@@ -307,4 +308,3 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
   - openclaw 去重接口明确为 /api/articles/urls，写入 Skill
   - 评估是否需要引入签名机制（HMAC-SHA256 + 时间戳防重放）
   - 收窄所有非 admin 邀请码的最小权限
-

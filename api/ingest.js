@@ -630,11 +630,12 @@ async function handleIngestFullText(req, res, userId) {
       source_url,
       published_at,
       status,
+      translation_job_status,
       publish_status,
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, 'full', $10, 'unread', $11, $12, $13, 'ready', $14, $15, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, 'full', $10, 'unread', $11, $12, $13, 'ready', 'ready', $14, $15, NULL
     )
     RETURNING id
   `;
@@ -751,11 +752,12 @@ async function handleIngestSubmit(req, res, userId) {
       source_url,
       published_at,
       status,
+      translation_job_status,
       publish_status,
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, NULL, $3, NULL, $4, $5, $6, '', $7, 0, 'unread', $8, $9, $10, 'translating', $11, $12, NULL
+      $1, $2, NULL, $3, NULL, $4, $5, $6, '', $7, 0, 'unread', $8, $9, $10, 'translating', 'translating', $11, $12, NULL
     )
     RETURNING id
   `;
@@ -795,7 +797,7 @@ async function handleTranslateStep(req, res, userId) {
   const poolClient = getPool();
   const { rows } = await poolClient.query(
     `
-      SELECT id, title_en, title_zh, summary_en, summary_zh, content_plain, content_zh, translated_chars, status, submitted_by, translation_status
+      SELECT id, title_en, title_zh, summary_en, summary_zh, content_plain, content_zh, translated_chars, status, translation_job_status, submitted_by, translation_status
       FROM articles
       WHERE id = $1
       LIMIT 1
@@ -809,19 +811,20 @@ async function handleTranslateStep(req, res, userId) {
   }
 
   const article = rows[0];
+  const currentJobStatus = article.translation_job_status || article.status || 'ready';
   if (!isAdmin(userId) && article.submitted_by !== userId) {
     res.status(403).json({ error: 'forbidden', message: '无权限' });
     return;
   }
-  if (article.status !== 'translating') {
-    res.status(200).json({ success: true, status: article.status });
+  if (currentJobStatus !== 'translating') {
+    res.status(200).json({ success: true, status: currentJobStatus });
     return;
   }
 
   const contentPlain = article.content_plain || '';
   if (!contentPlain) {
     await poolClient.query(
-      'UPDATE articles SET status = $2 WHERE id = $1',
+      'UPDATE articles SET status = $2, translation_job_status = $2 WHERE id = $1',
       [article.id, 'ready']
     );
     res.status(200).json({ success: true, status: 'ready' });
@@ -862,6 +865,7 @@ async function handleTranslateStep(req, res, userId) {
           content_zh = $4,
           translated_chars = $5,
           status = $6,
+          translation_job_status = $6,
           translation_status = $7
       WHERE id = $1
     `,

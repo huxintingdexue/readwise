@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS articles (
   fetched_at          TIMESTAMP DEFAULT NOW(),
   user_id             TEXT NULL,                            -- 预留多用户，MVP 阶段由后端映射默认用户
   submitted_by        TEXT,                                 -- 手动投喂者 user_id
-  status              VARCHAR(20) DEFAULT 'ready',           -- 翻译流程：'translating' | 'ready'
+  status              VARCHAR(20) DEFAULT 'ready',           -- 兼容旧字段（待下线）
+  translation_job_status VARCHAR(20) DEFAULT 'ready',        -- 翻译流程：'translating' | 'ready'
   publish_status      VARCHAR(20) DEFAULT 'published',       -- 'published' | 'pending_review' | 'hidden'
   hidden_reason       TEXT,                                 -- 隐藏原因（管理员）
   hidden_at           TIMESTAMP                             -- 隐藏时间
