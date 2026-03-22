@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-22 — 顶底栏固定防晃动（v2.12.5）
+
+### 已完成
+- ✅ 顶部栏由 `sticky` 改为真正 `fixed`，滚动惯性时不再随内容位移
+- ✅ 列表页内容区增加顶部预留高度，避免被固定顶部栏遮挡
+- ✅ 顶部栏与底部栏增加合成层提示（`translateZ(0)` + `will-change`），降低移动端惯性滚动“跟随晃动”观感
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-22 — 列表页顶部栏全宽贴边（v2.12.4）
 
 ### 已完成
@@ -2174,7 +2186,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 
