@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-22 — 列表页顶部栏全宽贴边（v2.12.4）
+
+### 已完成
+- ✅ 文章列表页 `topbar` 改为横向贯穿屏幕，不再出现左右留白断层
+- ✅ 顶部栏滚动吸附时视觉与底部导航栏保持一致（全宽贴边）
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-22 — 登录页移除默认提示文案（v2.12.3）
 
 ### 已完成
@@ -2163,7 +2174,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 

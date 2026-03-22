@@ -521,8 +521,10 @@ body.reading-mode::-webkit-scrollbar-thumb {
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+  margin-left: -14px;
+  margin-right: -14px;
   background: var(--bg);
-  padding: 12px 0 10px;
+  padding: 12px 14px 10px;
 }
 
 .topbar-title {
