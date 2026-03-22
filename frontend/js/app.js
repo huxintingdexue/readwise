@@ -498,6 +498,8 @@ function renderArticles() {
     const badgeLabel = isTranslating ? '导入中' : '已导入';
     const isManual = Boolean(item.submitted_by || item.source_key === 'manual');
     const isManualTranslating = isManual && isTranslating;
+    const summaryText = String(item.summary_zh || item.summary_en || '暂无摘要');
+    const summaryClass = summaryText.length > 66 ? 'article-summary summary-long' : 'article-summary';
     li.innerHTML = `
       <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManualTranslating ? ' is-recommend' : ''}" data-id="${item.id}">
         <div class="article-card-head">
@@ -510,7 +512,7 @@ function renderArticles() {
           </div>
         </div>
         <div class="article-meta">${escapeHtml(sourceName(item.source_key, item.author))} \u00B7 ${escapeHtml(formatDate(item.published_at))}</div>
-        <p class="article-summary">${escapeHtml(item.summary_zh || item.summary_en || '暂无摘要')}</p>
+        <p class="${summaryClass}">${escapeHtml(summaryText)}</p>
       </article>
     `;
 

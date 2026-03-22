@@ -11,7 +11,7 @@
   --scrollbar-track: #efebe4;
   --scrollbar-thumb: #c7c0b2;
   --font-family-base: 'Noto Serif SC', 'PingFang SC', Georgia, serif;
-  --topbar-height: calc(92px + env(safe-area-inset-top, 0px));
+  --topbar-height: calc(84px + env(safe-area-inset-top, 0px));
 }
 
 /* ── 护眼模式 ─────────────────────────────────────── */
@@ -723,6 +723,10 @@ body.reading-mode::-webkit-scrollbar-thumb {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.article-summary.summary-long {
+  -webkit-line-clamp: 4;
 }
 
 .read-status {

@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-22 — 顶部间距再收紧 + 摘要动态 3/4 行（v2.12.7）
+
+### 已完成
+- ✅ 列表页顶部预留高度再下调一档，缩小顶部栏与首张卡片之间空隙
+- ✅ 文章摘要改为动态行数：默认 3 行，长摘要自动扩展为 4 行
+
+### 变更文件
+- frontend/css/reader.css
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-22 — 列表独立滚动容器 + 顶部间距收紧（v2.12.6）
 
 ### 已完成
@@ -2198,4 +2210,3 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
