@@ -11,7 +11,7 @@
   --scrollbar-track: #efebe4;
   --scrollbar-thumb: #c7c0b2;
   --font-family-base: 'Noto Serif SC', 'PingFang SC', Georgia, serif;
-  --topbar-height: 112px;
+  --topbar-height: calc(92px + env(safe-area-inset-top, 0px));
 }
 
 /* ── 护眼模式 ─────────────────────────────────────── */
@@ -50,7 +50,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-family-base);
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 body.font-serif {
@@ -134,7 +134,11 @@ body.reading-mode::-webkit-scrollbar-thumb {
   max-width: 840px;
   margin: 0 auto;
   padding: var(--topbar-height) 14px 86px;
+  height: 100vh;
   position: relative;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 .login-overlay {

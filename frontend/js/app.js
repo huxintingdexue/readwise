@@ -47,6 +47,7 @@ function isReadingMode() {
 }
 
 const nodes = {
+  appShell: document.querySelector('.app-shell'),
   tabButtons: [...document.querySelectorAll('.tab-btn')],
   splashScreen: document.querySelector('#splashScreen'),
   todayTab: document.querySelector('#tab-today'),
@@ -293,11 +294,16 @@ function readStatusLabel(status, progress) {
   if (progress > 0) return `已读 ${progress}%`;
   return '未读';
 }
+
+function getListScroller() {
+  return nodes.appShell || window;
+}
+
 function getActiveReaderScroller() {
   if (isReadingMode() && nodes.readerView) {
     return nodes.readerView;
   }
-  return window;
+  return getListScroller();
 }
 
 function currentScrollTop(scroller = window) {
@@ -322,15 +328,20 @@ function calcScrollPositionByBaseLength(baseLength, scroller = window) {
 
 function captureListScroll() {
   const tab = state.tab || 'today';
-  state.listScrollTop[tab] = currentScrollTop();
+  state.listScrollTop[tab] = currentScrollTop(getListScroller());
 }
 
 function restoreListScroll() {
   const tab = state.tab || 'today';
   const target = Number(state.listScrollTop[tab] || 0);
+  const scroller = getListScroller();
   return new Promise((resolve) => {
     requestAnimationFrame(() => {
-      window.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
+      if (scroller && scroller !== window) {
+        scroller.scrollTop = Math.max(0, target);
+      } else {
+        window.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
+      }
       requestAnimationFrame(() => resolve());
     });
   });

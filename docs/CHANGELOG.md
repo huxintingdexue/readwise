@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-22 — 列表独立滚动容器 + 顶部间距收紧（v2.12.6）
+
+### 已完成
+- ✅ 列表页改为 `.app-shell` 独立滚动容器（`body` 不滚动），顶部/底部状态栏保持固定不随惯性滚动晃动
+- ✅ 顶部栏与列表内容间距收紧：下调顶部预留高度，减少“标题区到首卡片”空白
+
+### 变更文件
+- frontend/css/reader.css
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-22 — 顶底栏固定防晃动（v2.12.5）
 
 ### 已完成
@@ -2186,6 +2198,4 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
-
 
