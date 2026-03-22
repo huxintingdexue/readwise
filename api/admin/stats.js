@@ -87,13 +87,16 @@ export default async function handler(req, res) {
 
     const todayActiveUsers = eventsReady
       ? await safeQuery(
-          `SELECT DISTINCT e.user_id,
-                  NULLIF(TRIM(u.nickname), '') AS nickname
-           FROM events e
-           LEFT JOIN users u ON u.id = e.user_id
-           WHERE e.created_at >= date_trunc('day', now())
-             AND NULLIF(TRIM(e.user_id), '') IS NOT NULL
-           ORDER BY COALESCE(NULLIF(TRIM(u.nickname), ''), e.user_id) ASC`,
+          `SELECT t.user_id, t.nickname
+           FROM (
+             SELECT DISTINCT e.user_id,
+                    NULLIF(TRIM(u.nickname), '') AS nickname
+             FROM events e
+             LEFT JOIN users u ON u.id = e.user_id
+             WHERE e.created_at >= date_trunc('day', now())
+               AND NULLIF(TRIM(e.user_id), '') IS NOT NULL
+           ) t
+           ORDER BY COALESCE(t.nickname, t.user_id) ASC`,
           []
         )
       : { rows: [] };
