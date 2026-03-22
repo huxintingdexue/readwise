@@ -200,6 +200,10 @@ body.reading-mode::-webkit-scrollbar-thumb {
   min-height: 18px;
 }
 
+.login-error:empty {
+  display: none;
+}
+
 .me-section {
   margin-top: 18px;
   background: var(--panel);

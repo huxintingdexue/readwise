@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-22 — 登录页移除默认提示文案（v2.12.3）
+
+### 已完成
+- ✅ 登录弹窗默认不再显示“请输入昵称（邀请码可选）”提示文案
+- ✅ 登录错误提示在无内容时自动隐藏，避免按钮下方占位空行
+
+### 变更文件
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-22 — 管理员用户使用情况展示昵称（v2.12.2）
 
 ### 已完成
@@ -2151,7 +2163,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 

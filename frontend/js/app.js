@@ -1533,7 +1533,7 @@ async function init() {
     await startApp();
   } else {
     hideSplashScreen();
-    showLoginOverlay('请输入昵称（邀请码可选）');
+    showLoginOverlay();
   }
 }
 
