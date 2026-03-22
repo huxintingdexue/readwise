@@ -69,8 +69,8 @@ export default async function handler(req, res) {
       ? await safeQuery(
           `SELECT COUNT(DISTINCT user_id)::int AS count
            FROM events
-           WHERE event = 'open_app'
-             AND created_at >= date_trunc('day', now())`,
+           WHERE created_at >= date_trunc('day', now())
+             AND NULLIF(TRIM(user_id), '') IS NOT NULL`,
           [{ count: 0 }]
         )
       : { rows: [{ count: 0 }] };
@@ -91,8 +91,8 @@ export default async function handler(req, res) {
                   NULLIF(TRIM(u.nickname), '') AS nickname
            FROM events e
            LEFT JOIN users u ON u.id = e.user_id
-           WHERE event = 'open_app'
-             AND created_at >= date_trunc('day', now())
+           WHERE e.created_at >= date_trunc('day', now())
+             AND NULLIF(TRIM(e.user_id), '') IS NOT NULL
            ORDER BY COALESCE(NULLIF(TRIM(u.nickname), ''), e.user_id) ASC`,
           []
         )
