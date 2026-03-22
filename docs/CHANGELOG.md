@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-03-22 — 管理员用户使用情况展示昵称（v2.12.2）
+
+### 已完成
+- ✅ 管理员统计接口补充用户昵称字段（`nickname`），覆盖今日活跃用户、本周阅读排行、划线使用排行、提问使用排行
+- ✅ 管理端“用户使用情况”改为昵称优先展示（同时保留 `user_id` 兜底，展示为 `昵称 (user_id)`）
+- ✅ 保持接口向后兼容：原 `today_active_user_ids` 继续返回，同时新增 `today_active_users_detail`
+
+### 变更文件
+- api/admin/stats.js
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-21 — 外观入口合并 + 字体切换（v2.12.1）
 
 ### 已完成
@@ -2138,7 +2151,6 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
-
 
 
 

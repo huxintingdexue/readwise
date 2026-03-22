@@ -87,22 +87,27 @@ export default async function handler(req, res) {
 
     const todayActiveUsers = eventsReady
       ? await safeQuery(
-          `SELECT DISTINCT user_id
-           FROM events
+          `SELECT DISTINCT e.user_id,
+                  NULLIF(TRIM(u.nickname), '') AS nickname
+           FROM events e
+           LEFT JOIN users u ON u.id = e.user_id
            WHERE event = 'open_app'
              AND created_at >= date_trunc('day', now())
-           ORDER BY user_id ASC`,
+           ORDER BY COALESCE(NULLIF(TRIM(u.nickname), ''), e.user_id) ASC`,
           []
         )
       : { rows: [] };
 
     const weeklyUser = eventsReady
       ? await safeQuery(
-          `SELECT user_id, COUNT(*)::int AS count
-           FROM events
-           WHERE event = 'finish_article'
-             AND created_at >= date_trunc('week', now())
-           GROUP BY user_id
+          `SELECT e.user_id,
+                  NULLIF(TRIM(u.nickname), '') AS nickname,
+                  COUNT(*)::int AS count
+           FROM events e
+           LEFT JOIN users u ON u.id = e.user_id
+           WHERE e.event = 'finish_article'
+             AND e.created_at >= date_trunc('week', now())
+           GROUP BY e.user_id, u.nickname
            ORDER BY count DESC`
         )
       : { rows: [] };
@@ -137,23 +142,33 @@ export default async function handler(req, res) {
       : { rows: [] };
 
     const highlightsByUser = await safeQuery(
-      `SELECT user_id, COUNT(*)::int AS count
-       FROM highlights
-       GROUP BY user_id
+      `SELECT h.user_id,
+              NULLIF(TRIM(u.nickname), '') AS nickname,
+              COUNT(*)::int AS count
+       FROM highlights h
+       LEFT JOIN users u ON u.id = h.user_id
+       GROUP BY h.user_id, u.nickname
        ORDER BY count DESC`
     );
 
     const qaByUser = await safeQuery(
-      `SELECT user_id, COUNT(*)::int AS count
-       FROM qa_records
+      `SELECT q.user_id,
+              NULLIF(TRIM(u.nickname), '') AS nickname,
+              COUNT(*)::int AS count
+       FROM qa_records q
+       LEFT JOIN users u ON u.id = q.user_id
        WHERE answer_summary IS NULL OR answer_summary NOT LIKE '__reference__:%'
-       GROUP BY user_id
+       GROUP BY q.user_id, u.nickname
        ORDER BY count DESC`
     );
 
     res.status(200).json({
       today_active_users: todayActive.rows[0]?.count ?? 0,
       today_active_user_ids: todayActiveUsers.rows.map((row) => row.user_id).filter(Boolean),
+      today_active_users_detail: todayActiveUsers.rows.map((row) => ({
+        user_id: row.user_id || '',
+        nickname: row.nickname || null
+      })),
       today_open_articles: todayOpen.rows[0]?.count ?? 0,
       weekly_user_finishes: weeklyUser.rows,
       article_completion: articleCompletion.rows,

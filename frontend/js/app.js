@@ -1079,9 +1079,11 @@ async function loadAdminStats() {
   nodes.adminStatsList.innerHTML = '';
   try {
     const data = await getAdminStats();
-    const activeUsers = Array.isArray(data.today_active_user_ids)
-      ? data.today_active_user_ids.filter(Boolean)
-      : [];
+    const activeUsers = Array.isArray(data.today_active_users_detail) && data.today_active_users_detail.length
+      ? data.today_active_users_detail.map((item) => formatAdminUserLabel(item)).filter(Boolean)
+      : (Array.isArray(data.today_active_user_ids)
+          ? data.today_active_user_ids.filter(Boolean)
+          : []);
     nodes.adminStatsList.appendChild(
       renderStatBlock('今日概览', [
         { label: '今日活跃用户数', value: String(data.today_active_users ?? 0) },
@@ -1093,7 +1095,7 @@ async function loadAdminStats() {
       renderStatBlock(
         '本周阅读排行（按用户）',
         (data.weekly_user_finishes || []).map((item) => ({
-          label: item.user_id || '未知用户',
+          label: formatAdminUserLabel(item),
           value: `${item.count || 0} 篇`
         }))
       )
@@ -1111,7 +1113,7 @@ async function loadAdminStats() {
       renderStatBlock(
         '核心功能使用（划线）',
         (data.highlights_by_user || []).map((item) => ({
-          label: item.user_id || '未知用户',
+          label: formatAdminUserLabel(item),
           value: `${item.count || 0} 次`
         }))
       )
@@ -1120,7 +1122,7 @@ async function loadAdminStats() {
       renderStatBlock(
         '核心功能使用（提问）',
         (data.qa_by_user || []).map((item) => ({
-          label: item.user_id || '未知用户',
+          label: formatAdminUserLabel(item),
           value: `${item.count || 0} 次`
         }))
       )
@@ -1368,6 +1370,15 @@ function formatAdminTime(isoString) {
   const hh = String(d.getHours()).padStart(2, '0');
   const mi = String(d.getMinutes()).padStart(2, '0');
   return `${mm}/${dd} ${hh}:${mi}`;
+}
+
+function formatAdminUserLabel(item) {
+  const nickname = String(item?.nickname || '').trim();
+  const userId = String(item?.user_id || '').trim();
+  if (nickname && userId && nickname !== userId) {
+    return `${nickname} (${userId})`;
+  }
+  return nickname || userId || '未知用户';
 }
 
 function showLoginOverlay(message = '') {
