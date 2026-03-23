@@ -2349,3 +2349,17 @@
 - frontend/css/reader.css
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-24 — 作者名文案统一：AI编辑室
+
+### 已完成
+- ✅ 前端作者展示名将 `AI小编` 统一显示为 `AI编辑室`
+- ✅ 头像映射兼容新旧作者名（`AI编辑室` / `AI小编`）指向同一头像资源
+
+### 变更文件
+- frontend/js/app.js
+- scripts/avatar-config.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

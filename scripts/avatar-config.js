@@ -7,6 +7,7 @@ export const SOURCE_AVATAR_URLS = {
 };
 
 export const MANUAL_AUTHOR_AVATAR_URLS = {
+  AI编辑室: '/assets/avatars/social/ai-editor.jpg',
   AI小编: '/assets/avatars/social/ai-editor.jpg',
   'Peter Steinberger': '/assets/avatars/social/peter-steinberger.png',
   'Dario Amodei': '/assets/avatars/social/dario-amodei.jpg',

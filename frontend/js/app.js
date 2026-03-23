@@ -282,8 +282,15 @@ function formatDate(isoString) {
   if (Number.isNaN(d.getTime())) return '未知时间';
   return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
 }
+
+function displayAuthorName(author) {
+  const normalized = String(author || '').trim();
+  if (normalized === 'AI小编') return 'AI编辑室';
+  return normalized;
+}
+
 function sourceName(sourceKey, author) {
-  if (sourceKey === 'manual') return author || '未知作者';
+  if (sourceKey === 'manual') return displayAuthorName(author) || '未知作者';
   if (sourceKey === 'sam') return 'Sam Altman';
   if (sourceKey === 'andrej') return 'Andrej Karpathy';
   if (sourceKey === 'peter') return 'Peter Steipete';
