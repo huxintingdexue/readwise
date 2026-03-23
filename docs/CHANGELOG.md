@@ -4,6 +4,97 @@
 
 ---
 
+## 2026-03-23 — 登录流程改为先用后登（v2.14.3）
+
+### 已完成
+- ✅ 启动流程改为“先用后登”：不再强制弹登录框，首次进入自动创建匿名会话 UID（`guest_auto`）
+- ✅ 新增匿名会话接口：`POST /api/user/guest`
+- ✅ “我的”页按钮按会话状态切换：游客显示“登录”，已登录用户显示“退出登录”
+- ✅ 游客登录保护：不填邀请码时只升级当前游客昵称（不换 UID，不丢数据）；填写邀请码前增加“切换账号”确认
+- ✅ 登录弹窗支持点遮罩关闭，避免误触后卡住页面
+- ✅ 修复游客邀请码登录二次确认在移动端被输入法遮挡与重复触发问题（提交防抖 + 先收起键盘再确认）
+- ✅ 顶部固定栏改为不透明背景，移除透底观感
+- ✅ Naval 头像来源切换为 YouTube 官方频道 `@NavalR` 头像，并更新本地资源文件
+
+### 变更文件
+- api/user/guest.js
+- api/index.js
+- frontend/js/api.js
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-23 — “我的”页视觉重排（v2.14.2）
+
+### 已完成
+- ✅ 参考新设计稿重排“我的”页布局（个人信息区 / 阅读外观卡片 / 菜单卡片）
+- ✅ 保持现有功能绑定不变（退出登录、外观设置、导出、反馈、管理员入口）
+- ✅ 个人信息区改为真实数据填充：昵称、邀请码、头像首字母
+- ✅ 菜单卡片视觉升级（图标块、标题+描述、右侧箭头）
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-23 — AI小编头像接入 + 顶部副标题中文化（v2.14.1）
+
+### 已完成
+- ✅ 接入用户提供的 AI小编头像资源，落地到本地静态目录并纳入头像映射配置
+- ✅ 数据库回填：`manual + AI小编` 文章头像统一更新为本地路径（6 篇已生效）
+- ✅ 文章列表页顶部副标题由英文改为中文「全球一手信息 触手可及」
+
+### 变更文件
+- frontend/assets/avatars/social/ai-editor.jpg
+- frontend/index.html
+- scripts/avatar-config.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-23 — 列表页改版 + 头像本地固化（v2.14.0）
+
+### 已完成
+- ✅ 今日列表页视觉改版（顶栏/卡片/底部导航），并改为真实数据动态渲染
+- ✅ 接入本地 Tailwind 构建链（移除 CDN 依赖），新增 `tailwind.config.cjs` 与构建产物
+- ✅ 阅读进度展示规则调整：`read_progress > 0` 显示百分比（浅灰），`read_progress = 0` 显示“未读”（`#0D9488`）
+- ✅ 列表卡片摘要支持动态 3/4 行（默认 3 行，长摘要最多 4 行）
+- ✅ 列表卡片字号整体放大，默认字体改为“清晰黑体”（新用户默认 `sans`）
+- ✅ 新增 `author_avatar_url` 字段链路（接口返回/入库/回填），并兼容“数据库未加列”场景避免 `internal_error`
+- ✅ 作者头像一次性抓取并本地固化到 `frontend/assets/avatars/social/`，数据库完成回填
+- ✅ 头像映射抽离为独立配置文件（前端与脚本分离配置，便于后续维护）
+
+### 变更文件
+- api/articles.js
+- api/ingest.js
+- docs/schema.sql
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- frontend/js/avatar-config.js
+- frontend/assets/avatars/social/*
+- frontend/css/tailwind.input.css
+- frontend/css/tailwind.css
+- scripts/fetch-articles.js
+- scripts/migrate-author-avatar-url.js
+- scripts/avatar-config.js
+- tailwind.config.cjs
+- package.json
+- package-lock.json
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 对应提交（staging）
+- `14e3410` 列表页改版 + 本地 Tailwind + 真实数据渲染
+- `ccac73a` 修复 `author_avatar_url` 列缺失导致的 `internal_error` 兼容回退
+- `9254dfe` 摘要动态 3/4 行 + 头像去边框
+- `42dba89` 卡片字号整体放大
+- `6a78bb6` 新用户默认字体改为清晰黑体（sans）
+- `78f8425` 作者头像本地固化 + 数据库回填
+- `c80e9a2` 头像映射配置抽离（前端/脚本）
+- `47adc71` 补充 staging-first 协作约定（CONTEXT）
+
 ## 2026-03-23 — 阅读页 Markdown 图片渲染支持（v2.13.0）
 
 ### 已完成
@@ -2245,3 +2336,30 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-24 — 文章列表临时隐藏标签与时间（生产先行）
+
+### 已完成
+- ✅ 文章卡片底部 `Topic + 日期` 改为仅隐藏显示（未删除数据、未删除渲染逻辑）
+- ✅ 仅做样式层调整，后续可在测试环境快速恢复
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
+
+---
+
+## 2026-03-24 — 作者名文案统一：AI编辑室
+
+### 已完成
+- ✅ 前端作者展示名将 `AI小编` 统一显示为 `AI编辑室`
+- ✅ 头像映射兼容新旧作者名（`AI编辑室` / `AI小编`）指向同一头像资源
+
+### 变更文件
+- frontend/js/app.js
+- scripts/avatar-config.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

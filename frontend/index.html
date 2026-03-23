@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#0f1115" />
     <link rel="manifest" href="/manifest.json" />
     <title>今日硅谷</title>
+    <link rel="stylesheet" href="/css/tailwind.css" />
     <link rel="stylesheet" href="/css/reader.css" />
   </head>
   <body>
@@ -16,7 +17,7 @@
       <header class="topbar">
         <div class="topbar-title" id="topbarTitle">
           <h1>今日硅谷</h1>
-          <p>全球一手信息触手可及</p>
+          <p>全球一手信息 触手可及</p>
         </div>
         <div class="topbar-actions">
           <button id="ingestToggle" class="icon-btn" type="button" aria-label="添加文章">
@@ -66,28 +67,28 @@
         </section>
 
         <section id="tab-notes" class="tab-panel hidden">
-          <div class="me-section">
-            <div class="me-section-head">
-              <h2>账号</h2>
-              <button id="logoutBtn" class="me-ghost-btn" type="button">退出登录</button>
+          <div class="me-profile-card">
+            <div class="me-profile-avatar-wrap">
+              <div class="me-profile-avatar" id="profileAvatarText">-</div>
+              <span class="me-profile-verified" aria-hidden="true">✓</span>
             </div>
-            <div class="me-item">
-              <span class="me-value" id="inviteCodeDisplay">邀请码：-</span>
+            <h2 class="me-profile-name" id="nicknameDisplay">-</h2>
+            <div class="me-profile-invite-row">
+              <span class="me-profile-invite-label">邀请码</span>
+              <code id="inviteCodeDisplay">-</code>
             </div>
-            <div class="me-item">
-              <span class="me-value" id="nicknameDisplay">昵称：-</span>
-            </div>
-            <div class="me-item hidden" id="nicknameHintRow">
+            <button id="logoutBtn" class="me-profile-logout" type="button">退出登录</button>
+            <div class="hidden" id="nicknameHintRow">
               <button id="nicknameHintBtn" class="me-ghost-btn" type="button">设置昵称</button>
             </div>
           </div>
-          <div class="me-section">
-            <div class="me-section-head">
+          <div class="me-section me-card">
+            <div class="me-section-head me-card-head">
               <h2>阅读外观</h2>
               <button id="meAppearanceEntry" class="me-ghost-btn" type="button">快捷设置</button>
             </div>
             <div class="me-appearance-group">
-              <div class="me-appearance-title">主题</div>
+              <div class="me-appearance-title">主题模式</div>
               <div class="me-theme-row">
                 <button class="theme-choice" data-theme="light" type="button">标准</button>
                 <button class="theme-choice" data-theme="eye" type="button">护眼</button>
@@ -95,7 +96,7 @@
               </div>
             </div>
             <div class="me-appearance-group">
-              <div class="me-appearance-title">字体</div>
+              <div class="me-appearance-title">字体排版</div>
               <div class="me-theme-row">
                 <button class="font-choice" data-font="serif" type="button">阅读宋体</button>
                 <button class="font-choice" data-font="sans" type="button">清晰黑体</button>
@@ -103,25 +104,32 @@
               </div>
             </div>
           </div>
-          <div class="me-section">
-            <h2>导出</h2>
-            <div class="me-item" id="exportEntry">
-              <div>导出划线和问答记录</div>
-              <span>></span>
+          <div class="me-menu-list">
+            <div class="me-menu-item" id="exportEntry">
+              <div class="me-menu-icon export">⤴</div>
+              <div class="me-menu-text">
+                <h4>导出</h4>
+                <p>导出划线与历史记录</p>
+              </div>
+              <span class="me-menu-arrow">›</span>
             </div>
-          </div>
-          <div class="me-section">
-            <h2>反馈与建议</h2>
-            <div class="me-item" id="feedbackEntry">
-              <div>提交建议</div>
-              <span>></span>
+            <div class="me-menu-item" id="feedbackEntry">
+              <div class="me-menu-icon feedback">✉</div>
+              <div class="me-menu-text">
+                <h4>反馈与建议</h4>
+                <p>提交反馈</p>
+              </div>
+              <span class="me-menu-arrow">›</span>
             </div>
-          </div>
-          <div class="me-section hidden" id="adminSection">
-            <h2>管理员</h2>
-            <div class="me-item" id="adminConsoleEntry">
-              <div>管理员控制台</div>
-              <span>></span>
+            <div class="hidden" id="adminSection">
+              <div class="me-menu-item" id="adminConsoleEntry">
+                <div class="me-menu-icon admin">⚙</div>
+                <div class="me-menu-text">
+                  <h4>管理员</h4>
+                  <p>管理员控制台</p>
+                </div>
+                <span class="me-menu-arrow">›</span>
+              </div>
             </div>
           </div>
           <div class="app-version" id="appVersion">版本：v2.10.8</div>

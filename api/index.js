@@ -7,6 +7,7 @@ import searchReference from './search-reference.js';
 import exportHandler from './export.js';
 import authVerify from './auth/verify.js';
 import userRegister from './user/register.js';
+import userGuest from './user/guest.js';
 import userMigrate from './user/migrate.js';
 import userMe from './user/me.js';
 import userProfile from './user/profile.js';
@@ -51,6 +52,9 @@ export default async function handler(req, res) {
   }
   if (pathname === '/api/user/register') {
     return userRegister(req, res);
+  }
+  if (pathname === '/api/user/guest') {
+    return userGuest(req, res);
   }
   if (pathname === '/api/user/migrate') {
     return userMigrate(req, res);

@@ -7,6 +7,22 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：登录流程改为“先用后登”——首次自动创建匿名 UID（guest_auto），不再强制登录弹窗 ✅
+- 最近变更：“我的”页支持游客态登录入口（按钮显示“登录”）；游客不填邀请码时升级当前账号昵称，避免 UID 切换导致数据丢失 ✅
+- 最近变更：修复游客邀请码登录确认弹窗在移动端被键盘遮挡/重复确认问题（先 blur + 提交防重）✅
+- 最近变更：顶部固定栏改为不透明背景，避免透出列表内容 ✅
+- 最近变更：Naval 头像替换为 YouTube 官方频道来源并更新本地资源 ✅
+- 最近变更：“我的”页按新设计稿完成视觉重排（个人资料区/阅读外观/菜单卡片），并保持现有功能绑定 ✅
+- 最近变更：接入用户提供的 AI小编头像（本地静态资源 + 数据库回填），AI小编历史文章头像已全部生效 ✅
+- 最近变更：列表页顶部副标题改为中文「全球一手信息 触手可及」✅
+- 最近变更：列表页完成新版视觉重构（顶栏/卡片/底部导航）并接入真实数据动态渲染 ✅
+- 最近变更：接入本地 Tailwind 构建（移除 CDN），新增 `tailwind.config.cjs` 与 `build:tailwind` ✅
+- 最近变更：列表进度显示规则调整（`>0` 显示百分比，`=0` 显示“未读”绿色）✅
+- 最近变更：列表摘要支持动态 3/4 行，卡片字号放大，头像去描边 ✅
+- 最近变更：新用户默认字体改为“清晰黑体”（`rw_font_preset` 默认 `sans`）✅
+- 最近变更：新增 `author_avatar_url` 全链路支持并兼容“数据库未加列”场景，避免 `/api/articles` `internal_error` ✅
+- 最近变更：作者头像已一次性抓取并本地固化（`frontend/assets/avatars/social`），数据库回填已完成 ✅
+- 最近变更：头像来源映射已抽离配置文件（前端 `frontend/js/avatar-config.js`，脚本 `scripts/avatar-config.js`）✅
 - 最近变更：阅读页 Markdown 支持图片语法 `![alt](url)` 渲染（懒加载 + 自适应样式）✅
 - 最近变更：修复今日活跃用户名单 SQL（DISTINCT + ORDER BY 兼容），解决“活跃用户数有值但名单为 -” ✅
 - 最近变更：管理员“今日概览”活跃用户改为按今日所有事件去重统计，并过滤空 user_id，修复显示 `-` ✅
@@ -190,6 +206,7 @@ Vercel Serverless Functions（/api/*）
 | api/search-reference.js | POST /api/search-reference（每日限流） | ✅ 已完成 |
 | api/auth/verify.js | POST /api/auth/verify（邀请码校验） | ✅ 已完成 |
 | api/user/register.js | POST /api/user/register（昵称注册，邀请码选填） | ✅ 已完成 |
+| api/user/guest.js | POST /api/user/guest（匿名会话 UID，下发 guest_auto） | ✅ 已完成 |
 | api/user/migrate.js | POST /api/user/migrate（老邀请码静默迁移 UID） | ✅ 已完成 |
 | api/user/me.js | GET /api/user/me（当前用户信息） | ✅ 已完成 |
 | api/user/profile.js | PATCH /api/user/profile（昵称/联系方式更新） | ✅ 已完成 |
@@ -321,3 +338,18 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
   - openclaw 去重接口明确为 /api/articles/urls，写入 Skill
   - 评估是否需要引入签名机制（HMAC-SHA256 + 时间戳防重放）
   - 收窄所有非 admin 邀请码的最小权限
+
+---
+
+## 2026-03-24（临时发布策略）
+
+- 文章列表卡片底部 `Topic + 日期` 已改为样式层隐藏（`display: none`）。
+- 仅隐藏展示，不删除模板和数据绑定，便于在测试环境快速恢复并继续调标签策略。
+- 本次变更用于生产先行验证视觉简化效果。
+
+---
+
+## 2026-03-24（作者名统一）
+
+- 列表页作者展示：`AI小编` 统一对外显示为 `AI编辑室`（仅展示层映射）。
+- 头像映射已兼容新旧名，避免历史数据和迁移脚本失配。

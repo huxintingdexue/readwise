@@ -528,6 +528,7 @@ async function handleIngestFullText(req, res, userId) {
   const contentZh = cleanupWhitespace(payload.content_zh || '');
   const contentEnRaw = String(payload.content_en || '').trim();
   const authorRaw = String(payload.author || '').trim();
+  const authorAvatarUrl = String(payload.author_avatar_url || '').trim() || null;
   const sourceUrl = String(payload.source_url || payload.url || '').trim();
   const publishedAtRaw = String(payload.published_at || '').trim();
   const publishStatus = normalizePublishStatus(payload.publish_status);
@@ -620,6 +621,7 @@ async function handleIngestFullText(req, res, userId) {
       summary_en,
       summary_zh,
       author,
+      author_avatar_url,
       content_en,
       content_plain,
       content_zh,
@@ -635,7 +637,7 @@ async function handleIngestFullText(req, res, userId) {
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, 'full', $10, 'unread', $11, $12, $13, 'ready', 'ready', $14, $15, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'full', $11, 'unread', $12, $13, $14, 'ready', 'ready', $15, $16, NULL
     )
     RETURNING id
   `;
@@ -647,6 +649,7 @@ async function handleIngestFullText(req, res, userId) {
     summaryEn || null,
     summaryZh,
     author || null,
+    authorAvatarUrl,
     contentEn,
     contentPlain || null,
     contentZh,
@@ -676,6 +679,7 @@ async function handleIngestSubmit(req, res, userId) {
     return;
   }
   const publishStatus = normalizePublishStatus(body.publish_status);
+  const authorAvatarUrl = String(body.author_avatar_url || '').trim() || null;
   if (!publishStatus) {
     badRequest(
       res,
@@ -742,6 +746,7 @@ async function handleIngestSubmit(req, res, userId) {
       summary_en,
       summary_zh,
       author,
+      author_avatar_url,
       content_en,
       content_plain,
       content_zh,
@@ -757,7 +762,7 @@ async function handleIngestSubmit(req, res, userId) {
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, NULL, $3, NULL, $4, $5, $6, '', $7, 0, 'unread', $8, $9, $10, 'translating', 'translating', $11, $12, NULL
+      $1, $2, NULL, $3, NULL, $4, $5, $6, $7, '', $8, 0, 'unread', $9, $10, $11, 'translating', 'translating', $12, $13, NULL
     )
     RETURNING id
   `;
@@ -768,6 +773,7 @@ async function handleIngestSubmit(req, res, userId) {
     title,
     summaryEn || null,
     author || null,
+    authorAvatarUrl,
     cleaned.contentEn || null,
     cleaned.contentPlain || null,
     translationStatus,

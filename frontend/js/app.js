@@ -1,5 +1,6 @@
-﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth } from './api.js';
+﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth, createGuestSession } from './api.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
+import { DEFAULT_AVATAR_URL, SOURCE_AVATAR_URLS } from './avatar-config.js';
 
 const state = {
   tab: 'today',
@@ -68,6 +69,7 @@ const nodes = {
   closeArticleNotes: document.querySelector('#closeArticleNotes'),
   inviteCodeDisplay: document.querySelector('#inviteCodeDisplay'),
   nicknameDisplay: document.querySelector('#nicknameDisplay'),
+  profileAvatarText: document.querySelector('#profileAvatarText'),
   nicknameHintRow: document.querySelector('#nicknameHintRow'),
   nicknameHintBtn: document.querySelector('#nicknameHintBtn'),
   exportEntry: document.querySelector('#exportEntry'),
@@ -233,7 +235,7 @@ function setThemeChoice(theme) {
 
 function normalizeFontPresetValue(value) {
   if (value === 'serif' || value === 'sans' || value === 'system') return value;
-  return 'serif';
+  return 'sans';
 }
 
 function setFontChoice(preset) {
@@ -280,14 +282,60 @@ function formatDate(isoString) {
   if (Number.isNaN(d.getTime())) return '未知时间';
   return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
 }
+
+function displayAuthorName(author) {
+  const normalized = String(author || '').trim();
+  if (normalized === 'AI小编') return 'AI编辑室';
+  return normalized;
+}
+
 function sourceName(sourceKey, author) {
-  if (sourceKey === 'manual') return author || '未知作者';
+  if (sourceKey === 'manual') return displayAuthorName(author) || '未知作者';
   if (sourceKey === 'sam') return 'Sam Altman';
   if (sourceKey === 'andrej') return 'Andrej Karpathy';
   if (sourceKey === 'peter') return 'Peter Steipete';
   if (sourceKey === 'naval') return 'Naval Ravikant';
   return sourceKey || '鏈煡鏉ユ簮';
 }
+
+function topicLabel(sourceKey) {
+  if (sourceKey === 'sam') return 'Sam';
+  if (sourceKey === 'andrej') return 'Andrej';
+  if (sourceKey === 'naval') return 'Naval';
+  if (sourceKey === 'manual') return '读友导入';
+  return '资讯';
+}
+
+function sourceFallbackAvatar(sourceKey) {
+  return SOURCE_AVATAR_URLS[sourceKey] || DEFAULT_AVATAR_URL;
+}
+
+function resolveAuthorAvatarUrl(item) {
+  const dbAvatar = String(item?.author_avatar_url || '').trim();
+  return dbAvatar || sourceFallbackAvatar(item?.source_key);
+}
+
+function estimatedReadMinutes(item) {
+  const apiEstimate = Number(item?.estimated_read_minutes || 0);
+  if (Number.isFinite(apiEstimate) && apiEstimate > 0) {
+    return Math.max(1, Math.round(apiEstimate));
+  }
+  const fallbackText = String(item?.summary_zh || item?.summary_en || '');
+  return Math.max(1, Math.round(fallbackText.length / 90));
+}
+
+function progressMeta(item) {
+  const isTranslating = item?.status === 'translating';
+  if (isTranslating) {
+    return { label: '翻译中...', className: 'is-translating' };
+  }
+  const progress = Math.max(0, Math.min(100, Number(item?.read_progress || 0)));
+  if (progress > 0) {
+    return { label: `${Math.round(progress)}%`, className: 'is-read' };
+  }
+  return { label: '未读', className: 'is-unread' };
+}
+
 function readStatusLabel(status, progress) {
   if (status === 'archived') return '存档';
   if (status === 'read') return `已读 ${progress}%`;
@@ -489,34 +537,52 @@ function renderArticles() {
 
   ordered.forEach((item) => {
     const li = document.createElement('li');
-    const progress = Math.max(0, Math.min(100, Number(item.read_progress || 0)));
-    const progressLabel = Math.round(progress);
     const isTranslating = item.status === 'translating';
-    const statusLabel = isTranslating ? '翻译中...' : readStatusLabel(item.read_status, progressLabel);
     const isOwner = item.submitted_by && item.submitted_by === getUserId();
     const showBadge = Boolean(isOwner);
     const badgeLabel = isTranslating ? '导入中' : '已导入';
     const isManual = Boolean(item.submitted_by || item.source_key === 'manual');
     const isManualTranslating = isManual && isTranslating;
+    const progress = progressMeta(item);
+    const readMinutes = estimatedReadMinutes(item);
+    const avatarUrl = resolveAuthorAvatarUrl(item);
     const summaryText = String(item.summary_zh || item.summary_en || '暂无摘要');
     const summaryClass = summaryText.length > 66 ? 'article-summary summary-long' : 'article-summary';
     li.innerHTML = `
-      <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManualTranslating ? ' is-recommend' : ''}" data-id="${item.id}">
-        <div class="article-card-head">
-          <div class="article-card-title">
-            <h3>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
+      <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManualTranslating ? ' is-recommend' : ''} bg-white rounded-xl p-4 relative group active:scale-[0.99] transition-all duration-200 shadow-[0_1px_6px_rgba(0,0,0,0.02)]" data-id="${item.id}">
+        <div class="article-card-top">
+          <div class="article-author">
+            <img class="article-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(sourceName(item.source_key, item.author))}"/>
+            <div class="article-author-text">
+              <span class="article-author-name">${escapeHtml(sourceName(item.source_key, item.author))}</span>
+              <span class="article-reading-time">· ${readMinutes} min</span>
+            </div>
           </div>
           <div class="article-card-status">
             ${showBadge ? `<span class="article-badge">${badgeLabel}</span>` : ''}
-            <span class="${isTranslating ? 'article-status' : 'read-status'}">${escapeHtml(statusLabel)}</span>
+            <span class="article-progress ${progress.className}">${escapeHtml(progress.label)}</span>
           </div>
         </div>
-        <div class="article-meta">${escapeHtml(sourceName(item.source_key, item.author))} \u00B7 ${escapeHtml(formatDate(item.published_at))}</div>
-        <p class="${summaryClass}">${escapeHtml(summaryText)}</p>
+        <div class="article-body">
+          <h3 class="article-title">${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
+          <p class="${summaryClass}">${escapeHtml(summaryText)}</p>
+        </div>
+        <div class="article-bottom">
+          <span class="article-topic">${escapeHtml(topicLabel(item.source_key))}</span>
+          <span class="article-dot"></span>
+          <span class="article-date">${escapeHtml(formatDate(item.published_at))}</span>
+        </div>
       </article>
     `;
 
     const card = li.firstElementChild;
+    const avatarNode = li.querySelector('.article-avatar');
+    if (avatarNode) {
+      avatarNode.addEventListener('error', () => {
+        if (avatarNode.src.endsWith(DEFAULT_AVATAR_URL)) return;
+        avatarNode.src = DEFAULT_AVATAR_URL;
+      }, { once: true });
+    }
     if (!isTranslating) {
       card.addEventListener('click', () => openArticle(item.id));
     }
@@ -553,10 +619,16 @@ async function loadArticles(options = {}) {
       nodes.articlesState.textContent = `加载失败：${err.message}`;
     }
     const message = String(err.message || '');
-    const authFailed = message.includes('UID') || message.includes('unauthorized');
+    const authFailed = message.includes('UID') || message.includes('unauthorized') || message.includes('缺少身份凭证');
     if (authFailed) {
-      showToast('登录态失效，请重新登录');
-      logout();
+      showToast('会话已失效，正在恢复');
+      state.appStarted = false;
+      const ok = await bootstrapAuth();
+      if (ok) {
+        await startApp();
+      } else {
+        showLoginOverlay('登录失败，请稍后重试');
+      }
       return;
     }
     if (!renderedFromCache) {
@@ -739,6 +811,10 @@ function bindEvents() {
   });
 
   nodes.logoutBtn?.addEventListener('click', () => {
+    if (isGuestUser()) {
+      showLoginOverlay();
+      return;
+    }
     const confirmed = window.confirm('确定退出登录吗？');
     if (!confirmed) return;
     logout();
@@ -940,8 +1016,7 @@ function bindEvents() {
   }
 }
 function getInviteCodeLabel() {
-  const inviteCode = String(state.currentUser?.inviteCode || '').trim() || getStoredInviteCode() || '-';
-  return `\u9080\u8bf7\u7801\uff1a${inviteCode}`;
+  return String(state.currentUser?.inviteCode || '').trim() || getStoredInviteCode() || '-';
 }
 
 function getUserId() {
@@ -960,11 +1035,23 @@ function getAuthIdentity() {
 
 function getNicknameLabel() {
   const nickname = String(state.currentUser?.nickname || '').trim();
-  return `\u6635\u79f0\uff1a${nickname || '-'}`;
+  return nickname || '-';
+}
+
+function getAvatarDisplayText() {
+  const nickname = String(state.currentUser?.nickname || '').trim();
+  if (nickname) return nickname.slice(0, 1).toUpperCase();
+  const invite = getInviteCodeLabel();
+  if (invite && invite !== '-') return invite.slice(0, 1).toUpperCase();
+  return '-';
 }
 
 function isAdminUser() {
   return getUserId() === 'admin';
+}
+
+function isGuestUser() {
+  return state.currentUser?.source === 'guest_auto';
 }
 
 function refreshMeTab() {
@@ -974,9 +1061,15 @@ function refreshMeTab() {
   if (nodes.nicknameDisplay) {
     nodes.nicknameDisplay.textContent = getNicknameLabel();
   }
+  if (nodes.profileAvatarText) {
+    nodes.profileAvatarText.textContent = getAvatarDisplayText();
+  }
   if (nodes.nicknameHintRow) {
-    const shouldShow = !String(state.currentUser?.nickname || '').trim();
+    const shouldShow = !isGuestUser() && !String(state.currentUser?.nickname || '').trim();
     nodes.nicknameHintRow.classList.toggle('hidden', !shouldShow);
+  }
+  if (nodes.logoutBtn) {
+    nodes.logoutBtn.textContent = isGuestUser() ? '登录' : '退出登录';
   }
   const userId = getUserId();
   if (nodes.adminSection) {
@@ -1460,13 +1553,21 @@ async function bootstrapAuth() {
     }
   }
 
-  return false;
+  try {
+    await createGuestSession();
+    await loadCurrentUserProfile();
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 function bindLoginEvents() {
   if (!nodes.loginButton || !nodes.loginInput || !nodes.nicknameInput) return;
+  let loginSubmitting = false;
 
   const attemptRegister = async () => {
+    if (loginSubmitting) return;
     const nickname = nodes.nicknameInput.value.trim();
     const inviteCode = nodes.loginInput.value.trim();
     if (!nickname) {
@@ -1474,10 +1575,31 @@ function bindLoginEvents() {
       return;
     }
 
+    loginSubmitting = true;
+    nodes.loginButton.disabled = true;
+    const originText = nodes.loginButton.textContent;
+    nodes.loginButton.textContent = '处理中...';
+
     try {
-      await registerUser(nickname, inviteCode);
+      if (isGuestUser() && !inviteCode) {
+        await updateUserProfile({ nickname });
+      } else {
+        if (isGuestUser() && inviteCode) {
+          // Ensure virtual keyboard is dismissed before showing confirm on mobile.
+          nodes.nicknameInput.blur();
+          nodes.loginInput.blur();
+          if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+          }
+          await new Promise((resolve) => setTimeout(resolve, 160));
+          const confirmed = window.confirm('使用邀请码会切换到新账号，当前游客数据不会自动合并。是否继续？');
+          if (!confirmed) return;
+        }
+        await registerUser(nickname, inviteCode);
+      }
       await loadCurrentUserProfile();
       hideLoginOverlay();
+      refreshMeTab();
       await startApp();
     } catch (err) {
       const message = String(err.message || '娉ㄥ唽澶辫触');
@@ -1485,6 +1607,10 @@ function bindLoginEvents() {
         nodes.loginInput.value = '';
       }
       showLoginOverlay(message);
+    } finally {
+      loginSubmitting = false;
+      nodes.loginButton.disabled = false;
+      nodes.loginButton.textContent = originText || '进入';
     }
   };
 
@@ -1497,6 +1623,12 @@ function bindLoginEvents() {
   nodes.loginInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       attemptRegister();
+    }
+  });
+
+  nodes.loginOverlay?.addEventListener('click', (event) => {
+    if (event.target === nodes.loginOverlay) {
+      hideLoginOverlay();
     }
   });
 }
@@ -1535,19 +1667,13 @@ async function init() {
   bindLoginEvents();
 
   const authed = await bootstrapAuth();
-  if (authed) {
-    hideLoginOverlay();
-    await startApp();
+  hideLoginOverlay();
+  if (!authed) {
+    hideSplashScreen();
+    showToast('初始化失败，请稍后重试');
     return;
   }
-
-  if (isLoggedIn()) {
-    hideLoginOverlay();
-    await startApp();
-  } else {
-    hideSplashScreen();
-    showLoginOverlay();
-  }
+  await startApp();
 }
 
 init();

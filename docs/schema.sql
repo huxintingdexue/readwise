@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS articles (
   summary_en          TEXT,
   summary_zh          TEXT,
   author             TEXT,                                 -- 手动投喂作者名
+  author_avatar_url   TEXT,                                 -- 作者头像 URL（可空）
   content_en          TEXT,                                 -- 富文本原文（含 HTML 标签，用于渲染）
   content_plain       TEXT,                                 -- 纯文本版本（无 HTML 标签，用于划线字符位置计算和进度记录）
   content_zh          TEXT,                                 -- 已翻译部分（持续追加）
