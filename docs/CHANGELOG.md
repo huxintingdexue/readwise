@@ -4,6 +4,38 @@
 
 ---
 
+## 2026-03-23 — 列表页改版 + 头像本地固化（v2.14.0）
+
+### 已完成
+- ✅ 今日列表页视觉改版（顶栏/卡片/底部导航），并改为真实数据动态渲染
+- ✅ 接入本地 Tailwind 构建链（移除 CDN 依赖），新增 `tailwind.config.cjs` 与构建产物
+- ✅ 阅读进度展示规则调整：`read_progress > 0` 显示百分比（浅灰），`read_progress = 0` 显示“未读”（`#0D9488`）
+- ✅ 列表卡片摘要支持动态 3/4 行（默认 3 行，长摘要最多 4 行）
+- ✅ 列表卡片字号整体放大，默认字体改为“清晰黑体”（新用户默认 `sans`）
+- ✅ 新增 `author_avatar_url` 字段链路（接口返回/入库/回填），并兼容“数据库未加列”场景避免 `internal_error`
+- ✅ 作者头像一次性抓取并本地固化到 `frontend/assets/avatars/social/`，数据库完成回填
+- ✅ 头像映射抽离为独立配置文件（前端与脚本分离配置，便于后续维护）
+
+### 变更文件
+- api/articles.js
+- api/ingest.js
+- docs/schema.sql
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- frontend/js/avatar-config.js
+- frontend/assets/avatars/social/*
+- frontend/css/tailwind.input.css
+- frontend/css/tailwind.css
+- scripts/fetch-articles.js
+- scripts/migrate-author-avatar-url.js
+- scripts/avatar-config.js
+- tailwind.config.cjs
+- package.json
+- package-lock.json
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-23 — 阅读页 Markdown 图片渲染支持（v2.13.0）
 
 ### 已完成

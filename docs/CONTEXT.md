@@ -7,6 +7,14 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：列表页完成新版视觉重构（顶栏/卡片/底部导航）并接入真实数据动态渲染 ✅
+- 最近变更：接入本地 Tailwind 构建（移除 CDN），新增 `tailwind.config.cjs` 与 `build:tailwind` ✅
+- 最近变更：列表进度显示规则调整（`>0` 显示百分比，`=0` 显示“未读”绿色）✅
+- 最近变更：列表摘要支持动态 3/4 行，卡片字号放大，头像去描边 ✅
+- 最近变更：新用户默认字体改为“清晰黑体”（`rw_font_preset` 默认 `sans`）✅
+- 最近变更：新增 `author_avatar_url` 全链路支持并兼容“数据库未加列”场景，避免 `/api/articles` `internal_error` ✅
+- 最近变更：作者头像已一次性抓取并本地固化（`frontend/assets/avatars/social`），数据库回填已完成 ✅
+- 最近变更：头像来源映射已抽离配置文件（前端 `frontend/js/avatar-config.js`，脚本 `scripts/avatar-config.js`）✅
 - 最近变更：阅读页 Markdown 支持图片语法 `![alt](url)` 渲染（懒加载 + 自适应样式）✅
 - 最近变更：修复今日活跃用户名单 SQL（DISTINCT + ORDER BY 兼容），解决“活跃用户数有值但名单为 -” ✅
 - 最近变更：管理员“今日概览”活跃用户改为按今日所有事件去重统计，并过滤空 user_id，修复显示 `-` ✅
