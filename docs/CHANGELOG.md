@@ -2336,3 +2336,16 @@
 - vercel.json
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
+
+---
+
+## 2026-03-24 — 文章列表临时隐藏标签与时间（生产先行）
+
+### 已完成
+- ✅ 文章卡片底部 `Topic + 日期` 改为仅隐藏显示（未删除数据、未删除渲染逻辑）
+- ✅ 仅做样式层调整，后续可在测试环境快速恢复
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
