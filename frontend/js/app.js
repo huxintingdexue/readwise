@@ -548,7 +548,7 @@ function renderArticles() {
             <img class="article-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(sourceName(item.source_key, item.author))}"/>
             <div class="article-author-text">
               <span class="article-author-name">${escapeHtml(sourceName(item.source_key, item.author))}</span>
-              <span class="article-reading-time">· ${readMinutes} min read</span>
+              <span class="article-reading-time">· ${readMinutes} min</span>
             </div>
           </div>
           <div class="article-card-status">
