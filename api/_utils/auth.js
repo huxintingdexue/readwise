@@ -187,15 +187,31 @@ function getPathname(req) {
   }
 }
 
+function getQueryStatus(req) {
+  try {
+    const url = new URL(req.url || '/', `http://${req.headers?.host || 'localhost'}`);
+    return String(req.query?.status || url.searchParams.get('status') || '').trim();
+  } catch (_) {
+    return String(req.query?.status || '').trim();
+  }
+}
+
 export function ensureOpenClawPermission(req, res, userId) {
   if (userId !== 'openclaw') return true;
 
   const method = String(req.method || 'GET').toUpperCase();
   const pathname = getPathname(req);
+  const queryStatus = getQueryStatus(req);
+  const isAdminArticlesList = method === 'GET'
+    && pathname === '/api/admin/articles'
+    && ['pending', 'hidden'].includes(queryStatus);
   const allowed = (
     (method === 'POST' && pathname === '/api/ingest') ||
     (method === 'GET' && pathname === '/api/articles/urls') ||
-    (method === 'DELETE' && /^\/api\/articles\/[^/]+\/?$/.test(pathname))
+    (method === 'GET' && pathname === '/api/articles') ||
+    (method === 'GET' && /^\/api\/articles\/[^/]+\/?$/.test(pathname)) ||
+    (method === 'DELETE' && /^\/api\/articles\/[^/]+\/?$/.test(pathname)) ||
+    isAdminArticlesList
   );
 
   if (allowed) return true;
