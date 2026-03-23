@@ -9,6 +9,7 @@ const VALID_AUTHOR = new Set(['sam', 'andrej', 'peter', 'naval', 'manual']);
 const VALID_SORT = new Set(['date_desc', 'date_asc']);
 
 let pool;
+let cachedAuthorAvatarColumnExists = null;
 
 function getPool() {
   if (!pool) {
@@ -19,6 +20,24 @@ function getPool() {
     pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
   }
   return pool;
+}
+
+async function hasAuthorAvatarColumn() {
+  if (typeof cachedAuthorAvatarColumnExists === 'boolean') {
+    return cachedAuthorAvatarColumnExists;
+  }
+  const { rows } = await getPool().query(
+    `
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'articles'
+        AND column_name = 'author_avatar_url'
+      LIMIT 1
+    `
+  );
+  cachedAuthorAvatarColumnExists = rows.length > 0;
+  return cachedAuthorAvatarColumnExists;
 }
 
 function readQuery(req) {
@@ -78,6 +97,9 @@ async function listArticles(res, query, userId) {
   const orderClause = filters.sort === 'date_asc'
     ? 'a.published_at ASC NULLS LAST, a.fetched_at ASC'
     : 'a.published_at DESC NULLS LAST, a.fetched_at DESC';
+  const avatarSelect = (await hasAuthorAvatarColumn())
+    ? 'a.author_avatar_url'
+    : 'NULL::text AS author_avatar_url';
 
   const sql = `
     SELECT
@@ -88,7 +110,7 @@ async function listArticles(res, query, userId) {
       a.summary_en,
       a.summary_zh,
       a.author,
-      a.author_avatar_url,
+      ${avatarSelect},
       a.url,
       a.published_at,
       a.translation_status,
@@ -176,6 +198,9 @@ async function listArticleUrls(res, userId) {
 
 async function getArticleById(res, id, userId) {
   const isAdminUser = userId === 'admin';
+  const avatarSelect = (await hasAuthorAvatarColumn())
+    ? 'a.author_avatar_url'
+    : 'NULL::text AS author_avatar_url';
   const sql = `
     SELECT
       a.id,
@@ -185,7 +210,7 @@ async function getArticleById(res, id, userId) {
       a.summary_en,
       a.summary_zh,
       a.author,
-      a.author_avatar_url,
+      ${avatarSelect},
       a.content_en,
       a.content_plain,
       a.content_zh,
