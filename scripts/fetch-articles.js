@@ -11,9 +11,9 @@ const FEEDS = [
   { key: 'naval', urls: ['https://nav.al/feed'] }
 ];
 const SOURCE_AVATAR_URLS = {
-  sam: '/assets/avatars/sam-altman.svg',
-  andrej: '/assets/avatars/andrej-karpathy.svg',
-  naval: '/assets/avatars/naval-ravikant.svg'
+  sam: '/assets/avatars/social/sam-altman.jpg',
+  andrej: '/assets/avatars/social/andrej-karpathy.jpg',
+  naval: '/assets/avatars/social/naval-ravikant.jpg'
 };
 
 const TRANSLATE_PROMPT =

@@ -299,9 +299,9 @@ function topicLabel(sourceKey) {
 }
 
 function sourceFallbackAvatar(sourceKey) {
-  if (sourceKey === 'sam') return '/assets/avatars/sam-altman.svg';
-  if (sourceKey === 'andrej') return '/assets/avatars/andrej-karpathy.svg';
-  if (sourceKey === 'naval') return '/assets/avatars/naval-ravikant.svg';
+  if (sourceKey === 'sam') return '/assets/avatars/social/sam-altman.jpg';
+  if (sourceKey === 'andrej') return '/assets/avatars/social/andrej-karpathy.jpg';
+  if (sourceKey === 'naval') return '/assets/avatars/social/naval-ravikant.jpg';
   return DEFAULT_AVATAR_URL;
 }
 
