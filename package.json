@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vercel dev",
     "start": "vercel dev",
+    "build:tailwind": "tailwindcss -c tailwind.config.cjs -i ./frontend/css/tailwind.input.css -o ./frontend/css/tailwind.css --minify",
     "fetch:articles": "node scripts/fetch-articles.js",
+    "migrate:author-avatar-url": "node scripts/migrate-author-avatar-url.js",
     "migrate:publish-status": "node scripts/migrate-publish-status.js",
     "migrate:translation-job-status": "node scripts/migrate-translation-job-status.js",
     "publish:pending": "node scripts/publish-pending.js"
@@ -17,5 +19,10 @@
     "dotenv": "^16.6.1",
     "node-fetch": "^3.3.2",
     "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tailwindcss/forms": "^0.5.10",
+    "tailwindcss": "^3.4.17"
   }
 }

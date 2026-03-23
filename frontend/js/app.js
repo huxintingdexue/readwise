@@ -31,6 +31,7 @@ const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
 const SW_REGISTER_DELAY_MS = 1200;
+const DEFAULT_AVATAR_URL = '/assets/avatars/default.svg';
 let splashFallbackTimer = null;
 let swRegisterTimer = null;
 let readerFeaturesReady = false;
@@ -288,6 +289,48 @@ function sourceName(sourceKey, author) {
   if (sourceKey === 'naval') return 'Naval Ravikant';
   return sourceKey || '鏈煡鏉ユ簮';
 }
+
+function topicLabel(sourceKey) {
+  if (sourceKey === 'sam') return 'Sam';
+  if (sourceKey === 'andrej') return 'Andrej';
+  if (sourceKey === 'naval') return 'Naval';
+  if (sourceKey === 'manual') return '读友导入';
+  return '资讯';
+}
+
+function sourceFallbackAvatar(sourceKey) {
+  if (sourceKey === 'sam') return '/assets/avatars/sam-altman.svg';
+  if (sourceKey === 'andrej') return '/assets/avatars/andrej-karpathy.svg';
+  if (sourceKey === 'naval') return '/assets/avatars/naval-ravikant.svg';
+  return DEFAULT_AVATAR_URL;
+}
+
+function resolveAuthorAvatarUrl(item) {
+  const dbAvatar = String(item?.author_avatar_url || '').trim();
+  return dbAvatar || sourceFallbackAvatar(item?.source_key);
+}
+
+function estimatedReadMinutes(item) {
+  const apiEstimate = Number(item?.estimated_read_minutes || 0);
+  if (Number.isFinite(apiEstimate) && apiEstimate > 0) {
+    return Math.max(1, Math.round(apiEstimate));
+  }
+  const fallbackText = String(item?.summary_zh || item?.summary_en || '');
+  return Math.max(1, Math.round(fallbackText.length / 90));
+}
+
+function progressMeta(item) {
+  const isTranslating = item?.status === 'translating';
+  if (isTranslating) {
+    return { label: '翻译中...', className: 'is-translating' };
+  }
+  const progress = Math.max(0, Math.min(100, Number(item?.read_progress || 0)));
+  if (progress > 0) {
+    return { label: `${Math.round(progress)}%`, className: 'is-read' };
+  }
+  return { label: '未读', className: 'is-unread' };
+}
+
 function readStatusLabel(status, progress) {
   if (status === 'archived') return '存档';
   if (status === 'read') return `已读 ${progress}%`;
@@ -489,34 +532,51 @@ function renderArticles() {
 
   ordered.forEach((item) => {
     const li = document.createElement('li');
-    const progress = Math.max(0, Math.min(100, Number(item.read_progress || 0)));
-    const progressLabel = Math.round(progress);
     const isTranslating = item.status === 'translating';
-    const statusLabel = isTranslating ? '翻译中...' : readStatusLabel(item.read_status, progressLabel);
     const isOwner = item.submitted_by && item.submitted_by === getUserId();
     const showBadge = Boolean(isOwner);
     const badgeLabel = isTranslating ? '导入中' : '已导入';
     const isManual = Boolean(item.submitted_by || item.source_key === 'manual');
     const isManualTranslating = isManual && isTranslating;
+    const progress = progressMeta(item);
+    const readMinutes = estimatedReadMinutes(item);
+    const avatarUrl = resolveAuthorAvatarUrl(item);
     const summaryText = String(item.summary_zh || item.summary_en || '暂无摘要');
-    const summaryClass = summaryText.length > 66 ? 'article-summary summary-long' : 'article-summary';
     li.innerHTML = `
-      <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManualTranslating ? ' is-recommend' : ''}" data-id="${item.id}">
-        <div class="article-card-head">
-          <div class="article-card-title">
-            <h3>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
+      <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManualTranslating ? ' is-recommend' : ''} bg-white rounded-xl p-4 relative group active:scale-[0.99] transition-all duration-200 shadow-[0_1px_6px_rgba(0,0,0,0.02)]" data-id="${item.id}">
+        <div class="article-card-top">
+          <div class="article-author">
+            <img class="article-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(sourceName(item.source_key, item.author))}"/>
+            <div class="article-author-text">
+              <span class="article-author-name">${escapeHtml(sourceName(item.source_key, item.author))}</span>
+              <span class="article-reading-time">· ${readMinutes} min</span>
+            </div>
           </div>
           <div class="article-card-status">
             ${showBadge ? `<span class="article-badge">${badgeLabel}</span>` : ''}
-            <span class="${isTranslating ? 'article-status' : 'read-status'}">${escapeHtml(statusLabel)}</span>
+            <span class="article-progress ${progress.className}">${escapeHtml(progress.label)}</span>
           </div>
         </div>
-        <div class="article-meta">${escapeHtml(sourceName(item.source_key, item.author))} \u00B7 ${escapeHtml(formatDate(item.published_at))}</div>
-        <p class="${summaryClass}">${escapeHtml(summaryText)}</p>
+        <div class="article-body">
+          <h3 class="article-title">${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
+          <p class="article-summary">${escapeHtml(summaryText)}</p>
+        </div>
+        <div class="article-bottom">
+          <span class="article-topic">${escapeHtml(topicLabel(item.source_key))}</span>
+          <span class="article-dot"></span>
+          <span class="article-date">${escapeHtml(formatDate(item.published_at))}</span>
+        </div>
       </article>
     `;
 
     const card = li.firstElementChild;
+    const avatarNode = li.querySelector('.article-avatar');
+    if (avatarNode) {
+      avatarNode.addEventListener('error', () => {
+        if (avatarNode.src.endsWith(DEFAULT_AVATAR_URL)) return;
+        avatarNode.src = DEFAULT_AVATAR_URL;
+      }, { once: true });
+    }
     if (!isTranslating) {
       card.addEventListener('click', () => openArticle(item.id));
     }

@@ -88,6 +88,7 @@ async function listArticles(res, query, userId) {
       a.summary_en,
       a.summary_zh,
       a.author,
+      a.author_avatar_url,
       a.url,
       a.published_at,
       a.translation_status,
@@ -116,7 +117,20 @@ async function listArticles(res, query, userId) {
             )
           )
         )::int
-      END AS read_progress
+      END AS read_progress,
+      LEAST(
+        99,
+        GREATEST(
+          1,
+          CEIL(
+            COALESCE(
+              NULLIF(LENGTH(COALESCE(a.content_zh, '')), 0),
+              NULLIF(LENGTH(COALESCE(a.content_plain, '')), 0),
+              1
+            )::numeric / 420
+          )::int
+        )
+      ) AS estimated_read_minutes
     FROM articles a
     LEFT JOIN reading_progress rp
       ON rp.article_id = a.id
@@ -171,6 +185,7 @@ async function getArticleById(res, id, userId) {
       a.summary_en,
       a.summary_zh,
       a.author,
+      a.author_avatar_url,
       a.content_en,
       a.content_plain,
       a.content_zh,

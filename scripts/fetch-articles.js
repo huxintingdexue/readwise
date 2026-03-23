@@ -10,6 +10,11 @@ const FEEDS = [
   // Peter feed removed due to persistent 404s.
   { key: 'naval', urls: ['https://nav.al/feed'] }
 ];
+const SOURCE_AVATAR_URLS = {
+  sam: '/assets/avatars/sam-altman.svg',
+  andrej: '/assets/avatars/andrej-karpathy.svg',
+  naval: '/assets/avatars/naval-ravikant.svg'
+};
 
 const TRANSLATE_PROMPT =
   '你是一个技术文章翻译专家。请将以下英文翻译成中文，要求：保留所有专有名词英文原文（如 Transformer、Attention、LLM），人名不翻译，翻译风格自然流畅，不要逐字直译。以下【上文参考】部分仅供理解上下文，不需要翻译。';
@@ -444,6 +449,10 @@ function parsePublishedAt(value) {
   return date.toISOString();
 }
 
+function sourceAvatarUrl(sourceKey) {
+  return SOURCE_AVATAR_URLS[sourceKey] || null;
+}
+
 async function insertArticle(pool, article, options = {}) {
   const repairSummary = options.repairSummary === true;
   const query = repairSummary
@@ -454,6 +463,7 @@ async function insertArticle(pool, article, options = {}) {
       title_zh,
       summary_en,
       summary_zh,
+      author_avatar_url,
       content_en,
       content_plain,
       content_zh,
@@ -464,11 +474,12 @@ async function insertArticle(pool, article, options = {}) {
       published_at,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'unread', $11, $12, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'unread', $12, $13, NULL
     )
     ON CONFLICT (url) DO UPDATE SET
       summary_en = EXCLUDED.summary_en,
       summary_zh = EXCLUDED.summary_zh,
+      author_avatar_url = COALESCE(articles.author_avatar_url, EXCLUDED.author_avatar_url),
       content_plain = EXCLUDED.content_plain
     RETURNING id, (xmax = 0) AS inserted
   `
@@ -479,6 +490,7 @@ async function insertArticle(pool, article, options = {}) {
       title_zh,
       summary_en,
       summary_zh,
+      author_avatar_url,
       content_en,
       content_plain,
       content_zh,
@@ -489,7 +501,7 @@ async function insertArticle(pool, article, options = {}) {
       published_at,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'unread', $11, $12, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'unread', $12, $13, NULL
     )
     ON CONFLICT (url) DO NOTHING
     RETURNING id
@@ -501,6 +513,7 @@ async function insertArticle(pool, article, options = {}) {
     article.titleZh || null,
     article.summaryEn || null,
     article.summaryZh || null,
+    article.authorAvatarUrl || null,
     article.contentEn || null,
     article.contentPlain || null,
     article.contentZh || null,
@@ -576,6 +589,7 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
       sourceKey: feed.key,
       titleEn: item.title,
       summaryEn: item.summaryEn,
+      authorAvatarUrl: sourceAvatarUrl(feed.key),
       contentEn: cleaned.contentEn,
       contentPlain: cleaned.contentPlain,
       url: item.url,
