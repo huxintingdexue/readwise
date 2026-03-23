@@ -234,7 +234,7 @@ function setThemeChoice(theme) {
 
 function normalizeFontPresetValue(value) {
   if (value === 'serif' || value === 'sans' || value === 'system') return value;
-  return 'serif';
+  return 'sans';
 }
 
 function setFontChoice(preset) {
