@@ -542,6 +542,7 @@ function renderArticles() {
     const readMinutes = estimatedReadMinutes(item);
     const avatarUrl = resolveAuthorAvatarUrl(item);
     const summaryText = String(item.summary_zh || item.summary_en || '暂无摘要');
+    const summaryClass = summaryText.length > 66 ? 'article-summary summary-long' : 'article-summary';
     li.innerHTML = `
       <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManualTranslating ? ' is-recommend' : ''} bg-white rounded-xl p-4 relative group active:scale-[0.99] transition-all duration-200 shadow-[0_1px_6px_rgba(0,0,0,0.02)]" data-id="${item.id}">
         <div class="article-card-top">
@@ -559,7 +560,7 @@ function renderArticles() {
         </div>
         <div class="article-body">
           <h3 class="article-title">${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
-          <p class="article-summary">${escapeHtml(summaryText)}</p>
+          <p class="${summaryClass}">${escapeHtml(summaryText)}</p>
         </div>
         <div class="article-bottom">
           <span class="article-topic">${escapeHtml(topicLabel(item.source_key))}</span>
