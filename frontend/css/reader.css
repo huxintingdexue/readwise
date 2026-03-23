@@ -732,9 +732,7 @@ body.reading-mode::-webkit-scrollbar-thumb {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--bg);
   box-shadow: 0 1px 6px rgba(22, 41, 47, 0.08);
   padding: calc(10px + env(safe-area-inset-top, 0px)) 18px 10px;
   transform: translateZ(0);
@@ -789,7 +787,7 @@ body.reading-mode::-webkit-scrollbar-thumb {
 }
 
 body.theme-dark .topbar {
-  background: rgba(24, 28, 35, 0.88);
+  background: var(--bg);
   box-shadow: none;
 }
 
