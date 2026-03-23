@@ -36,6 +36,16 @@
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
 
+### 对应提交（staging）
+- `14e3410` 列表页改版 + 本地 Tailwind + 真实数据渲染
+- `ccac73a` 修复 `author_avatar_url` 列缺失导致的 `internal_error` 兼容回退
+- `9254dfe` 摘要动态 3/4 行 + 头像去边框
+- `42dba89` 卡片字号整体放大
+- `6a78bb6` 新用户默认字体改为清晰黑体（sans）
+- `78f8425` 作者头像本地固化 + 数据库回填
+- `c80e9a2` 头像映射配置抽离（前端/脚本）
+- `47adc71` 补充 staging-first 协作约定（CONTEXT）
+
 ## 2026-03-23 — 阅读页 Markdown 图片渲染支持（v2.13.0）
 
 ### 已完成
