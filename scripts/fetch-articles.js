@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import { Pool } from 'pg';
+import { SOURCE_AVATAR_URLS } from './avatar-config.js';
 
 dotenv.config({ path: '.env.local' });
 
@@ -10,12 +11,6 @@ const FEEDS = [
   // Peter feed removed due to persistent 404s.
   { key: 'naval', urls: ['https://nav.al/feed'] }
 ];
-const SOURCE_AVATAR_URLS = {
-  sam: '/assets/avatars/social/sam-altman.jpg',
-  andrej: '/assets/avatars/social/andrej-karpathy.jpg',
-  naval: '/assets/avatars/social/naval-ravikant.jpg'
-};
-
 const TRANSLATE_PROMPT =
   '你是一个技术文章翻译专家。请将以下英文翻译成中文，要求：保留所有专有名词英文原文（如 Transformer、Attention、LLM），人名不翻译，翻译风格自然流畅，不要逐字直译。以下【上文参考】部分仅供理解上下文，不需要翻译。';
 const SUMMARY_CHUNK_PROMPT =

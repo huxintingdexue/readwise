@@ -1,5 +1,6 @@
 ﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth } from './api.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
+import { DEFAULT_AVATAR_URL, SOURCE_AVATAR_URLS } from './avatar-config.js';
 
 const state = {
   tab: 'today',
@@ -31,7 +32,6 @@ const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
 const SW_REGISTER_DELAY_MS = 1200;
-const DEFAULT_AVATAR_URL = '/assets/avatars/default.svg';
 let splashFallbackTimer = null;
 let swRegisterTimer = null;
 let readerFeaturesReady = false;
@@ -299,10 +299,7 @@ function topicLabel(sourceKey) {
 }
 
 function sourceFallbackAvatar(sourceKey) {
-  if (sourceKey === 'sam') return '/assets/avatars/social/sam-altman.jpg';
-  if (sourceKey === 'andrej') return '/assets/avatars/social/andrej-karpathy.jpg';
-  if (sourceKey === 'naval') return '/assets/avatars/social/naval-ravikant.jpg';
-  return DEFAULT_AVATAR_URL;
+  return SOURCE_AVATAR_URLS[sourceKey] || DEFAULT_AVATAR_URL;
 }
 
 function resolveAuthorAvatarUrl(item) {
