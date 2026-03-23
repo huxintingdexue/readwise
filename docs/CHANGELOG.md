@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-03-23 — AI小编头像接入 + 顶部副标题中文化（v2.14.1）
+
+### 已完成
+- ✅ 接入用户提供的 AI小编头像资源，落地到本地静态目录并纳入头像映射配置
+- ✅ 数据库回填：`manual + AI小编` 文章头像统一更新为本地路径（6 篇已生效）
+- ✅ 文章列表页顶部副标题由英文改为中文「全球一手信息 触手可及」
+
+### 变更文件
+- frontend/assets/avatars/social/ai-editor.jpg
+- frontend/index.html
+- scripts/avatar-config.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-23 — 列表页改版 + 头像本地固化（v2.14.0）
 
 ### 已完成
