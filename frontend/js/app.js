@@ -1,4 +1,4 @@
-﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, isLoggedIn, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth } from './api.js';
+﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth, createGuestSession } from './api.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 import { DEFAULT_AVATAR_URL, SOURCE_AVATAR_URLS } from './avatar-config.js';
 
@@ -612,10 +612,16 @@ async function loadArticles(options = {}) {
       nodes.articlesState.textContent = `加载失败：${err.message}`;
     }
     const message = String(err.message || '');
-    const authFailed = message.includes('UID') || message.includes('unauthorized');
+    const authFailed = message.includes('UID') || message.includes('unauthorized') || message.includes('缺少身份凭证');
     if (authFailed) {
-      showToast('登录态失效，请重新登录');
-      logout();
+      showToast('会话已失效，正在恢复');
+      state.appStarted = false;
+      const ok = await bootstrapAuth();
+      if (ok) {
+        await startApp();
+      } else {
+        showLoginOverlay('登录失败，请稍后重试');
+      }
       return;
     }
     if (!renderedFromCache) {
@@ -798,6 +804,10 @@ function bindEvents() {
   });
 
   nodes.logoutBtn?.addEventListener('click', () => {
+    if (isGuestUser()) {
+      showLoginOverlay();
+      return;
+    }
     const confirmed = window.confirm('确定退出登录吗？');
     if (!confirmed) return;
     logout();
@@ -1033,6 +1043,10 @@ function isAdminUser() {
   return getUserId() === 'admin';
 }
 
+function isGuestUser() {
+  return state.currentUser?.source === 'guest_auto';
+}
+
 function refreshMeTab() {
   if (nodes.inviteCodeDisplay) {
     nodes.inviteCodeDisplay.textContent = getInviteCodeLabel();
@@ -1044,8 +1058,11 @@ function refreshMeTab() {
     nodes.profileAvatarText.textContent = getAvatarDisplayText();
   }
   if (nodes.nicknameHintRow) {
-    const shouldShow = !String(state.currentUser?.nickname || '').trim();
+    const shouldShow = !isGuestUser() && !String(state.currentUser?.nickname || '').trim();
     nodes.nicknameHintRow.classList.toggle('hidden', !shouldShow);
+  }
+  if (nodes.logoutBtn) {
+    nodes.logoutBtn.textContent = isGuestUser() ? '登录' : '退出登录';
   }
   const userId = getUserId();
   if (nodes.adminSection) {
@@ -1529,7 +1546,13 @@ async function bootstrapAuth() {
     }
   }
 
-  return false;
+  try {
+    await createGuestSession();
+    await loadCurrentUserProfile();
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 function bindLoginEvents() {
@@ -1544,9 +1567,18 @@ function bindLoginEvents() {
     }
 
     try {
-      await registerUser(nickname, inviteCode);
+      if (isGuestUser() && !inviteCode) {
+        await updateUserProfile({ nickname });
+      } else {
+        if (isGuestUser() && inviteCode) {
+          const confirmed = window.confirm('使用邀请码会切换到新账号，当前游客数据不会自动合并。是否继续？');
+          if (!confirmed) return;
+        }
+        await registerUser(nickname, inviteCode);
+      }
       await loadCurrentUserProfile();
       hideLoginOverlay();
+      refreshMeTab();
       await startApp();
     } catch (err) {
       const message = String(err.message || '娉ㄥ唽澶辫触');
@@ -1566,6 +1598,12 @@ function bindLoginEvents() {
   nodes.loginInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       attemptRegister();
+    }
+  });
+
+  nodes.loginOverlay?.addEventListener('click', (event) => {
+    if (event.target === nodes.loginOverlay) {
+      hideLoginOverlay();
     }
   });
 }
@@ -1604,19 +1642,13 @@ async function init() {
   bindLoginEvents();
 
   const authed = await bootstrapAuth();
-  if (authed) {
-    hideLoginOverlay();
-    await startApp();
+  hideLoginOverlay();
+  if (!authed) {
+    hideSplashScreen();
+    showToast('初始化失败，请稍后重试');
     return;
   }
-
-  if (isLoggedIn()) {
-    hideLoginOverlay();
-    await startApp();
-  } else {
-    hideSplashScreen();
-    showLoginOverlay();
-  }
+  await startApp();
 }
 
 init();

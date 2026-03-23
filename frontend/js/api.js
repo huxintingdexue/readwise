@@ -105,6 +105,18 @@ export async function registerUser(nickname, inviteCode = '', contact = '') {
   return uid;
 }
 
+export async function createGuestSession() {
+  const data = await requestJson('/api/user/guest', {
+    method: 'POST'
+  });
+  const uid = String(data?.data?.uid || '').trim();
+  if (!uid) {
+    throw new Error(data?.message || 'guest session failed');
+  }
+  setUid(uid);
+  return uid;
+}
+
 export async function migrateLegacyUser(inviteCode) {
   const code = String(inviteCode || '').trim();
   if (!code) throw new Error('缺少邀请码');

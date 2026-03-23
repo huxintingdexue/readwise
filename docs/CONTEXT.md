@@ -7,6 +7,8 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：登录流程改为“先用后登”——首次自动创建匿名 UID（guest_auto），不再强制登录弹窗 ✅
+- 最近变更：“我的”页支持游客态登录入口（按钮显示“登录”）；游客不填邀请码时升级当前账号昵称，避免 UID 切换导致数据丢失 ✅
 - 最近变更：“我的”页按新设计稿完成视觉重排（个人资料区/阅读外观/菜单卡片），并保持现有功能绑定 ✅
 - 最近变更：接入用户提供的 AI小编头像（本地静态资源 + 数据库回填），AI小编历史文章头像已全部生效 ✅
 - 最近变更：列表页顶部副标题改为中文「全球一手信息 触手可及」✅
@@ -201,6 +203,7 @@ Vercel Serverless Functions（/api/*）
 | api/search-reference.js | POST /api/search-reference（每日限流） | ✅ 已完成 |
 | api/auth/verify.js | POST /api/auth/verify（邀请码校验） | ✅ 已完成 |
 | api/user/register.js | POST /api/user/register（昵称注册，邀请码选填） | ✅ 已完成 |
+| api/user/guest.js | POST /api/user/guest（匿名会话 UID，下发 guest_auto） | ✅ 已完成 |
 | api/user/migrate.js | POST /api/user/migrate（老邀请码静默迁移 UID） | ✅ 已完成 |
 | api/user/me.js | GET /api/user/me（当前用户信息） | ✅ 已完成 |
 | api/user/profile.js | PATCH /api/user/profile（昵称/联系方式更新） | ✅ 已完成 |
