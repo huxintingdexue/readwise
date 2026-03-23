@@ -69,6 +69,7 @@ const nodes = {
   closeArticleNotes: document.querySelector('#closeArticleNotes'),
   inviteCodeDisplay: document.querySelector('#inviteCodeDisplay'),
   nicknameDisplay: document.querySelector('#nicknameDisplay'),
+  profileAvatarText: document.querySelector('#profileAvatarText'),
   nicknameHintRow: document.querySelector('#nicknameHintRow'),
   nicknameHintBtn: document.querySelector('#nicknameHintBtn'),
   exportEntry: document.querySelector('#exportEntry'),
@@ -998,8 +999,7 @@ function bindEvents() {
   }
 }
 function getInviteCodeLabel() {
-  const inviteCode = String(state.currentUser?.inviteCode || '').trim() || getStoredInviteCode() || '-';
-  return `\u9080\u8bf7\u7801\uff1a${inviteCode}`;
+  return String(state.currentUser?.inviteCode || '').trim() || getStoredInviteCode() || '-';
 }
 
 function getUserId() {
@@ -1018,7 +1018,15 @@ function getAuthIdentity() {
 
 function getNicknameLabel() {
   const nickname = String(state.currentUser?.nickname || '').trim();
-  return `\u6635\u79f0\uff1a${nickname || '-'}`;
+  return nickname || '-';
+}
+
+function getAvatarDisplayText() {
+  const nickname = String(state.currentUser?.nickname || '').trim();
+  if (nickname) return nickname.slice(0, 1).toUpperCase();
+  const invite = getInviteCodeLabel();
+  if (invite && invite !== '-') return invite.slice(0, 1).toUpperCase();
+  return '-';
 }
 
 function isAdminUser() {
@@ -1031,6 +1039,9 @@ function refreshMeTab() {
   }
   if (nodes.nicknameDisplay) {
     nodes.nicknameDisplay.textContent = getNicknameLabel();
+  }
+  if (nodes.profileAvatarText) {
+    nodes.profileAvatarText.textContent = getAvatarDisplayText();
   }
   if (nodes.nicknameHintRow) {
     const shouldShow = !String(state.currentUser?.nickname || '').trim();
