@@ -1003,6 +1003,18 @@ body.reading-mode::-webkit-scrollbar-thumb {
   text-underline-offset: 3px;
 }
 
+.reader-content img,
+.reader-content .md-image {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 0.8em 0 1.4em;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+}
+
 .notes-section {
   margin-bottom: 20px;
 }

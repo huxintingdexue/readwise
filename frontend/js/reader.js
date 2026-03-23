@@ -34,6 +34,11 @@ function escapeHtmlAttr(text) {
 
 function renderInlineMarkdown(text) {
   let html = escapeHtml(text || '');
+  html = html.replace(
+    /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)(?:\s+"([^"]*)")?\)/g,
+    (_, alt, url, title) =>
+      `<img class="md-image" src="${escapeHtmlAttr(url)}" alt="${escapeHtmlAttr(alt || '图片')}"${title ? ` title="${escapeHtmlAttr(title)}"` : ''} loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
+  );
   html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, label, url) =>
     `<a href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer">${label}</a>`);
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');

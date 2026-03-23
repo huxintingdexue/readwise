@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-03-23 — 阅读页 Markdown 图片渲染支持（v2.13.0）
+
+### 已完成
+- ✅ 阅读页 Markdown 新增图片语法支持：`![alt](https://...)`
+- ✅ 图片渲染为懒加载（`loading=lazy`）并启用异步解码（`decoding=async`）
+- ✅ 新增图片版式样式（宽度自适应、圆角、边框、留白）
+
+### 变更文件
+- frontend/js/reader.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-22 — 今日活跃用户名单空白修复（v2.12.9）
 
 ### 已完成
