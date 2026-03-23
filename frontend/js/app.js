@@ -1557,8 +1557,10 @@ async function bootstrapAuth() {
 
 function bindLoginEvents() {
   if (!nodes.loginButton || !nodes.loginInput || !nodes.nicknameInput) return;
+  let loginSubmitting = false;
 
   const attemptRegister = async () => {
+    if (loginSubmitting) return;
     const nickname = nodes.nicknameInput.value.trim();
     const inviteCode = nodes.loginInput.value.trim();
     if (!nickname) {
@@ -1566,11 +1568,23 @@ function bindLoginEvents() {
       return;
     }
 
+    loginSubmitting = true;
+    nodes.loginButton.disabled = true;
+    const originText = nodes.loginButton.textContent;
+    nodes.loginButton.textContent = '处理中...';
+
     try {
       if (isGuestUser() && !inviteCode) {
         await updateUserProfile({ nickname });
       } else {
         if (isGuestUser() && inviteCode) {
+          // Ensure virtual keyboard is dismissed before showing confirm on mobile.
+          nodes.nicknameInput.blur();
+          nodes.loginInput.blur();
+          if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+          }
+          await new Promise((resolve) => setTimeout(resolve, 160));
           const confirmed = window.confirm('使用邀请码会切换到新账号，当前游客数据不会自动合并。是否继续？');
           if (!confirmed) return;
         }
@@ -1586,6 +1600,10 @@ function bindLoginEvents() {
         nodes.loginInput.value = '';
       }
       showLoginOverlay(message);
+    } finally {
+      loginSubmitting = false;
+      nodes.loginButton.disabled = false;
+      nodes.loginButton.textContent = originText || '进入';
     }
   };
 
