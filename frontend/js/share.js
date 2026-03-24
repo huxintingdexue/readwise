@@ -212,7 +212,7 @@ async function fetchArticle() {
     const meta = [author, formatDate(article.published_at)].filter(Boolean).join(' · ');
     const body = String(article.content_zh || article.content_plain || '').trim();
 
-    document.title = `${title} - ReadWise 分享`;
+    document.title = `${title} - 今日硅谷`;
     nodes.shareTitle.textContent = title;
     nodes.shareMeta.textContent = meta;
     if (summary) {

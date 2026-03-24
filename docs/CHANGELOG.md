@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-03-24 — 分享页标题品牌与下载按钮排版微调（v2.14.8）
+
+### 已完成
+- ✅ 分享页浏览器标题品牌从 `ReadWise` 调整为 `今日硅谷`
+- ✅ 分享页 `document.title` 更新为“文章标题 - 今日硅谷”
+- ✅ 悬浮条按钮“立即下载”字号下调并设置不换行，避免窄屏下折行
+
+### 变更文件
+- frontend/share.html
+- frontend/js/share.js
+- frontend/css/share.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 分享页文案二次精简（v2.14.7）
 
 ### 已完成

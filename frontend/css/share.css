@@ -181,8 +181,10 @@ body {
   background: linear-gradient(90deg, #14b8a6, #0ea5a0);
   color: #032721;
   font-weight: 700;
-  font-size: 13px;
-  padding: 8px 14px;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  padding: 8px 12px;
 }
 
 .share-toast {
