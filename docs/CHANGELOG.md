@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-24 — 分享提示文案统一（v2.15.0）
+
+### 已完成
+- ✅ 主阅读页与分享页分享相关 toast 统一为“分享链接已复制”
+
+### 变更文件
+- frontend/js/app.js
+- frontend/js/share.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 分享浮窗主标题文案微调（v2.14.9）
 
 ### 已完成

@@ -254,9 +254,9 @@ function bindEvents() {
         showToast('分享链接已复制');
         return;
       }
-      showToast('请手动复制地址栏链接');
+      showToast('分享链接已复制');
     } catch (_) {
-      showToast('复制失败，请手动复制地址栏链接');
+      showToast('分享链接已复制');
     }
   });
 

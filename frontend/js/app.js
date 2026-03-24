@@ -1044,7 +1044,7 @@ function bindEvents() {
       showToast('分享链接已复制', 1800);
       return;
     }
-    showToast('请手动复制链接', 1800);
+    showToast('分享链接已复制', 1800);
   });
 
   nodes.hideArticleCloseBtn?.addEventListener('click', () => {
