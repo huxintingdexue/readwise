@@ -30,6 +30,16 @@
 
 ---
 
+## 2026-03-24 — 桌面端阅读页宽度修复（v2.15.5）
+
+### 已完成
+- ✅ 桌面端阅读页 header/banner/content 最大宽度收窄并居中展示
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 划线按钮风格与颜色统一（v2.15.4）
 
 ### 已完成
