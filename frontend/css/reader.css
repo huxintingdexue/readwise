@@ -1949,7 +1949,7 @@ body.theme-dark .bottom-nav {
   }
 
   .reading-mode .reader > * {
-    max-width: 760px;
+    max-width: 1000px;
     margin-left: auto;
     margin-right: auto;
   }
