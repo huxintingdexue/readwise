@@ -375,3 +375,15 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
   - 减少触摸事件对滚动主线程路径的干预（去掉 `touchmove` 阻塞）
   - 回归更接近系统默认的滚动链路（放宽 overscroll + 关闭 contain）
   - 显式声明 `touch-action: pan-y pinch-zoom`
+
+---
+
+## 2026-03-24（性能数据化诊断）
+
+- 新增 `perf_overlay=1`：页面右上角显示实时性能指标（500ms 刷新）。
+- 指标用于跨参数链接对比，弱化手势一致性要求：
+  - FPS
+  - 慢帧（>16.7ms）
+  - 超长帧（>50ms）
+  - LongTask（>50ms）
+  - 滚动活跃状态

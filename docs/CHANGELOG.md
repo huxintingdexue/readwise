@@ -2393,3 +2393,17 @@
 - frontend/css/reader.css
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-24 — 阅读滚动性能浮层（staging 诊断）
+
+### 已完成
+- ✅ 新增 `perf_overlay=1` 页面右上角性能浮层（FPS、慢帧、超长帧、LongTask、滚动活跃）
+- ✅ 便于在不同 `perf_no_*` 组合下做定量 A/B，对比滚动链路瓶颈
+
+### 变更文件
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
