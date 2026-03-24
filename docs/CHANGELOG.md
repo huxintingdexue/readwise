@@ -30,6 +30,20 @@
 
 ---
 
+## 2026-03-24 — 桌面端提示浮窗调整（v2.15.8）
+
+### 已完成
+- ✅ 桌面端提示浮窗移到页面顶部
+- ✅ 文案改为“手机端体验更顺滑，支持沉浸式阅读。”
+- ✅ 新增“复制链接”按钮，点击复制站点链接
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 桌面端提示浮窗（v2.15.7）
 
 ### 已完成

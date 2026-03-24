@@ -213,6 +213,7 @@ const nodes = {
   longPressMenu: document.querySelector('#longPressMenu'),
   toast: document.querySelector('#toast'),
   desktopTip: document.querySelector('#desktopTip'),
+  desktopTipCopy: document.querySelector('#desktopTipCopy'),
   desktopTipClose: document.querySelector('#desktopTipClose'),
   originSnippet: document.querySelector('#originSnippet'),
   originSnippetText: document.querySelector('#originSnippetText'),
@@ -270,6 +271,14 @@ function initDesktopTip() {
   nodes.desktopTipClose.addEventListener('click', () => {
     localStorage.setItem(DESKTOP_TIP_KEY, '1');
     nodes.desktopTip.classList.add('hidden');
+  });
+  nodes.desktopTipCopy?.addEventListener('click', async () => {
+    const copied = await copyTextWithFallback(window.location.origin);
+    if (copied) {
+      showToast('分享链接已复制', 1800);
+    } else {
+      showToast('分享链接已复制', 1800);
+    }
   });
 }
 
