@@ -225,6 +225,10 @@ body {
   display: block;
 }
 
+.share-guide-card strong.hidden {
+  display: none;
+}
+
 .share-guide-card p {
   margin: 8px 0 14px;
   font-size: 13px;

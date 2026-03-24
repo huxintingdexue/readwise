@@ -216,9 +216,10 @@ function sharePageUrl() {
   return `${window.location.origin}/share/${encoded}`;
 }
 
-function showGuide(text, title = '如何继续安装') {
+function showGuide(text, title = '') {
   if (!nodes.shareGuide || !nodes.shareGuideText) return;
   nodes.shareGuideTitle.textContent = title;
+  nodes.shareGuideTitle.classList.toggle('hidden', !title);
   nodes.shareGuideText.textContent = text;
   nodes.shareGuide.classList.remove('hidden');
 }
@@ -317,7 +318,7 @@ function bindEvents() {
 
   nodes.shareCtaBtn?.addEventListener('click', () => {
     if (isWeChat()) {
-      showGuide('点击右上角“...”选择用浏览器打开。');
+      showGuide('点击右上角 ... ，选择用浏览器打开');
       return;
     }
     const platform = getPlatform();
