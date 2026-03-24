@@ -621,15 +621,34 @@ async function persistReadingProgressNow() {
   const baseLength = getReadingBaseLength(detail, nodes.readerContent);
   if (!baseLength) return;
   const scrollPosition = calcScrollPositionByBaseLength(baseLength, getActiveReaderScroller());
+  const percent = Math.max(0, Math.min(100, Math.round((scrollPosition / baseLength) * 100)));
   try {
     await saveReadingProgress(detail.id, scrollPosition);
   } catch (err) {
     console.warn('[reading-progress] save failed', err.message);
   }
+  return { articleId: detail.id, percent };
+}
+
+function updateListProgress(articleId, percent) {
+  if (!articleId || !Array.isArray(state.articles) || state.articles.length === 0) return;
+  let updated = false;
+  const next = state.articles.map((item) => {
+    if (item?.id !== articleId) return item;
+    updated = true;
+    const current = Math.max(0, Number(item?.read_progress || 0));
+    const nextProgress = Math.max(current, Math.max(0, Math.min(100, Number(percent || 0))));
+    return { ...item, read_progress: nextProgress };
+  });
+  if (updated) {
+    state.articles = next;
+    writeListCache(state.articles);
+    renderArticles();
+  }
 }
 
 async function exitReaderView(shouldReload = false) {
-  await persistReadingProgressNow();
+  const progressResult = await persistReadingProgressNow();
   state.currentArticle = null;
   document.body.classList.add('restoring-list-scroll');
   setReadingMode(false);
@@ -645,6 +664,9 @@ async function exitReaderView(shouldReload = false) {
   closeHideArticleModal();
   nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
   nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
+  if (state.tab === 'today' && progressResult?.articleId) {
+    updateListProgress(progressResult.articleId, progressResult.percent);
+  }
   try {
     if (shouldReload && state.tab === 'today') {
       await loadArticles();
