@@ -816,7 +816,7 @@ function renderArticles() {
     const briefs = state.articles
       .filter((a) => a.source_key === 'daily_brief')
       .slice()
-      .sort((a, b) => (Date.parse(b.fetched_at || '') || 0) - (Date.parse(a.fetched_at || '') || 0));
+      .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
     if (briefs.length === 0) {
       nodes.articlesState.textContent = '暂无历史快讯';
       return;
@@ -835,7 +835,7 @@ function renderArticles() {
   const briefs = state.articles
     .filter((a) => a.source_key === 'daily_brief')
     .slice()
-    .sort((a, b) => (Date.parse(b.fetched_at || '') || 0) - (Date.parse(a.fetched_at || '') || 0));
+    .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
 
   const normal = state.articles
     .filter((a) => a.source_key !== 'daily_brief')

@@ -1029,15 +1029,15 @@ body.theme-dark .topbar p {
 
 /* ── 历史快讯入口（卡片内底部） ── */
 .brief-history-card-entry {
-  margin-top: 8px;
-  padding-top: 6px;
+  margin-top: 6px;
+  padding-top: 4px;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .brief-history-btn {
   display: block;
   width: 100%;
-  padding: 2px 0;
+  padding: 1px 0;
   background: none;
   border: none;
   cursor: pointer;
