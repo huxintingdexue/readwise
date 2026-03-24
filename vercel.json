@@ -19,6 +19,14 @@
       "src": "/sw.js",
       "dest": "/frontend/sw.js"
     },
+    {
+      "src": "/share/?",
+      "dest": "/frontend/share.html"
+    },
+    {
+      "src": "/share/(.*)",
+      "dest": "/frontend/share.html"
+    },
     { "handle": "filesystem" },
     {
       "src": "/",

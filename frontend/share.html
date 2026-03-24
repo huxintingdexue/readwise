@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ReadWise 分享页</title>
+    <meta name="description" content="ReadWise 精选文章分享" />
+    <link rel="stylesheet" href="/frontend/css/share.css" />
+  </head>
+  <body>
+    <main class="share-shell">
+      <section class="share-card">
+        <header class="share-head">
+          <p class="share-brand">ReadWise · 今日硅谷</p>
+          <h1 id="shareTitle">加载中...</h1>
+          <p id="shareMeta" class="share-meta"></p>
+          <p id="shareSummary" class="share-summary hidden"></p>
+        </header>
+
+        <article id="shareContent" class="share-content">
+          <p>正在加载文章内容...</p>
+        </article>
+
+        <footer class="share-footer">
+          <a id="openOriginalLink" class="ghost-link hidden" target="_blank" rel="noopener noreferrer">查看原文</a>
+          <button id="copyShareBtn" type="button">复制链接</button>
+        </footer>
+      </section>
+    </main>
+
+    <aside id="shareCta" class="share-cta hidden" aria-live="polite">
+      <div class="share-cta-text">
+        <strong>想继续看更多精选？</strong>
+        <span id="shareCtaSub">打开 ReadWise，获取每日硅谷快讯</span>
+      </div>
+      <button id="shareCtaBtn" type="button">立即打开</button>
+    </aside>
+
+    <div id="shareToast" class="share-toast hidden"></div>
+    <script type="module" src="/frontend/js/share.js"></script>
+  </body>
+</html>

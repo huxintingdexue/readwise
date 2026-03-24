@@ -17,6 +17,7 @@ import adminStats from './admin/stats.js';
 import adminInviteCodes from './admin/invite-codes.js';
 import adminArticles from './admin/articles.js';
 import ingest from './ingest.js';
+import share from './share.js';
 
 function getPathname(req) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -82,6 +83,9 @@ export default async function handler(req, res) {
   }
   if (pathname === '/api/ingest') {
     return ingest(req, res);
+  }
+  if (pathname.startsWith('/api/share/articles/')) {
+    return share(req, res);
   }
 
   res.status(404).json({ error: 'not_found' });

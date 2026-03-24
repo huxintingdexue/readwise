@@ -173,6 +173,7 @@ const nodes = {
   readerMeta: document.querySelector('#readerMeta'),
   readerContent: document.querySelector('#readerContent'),
   articleNotesBtn: document.querySelector('#articleNotesBtn'),
+  shareArticleBtn: document.querySelector('#shareArticleBtn'),
   readerAppearanceBtn: document.querySelector('#readerAppearanceBtn'),
   articleNotesPanel: document.querySelector('#articleNotesPanel'),
   articleNotesBody: document.querySelector('#articleNotesBody'),
@@ -246,6 +247,12 @@ function showToast(message, duration = 2200) {
   nodes.toast.textContent = message;
   nodes.toast.classList.remove('hidden');
   setTimeout(() => nodes.toast.classList.add('hidden'), duration);
+}
+
+function buildShareUrl(articleId) {
+  if (!articleId) return '';
+  const encoded = encodeURIComponent(articleId);
+  return `${window.location.origin}/share/${encoded}`;
 }
 
 function hideSplashScreen() {
@@ -973,6 +980,47 @@ function bindEvents() {
   nodes.hideArticleBtn?.addEventListener('click', () => {
     if (!isAdminUser()) return;
     openHideArticleModal();
+  });
+
+  nodes.shareArticleBtn?.addEventListener('click', async () => {
+    const detail = state.currentArticle;
+    if (!detail?.id) {
+      showToast('未找到文章', 1800);
+      return;
+    }
+
+    const shareUrl = buildShareUrl(detail.id);
+    const shareTitle = detail.title_zh || detail.title_en || '推荐阅读';
+    const shareText = detail.summary_zh || detail.summary_en || '来自 ReadWise 的精选内容';
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        });
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast('分享链接已复制', 1800);
+        return;
+      }
+
+      const copied = document.execCommand && document.execCommand('copy');
+      if (copied) {
+        showToast('分享链接已复制', 1800);
+      } else {
+        showToast('请手动复制链接', 1800);
+      }
+    } catch (err) {
+      if (String(err?.name || '') === 'AbortError') {
+        return;
+      }
+      showToast('分享失败，请重试', 1800);
+    }
   });
 
   nodes.hideArticleCloseBtn?.addEventListener('click', () => {

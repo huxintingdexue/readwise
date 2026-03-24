@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-03-24 — 文章分享页 + 阅读页分享入口（v2.14.4）
+
+### 已完成
+- ✅ 新增公开分享接口：`GET /api/share/articles/:id`（仅返回已发布且翻译完成文章）
+- ✅ 新增公开分享落地页：`/share/:id`（展示标题、摘要、正文、原文链接）
+- ✅ 新增分享页导流浮条：用户下滑后展示，按设备区分 CTA（Android 下载按钮 / iOS 添加主屏幕提示 / 其他设备打开首页）
+- ✅ 阅读页右上角新增“分享本文”按钮，优先调用系统分享，失败回退到复制链接
+- ✅ 新增 Vercel 路由重写，支持 `share` 动态路径落地到 `frontend/share.html`
+
+### 变更文件
+- api/index.js
+- api/share.js
+- vercel.json
+- frontend/index.html
+- frontend/js/app.js
+- frontend/share.html
+- frontend/js/share.js
+- frontend/css/share.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-23 — 登录流程改为先用后登（v2.14.3）
 
 ### 已完成

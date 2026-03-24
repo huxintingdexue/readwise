@@ -8,6 +8,7 @@
 ## 当前状态（每次任务后必须更新）
 
 - 最近变更：登录流程改为“先用后登”——首次自动创建匿名 UID（guest_auto），不再强制登录弹窗 ✅
+- 最近变更：新增文章分享链路（`/share/:id` 公共分享页 + 阅读页一键分享 + 分享页滚动导流浮条）✅
 - 最近变更：“我的”页支持游客态登录入口（按钮显示“登录”）；游客不填邀请码时升级当前账号昵称，避免 UID 切换导致数据丢失 ✅
 - 最近变更：修复游客邀请码登录确认弹窗在移动端被键盘遮挡/重复确认问题（先 blur + 提交防重）✅
 - 最近变更：顶部固定栏改为不透明背景，避免透出列表内容 ✅
@@ -199,6 +200,7 @@ Vercel Serverless Functions（/api/*）
 | scripts/retranslate.js | 扫描未全量翻译文章并补齐全文翻译 | ✅ 已完成 |
 | .github/workflows/fetch.yml | cron UTC 14:00，支持 INITIAL_FETCH | ✅ 已完成 |
 | api/articles.js | GET /api/articles（join进度表返回百分比）| ✅ 已完成 |
+| api/share.js | GET /api/share/articles/:id（公开分享页读取已发布文章） | ✅ 已完成 |
 | api/highlights.js | GET/POST /api/highlights | ✅ 已完成 |
 | api/qa.js | POST /api/qa（DeepSeek 问答 + 每日限流） | ✅ 已完成 |
 | api/reading-list.js | GET/POST/PATCH /api/reading-list | ✅ 已完成 |
@@ -226,6 +228,9 @@ Vercel Serverless Functions（/api/*）
 | frontend/js/notes.js | 笔记 Tab、本文划线面板 | ✅ 已完成 |
 | frontend/js/api.js | 所有fetch封装，自动带 X-Uid（兼容 X-Invite-Code） | ✅ 已完成 |
 | frontend/js/app.js | “我的”页 + 反馈/管理员面板 | ✅ 已完成 |
+| frontend/share.html | 文章公开分享落地页（`/share/:id`） | ✅ 已完成 |
+| frontend/js/share.js | 分享页数据加载、Markdown 渲染、平台导流逻辑 | ✅ 已完成 |
+| frontend/css/share.css | 分享页样式与浮动导流条样式 | ✅ 已完成 |
 | frontend/sw.js | 列表NetworkFirst，详情CacheFirst，图片不缓存 | ✅ 已完成 |
 | frontend/manifest.json | PWA 配置 | ✅ 已完成 |
 | scripts/migrate-users.js | 邀请码老用户 -> users 迁移脚本（手动执行、幂等） | ✅ 已完成 |
