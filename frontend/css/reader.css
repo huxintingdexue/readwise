@@ -1130,6 +1130,12 @@ body.theme-dark .topbar p {
   place-items: center;
 }
 
+#shareArticleBtn {
+  color: #139f92;
+  background: #ece4c9;
+  border-color: #d8cfaf;
+}
+
 .reference-banner {
   margin: 8px 0 16px;
   padding: 12px 14px;
