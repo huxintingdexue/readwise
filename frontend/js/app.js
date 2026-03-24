@@ -274,11 +274,9 @@ function initDesktopTip() {
   });
   nodes.desktopTipCopy?.addEventListener('click', async () => {
     const copied = await copyTextWithFallback(window.location.origin);
-    if (copied) {
-      showToast('分享链接已复制', 1800);
-    } else {
-      showToast('分享链接已复制', 1800);
-    }
+    showToast('阅读链接已复制', 1800);
+    localStorage.setItem(DESKTOP_TIP_KEY, '1');
+    nodes.desktopTip.classList.add('hidden');
   });
 }
 
