@@ -30,6 +30,19 @@
 
 ---
 
+## 2026-03-24 — 桌面端提示浮窗（v2.15.7）
+
+### 已完成
+- ✅ 仅桌面端显示底部提示浮窗，引导用户使用手机端
+- ✅ 提供“知道了”按钮，关闭后本地记住不再提示
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 强制刷新静态缓存（v2.15.6）
 
 ### 已完成

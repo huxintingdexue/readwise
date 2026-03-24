@@ -1555,6 +1555,60 @@ body.theme-dark .topbar p {
   font-size: 13px;
 }
 
+.desktop-tip {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: min(860px, calc(100vw - 24px));
+  background: #0f172a;
+  color: #f8fafc;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 16px 30px rgba(2, 6, 23, 0.35);
+  z-index: 130;
+}
+
+.desktop-tip-text {
+  min-width: 0;
+}
+
+.desktop-tip-text strong,
+.desktop-tip-text span {
+  display: block;
+}
+
+.desktop-tip-text strong {
+  font-size: 14px;
+}
+
+.desktop-tip-text span {
+  margin-top: 2px;
+  color: #cbd5e1;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.desktop-tip button {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #14b8a6, #0ea5a0);
+  color: #032721;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  padding: 8px 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 .origin-snippet {
   position: fixed;
   z-index: 40;

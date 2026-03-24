@@ -33,6 +33,7 @@ const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
 const SW_REGISTER_DELAY_MS = 1200;
+const DESKTOP_TIP_KEY = 'rw_desktop_tip_dismissed';
 let splashFallbackTimer = null;
 let swRegisterTimer = null;
 let readerFeaturesReady = false;
@@ -211,6 +212,8 @@ const nodes = {
   ingestCloseBtn: document.querySelector('#ingestCloseBtn'),
   longPressMenu: document.querySelector('#longPressMenu'),
   toast: document.querySelector('#toast'),
+  desktopTip: document.querySelector('#desktopTip'),
+  desktopTipClose: document.querySelector('#desktopTipClose'),
   originSnippet: document.querySelector('#originSnippet'),
   originSnippetText: document.querySelector('#originSnippetText'),
   closeOriginSnippet: document.querySelector('#closeOriginSnippet'),
@@ -250,6 +253,24 @@ function showToast(message, duration = 2200) {
   nodes.toast.textContent = message;
   nodes.toast.classList.remove('hidden');
   setTimeout(() => nodes.toast.classList.add('hidden'), duration);
+}
+
+function isDesktopDevice() {
+  const ua = navigator.userAgent.toLowerCase();
+  const isMobileUa = /iphone|ipad|ipod|android/i.test(ua);
+  return !isMobileUa && window.innerWidth >= 960;
+}
+
+function initDesktopTip() {
+  if (!nodes.desktopTip || !nodes.desktopTipClose) return;
+  if (!isDesktopDevice()) return;
+  const dismissed = localStorage.getItem(DESKTOP_TIP_KEY);
+  if (dismissed === '1') return;
+  nodes.desktopTip.classList.remove('hidden');
+  nodes.desktopTipClose.addEventListener('click', () => {
+    localStorage.setItem(DESKTOP_TIP_KEY, '1');
+    nodes.desktopTip.classList.add('hidden');
+  });
 }
 
 function buildShareUrl(articleId) {
@@ -1944,6 +1965,7 @@ async function init() {
   initTheme();
   initFontPreset();
   bindLoginEvents();
+  initDesktopTip();
 
   const authed = await bootstrapAuth();
   hideLoginOverlay();
