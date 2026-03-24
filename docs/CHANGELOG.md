@@ -2504,3 +2504,16 @@
 - frontend/css/reader.css
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-24 — 修复阅读进度回写到列表
+
+### 已完成
+- ✅ 退出阅读时即时回写当前文章的阅读进度到列表缓存
+- ✅ 列表无需重新拉取即可更新进度显示
+
+### 变更文件
+- frontend/js/app.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
