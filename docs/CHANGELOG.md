@@ -30,6 +30,16 @@
 
 ---
 
+## 2026-03-24 — 分享页 APK 下载直链接入（v2.16.1）
+
+### 已完成
+- ✅ 分享页“立即下载”按钮接入 APK 直链（gitee）
+
+### 变更文件
+- frontend/js/share.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 独立访客数统计（v2.16.0）
 
 ### 已完成

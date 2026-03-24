@@ -1,4 +1,4 @@
-const ANDROID_APK_URL = '';
+const ANDROID_APK_URL = 'https://gitee.com/byguang/apk-download/releases/download/v1.0.0/readwise.apk';
 
 const nodes = {
   shareTitle: document.querySelector('#shareTitle'),
