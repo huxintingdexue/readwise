@@ -356,6 +356,28 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 
 ---
 
+## 2026-03-24（阅读滚动性能定位）
+
+- 为滚动抖动定位新增 query 参数开关（staging 诊断用，默认不生效）。
+- 可分别排查：
+  - 选区/划线触摸监听链路（`perf_no_selection=1`）
+  - 毛玻璃滤镜重绘（`perf_no_glass=1`）
+  - 阅读容器 contain（`perf_no_reader_contain=1`）
+  - 阅读头 sticky（`perf_no_reader_sticky=1`）
+  - 顶/底栏图层提升（`perf_no_layer_promote=1`）
+
+---
+
+## 2026-03-24（阅读滚动优化 V1）
+
+- 目标：提升阅读页滚动跟手性与惯性感，降低“抖/颤”的主观体感。
+- 策略：
+  - 减少触摸事件对滚动主线程路径的干预（去掉 `touchmove` 阻塞）
+  - 回归更接近系统默认的滚动链路（放宽 overscroll + 关闭 contain）
+  - 显式声明 `touch-action: pan-y pinch-zoom`
+
+---
+
 ## 2026-03-24（性能数据化诊断）
 
 - 新增 `perf_overlay=1`：页面右上角显示实时性能指标（500ms 刷新）。

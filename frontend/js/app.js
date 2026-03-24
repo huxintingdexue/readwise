@@ -48,12 +48,21 @@ const PERF_FLAGS = {
 };
 
 function applyPerfFlags() {
-  if (PERF_FLAGS.noGlass) document.body.classList.add('perf-no-glass');
-  if (PERF_FLAGS.noReaderContain) document.body.classList.add('perf-no-reader-contain');
-  if (PERF_FLAGS.noReaderSticky) document.body.classList.add('perf-no-reader-sticky');
-  if (PERF_FLAGS.noLayerPromote) document.body.classList.add('perf-no-layer-promote');
-  if (PERF_FLAGS.noSelection) document.body.classList.add('no-custom-selection');
-  if (PERF_FLAGS.overlay) document.body.classList.add('perf-overlay-on');
+  if (PERF_FLAGS.noGlass) {
+    document.body.classList.add('perf-no-glass');
+  }
+  if (PERF_FLAGS.noReaderContain) {
+    document.body.classList.add('perf-no-reader-contain');
+  }
+  if (PERF_FLAGS.noReaderSticky) {
+    document.body.classList.add('perf-no-reader-sticky');
+  }
+  if (PERF_FLAGS.noLayerPromote) {
+    document.body.classList.add('perf-no-layer-promote');
+  }
+  if (PERF_FLAGS.noSelection) {
+    document.body.classList.add('no-custom-selection');
+  }
 }
 
 function initPerfOverlay() {
@@ -103,9 +112,7 @@ function initPerfOverlay() {
         }
       });
       observer.observe({ type: 'longtask', buffered: true });
-    } catch (_) {
-      // Ignore unsupported browsers.
-    }
+    } catch (_) {}
   }
 
   function tick(ts) {

@@ -2366,11 +2366,41 @@
 
 ---
 
+## 2026-03-24 — 阅读滚动流畅度定位开关（仅测试）
+
+### 已完成
+- ✅ 新增 URL 级性能定位开关（默认关闭，不影响正常用户）
+- ✅ 支持按开关禁用：选区/划线触摸链路、毛玻璃滤镜、阅读容器 contain、阅读头部 sticky、图层强制提升
+- ✅ 用于 staging 快速 A/B 定位滚动抖动来源
+
+### 变更文件
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
+
+---
+
+## 2026-03-24 — 阅读滚动流畅度优化 V1
+
+### 已完成
+- ✅ 移除阅读区 `touchmove + preventDefault` 的自动滚动选区逻辑，避免浏览器滚动链路被 JS 触摸监听阻塞
+- ✅ 阅读容器滚动约束放宽：`overscroll-behavior-y` 从 `contain` 调整为 `auto`
+- ✅ 阅读容器关闭 `contain`，并补充 `touch-action: pan-y pinch-zoom`，优先系统原生滚动/惯性
+
+### 变更文件
+- frontend/js/highlight.js
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
+
+---
+
 ## 2026-03-24 — 阅读滚动性能浮层（staging 诊断）
 
 ### 已完成
-- ✅ 新增 `perf_overlay=1` 调试浮层（FPS、慢帧、超长帧、LongTask、滚动活跃）
-- ✅ 与已有 `perf_no_*` 开关配合，支持定量 A/B，不依赖主观手感
+- ✅ 新增 `perf_overlay=1` 页面右上角性能浮层（FPS、慢帧、超长帧、LongTask、滚动活跃）
+- ✅ 便于在不同 `perf_no_*` 组合下做定量 A/B，对比滚动链路瓶颈
 
 ### 变更文件
 - frontend/js/app.js
