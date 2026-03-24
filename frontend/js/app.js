@@ -295,6 +295,13 @@ function hideSplashScreen() {
   }
 }
 
+function isStandalonePwa() {
+  return (
+    window.matchMedia?.('(display-mode: standalone)')?.matches
+    || window.navigator?.standalone === true
+  );
+}
+
 function scheduleServiceWorkerRegistration() {
   if (!('serviceWorker' in navigator) || swRegisterTimer) return;
   swRegisterTimer = setTimeout(() => {
@@ -1868,6 +1875,11 @@ async function startApp() {
 }
 
 async function init() {
+  if (isStandalonePwa()) {
+    requestAnimationFrame(() => {
+      hideSplashScreen();
+    });
+  }
   applyPerfFlags();
   initPerfOverlay();
   splashFallbackTimer = setTimeout(() => {

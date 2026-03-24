@@ -2529,3 +2529,16 @@
 - frontend/js/app.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-24 — PWA 启动去重开屏
+
+### 已完成
+- ✅ PWA/独立模式下跳过二次自定义开屏，避免系统图标后再展示一次开屏
+- ✅ 仍保留浏览器模式的自定义开屏
+
+### 变更文件
+- frontend/js/app.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
