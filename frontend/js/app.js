@@ -705,7 +705,7 @@ function showLongPressMenu(x, y, articleId) {
   nodes.longPressMenu.classList.remove('hidden');
 }
 
-function buildArticleCard(item) {
+function buildArticleCard(item, showBriefHistoryEntry = false) {
   const li = document.createElement('li');
   const isTranslating = item.status === 'translating';
   const isOwner = item.submitted_by && item.submitted_by === getUserId();
@@ -742,6 +742,7 @@ function buildArticleCard(item) {
         <span class="article-dot"></span>
         <span class="article-date">${escapeHtml(formatDate(item.published_at))}</span>
       </div>
+      ${showBriefHistoryEntry ? '<div class="brief-history-card-entry"><button class="brief-history-btn">查看历史快讯</button></div>' : ''}
     </article>
   `;
 
@@ -752,6 +753,13 @@ function buildArticleCard(item) {
       if (avatarNode.src.endsWith(DEFAULT_AVATAR_URL)) return;
       avatarNode.src = DEFAULT_AVATAR_URL;
     }, { once: true });
+  }
+  if (showBriefHistoryEntry) {
+    const btn = li.querySelector('.brief-history-btn');
+    btn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openBriefHistory();
+    });
   }
   if (!isTranslating) {
     card.addEventListener('click', () => openArticle(item.id));
@@ -807,13 +815,7 @@ function renderArticles() {
     .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
 
   if (briefs.length > 0) {
-    nodes.articlesList.appendChild(buildArticleCard(briefs[0]));
-
-    const entryLi = document.createElement('li');
-    entryLi.className = 'brief-history-entry';
-    entryLi.innerHTML = `<button class="brief-history-btn">查看历史快讯</button>`;
-    entryLi.querySelector('.brief-history-btn').addEventListener('click', openBriefHistory);
-    nodes.articlesList.appendChild(entryLi);
+    nodes.articlesList.appendChild(buildArticleCard(briefs[0], true));
   }
 
   normal.forEach((item) => nodes.articlesList.appendChild(buildArticleCard(item)));
