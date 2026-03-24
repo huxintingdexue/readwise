@@ -175,7 +175,10 @@
           <p id="readerMeta" style="display:none"></p>
           <header class="reader-header">
             <button id="backBtn" class="back-btn" type="button" aria-label="返回">
-              <span aria-hidden="true">←</span>
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none">
+                <path d="M14.5 5L7.5 12L14.5 19" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 12H20" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+              </svg>
             </button>
             <div class="reader-header-right">
               <button id="hideArticleBtn" class="header-icon-btn hidden" type="button" aria-label="隐藏此文章">
@@ -192,17 +195,17 @@
               </button>
               <button id="shareArticleBtn" class="header-icon-btn" type="button" aria-label="分享本文">
                 <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none">
-                  <path d="M8 12L16.5 7.5M8 12L16.5 16.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                  <circle cx="7.2" cy="12" r="2.6" fill="currentColor"/>
-                  <circle cx="17" cy="7.2" r="2.6" fill="currentColor"/>
-                  <circle cx="17" cy="16.8" r="2.6" fill="currentColor"/>
+                  <path d="M8.2 12.1L15.8 7.8M8.2 12.1L15.8 16.4" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/>
+                  <circle cx="7.3" cy="12.1" r="2.5" fill="currentColor"/>
+                  <circle cx="16.8" cy="7.2" r="2.5" fill="currentColor"/>
+                  <circle cx="16.8" cy="16.8" r="2.5" fill="currentColor"/>
                 </svg>
               </button>
-              <button id="readerAppearanceBtn" class="header-icon-btn" type="button" aria-label="阅读外观">
-                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
-                  <path d="M12 4a8 8 0 0 0-8 8h2a6 6 0 1 1 6 6v2a8 8 0 0 0 0-16z"/>
-                  <path d="M13 7h4v2h-2v8h-2V7z"/>
-                  <path d="M7 13h4v2H7z"/>
+              <button id="readerAppearanceBtn" class="header-icon-btn" type="button" aria-label="阅读设置">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none">
+                  <path d="M4 6.5H20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+                  <path d="M4 12H20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+                  <path d="M4 17.5H20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
                 </svg>
               </button>
             </div>

@@ -1131,9 +1131,23 @@ body.theme-dark .topbar p {
 }
 
 #shareArticleBtn {
-  color: #139f92;
-  background: #ece4c9;
-  border-color: #d8cfaf;
+  color: #6f7f9b;
+}
+
+#backBtn,
+#shareArticleBtn,
+#readerAppearanceBtn {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#backBtn {
+  color: #119f92;
+}
+
+#readerAppearanceBtn {
+  color: #6f7f9b;
 }
 
 .reference-banner {
