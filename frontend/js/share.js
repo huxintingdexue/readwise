@@ -178,16 +178,16 @@ function initCtaByPlatform() {
   const platform = getPlatform();
   if (platform === 'android') {
     nodes.shareCtaBtn.textContent = '立即下载';
-    nodes.shareCtaSub.textContent = '每日同步硅谷圈最新一手信息';
+    nodes.shareCtaSub.textContent = '每天更新硅谷圈大佬最新动态和文章';
     return;
   }
   if (platform === 'ios') {
     nodes.shareCtaBtn.textContent = '添加到主屏幕';
-    nodes.shareCtaSub.textContent = '每日同步硅谷圈最新一手信息';
+    nodes.shareCtaSub.textContent = '每天更新硅谷圈大佬最新动态和文章';
     return;
   }
   nodes.shareCtaBtn.textContent = '立即打开';
-  nodes.shareCtaSub.textContent = '每日同步硅谷圈最新一手信息';
+  nodes.shareCtaSub.textContent = '每天更新硅谷圈大佬最新动态和文章';
 }
 
 async function fetchArticle() {
