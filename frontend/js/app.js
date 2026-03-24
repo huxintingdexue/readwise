@@ -1272,16 +1272,16 @@ function bindEvents() {
 
   if (!state.historyBound) {
     window.addEventListener('popstate', () => {
-      if (state.briefHistoryOpen) {
-        closeBriefHistory();
-        return;
-      }
       if (document.body.classList.contains('admin-mode')) {
         closeAdminConsole({ fromPopstate: true });
         return;
       }
       if (isReadingMode()) {
         exitReaderView(false);
+        return;
+      }
+      if (state.briefHistoryOpen) {
+        closeBriefHistory();
       }
     });
     state.historyBound = true;
