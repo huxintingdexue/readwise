@@ -1136,7 +1136,8 @@ body.theme-dark .topbar p {
 
 #backBtn,
 #shareArticleBtn,
-#readerAppearanceBtn {
+#readerAppearanceBtn,
+#articleNotesBtn {
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -1147,6 +1148,10 @@ body.theme-dark .topbar p {
 }
 
 #readerAppearanceBtn {
+  color: #6f7f9b;
+}
+
+#articleNotesBtn {
   color: #6f7f9b;
 }
 
