@@ -10,7 +10,11 @@ const nodes = {
   shareCta: document.querySelector('#shareCta'),
   shareCtaBtn: document.querySelector('#shareCtaBtn'),
   shareCtaSub: document.querySelector('#shareCtaSub'),
-  shareToast: document.querySelector('#shareToast')
+  shareToast: document.querySelector('#shareToast'),
+  shareGuide: document.querySelector('#shareGuide'),
+  shareGuideTitle: document.querySelector('#shareGuideTitle'),
+  shareGuideText: document.querySelector('#shareGuideText'),
+  shareGuideClose: document.querySelector('#shareGuideClose')
 };
 
 let currentArticleId = '';
@@ -194,6 +198,10 @@ function getPlatform() {
   return 'other';
 }
 
+function isWeChat() {
+  return /micromessenger/i.test(navigator.userAgent || '');
+}
+
 function showToast(message, duration = 1800) {
   if (!nodes.shareToast) return;
   nodes.shareToast.textContent = message;
@@ -208,8 +216,20 @@ function sharePageUrl() {
   return `${window.location.origin}/share/${encoded}`;
 }
 
+function showGuide(text, title = '如何继续安装') {
+  if (!nodes.shareGuide || !nodes.shareGuideText) return;
+  nodes.shareGuideTitle.textContent = title;
+  nodes.shareGuideText.textContent = text;
+  nodes.shareGuide.classList.remove('hidden');
+}
+
 function initCtaByPlatform() {
   const platform = getPlatform();
+  if (isWeChat()) {
+    nodes.shareCtaBtn.textContent = '安装APP';
+    nodes.shareCtaSub.textContent = '每天更新硅谷圈大佬最新动态和文章';
+    return;
+  }
   if (platform === 'android') {
     nodes.shareCtaBtn.textContent = '立即下载';
     nodes.shareCtaSub.textContent = '每天更新硅谷圈大佬最新动态和文章';
@@ -296,6 +316,10 @@ function bindEvents() {
   });
 
   nodes.shareCtaBtn?.addEventListener('click', () => {
+    if (isWeChat()) {
+      showGuide('点击右上角“...”选择用浏览器打开。');
+      return;
+    }
     const platform = getPlatform();
     if (platform === 'android') {
       if (ANDROID_APK_URL) {
@@ -306,17 +330,71 @@ function bindEvents() {
       return;
     }
     if (platform === 'ios') {
-      window.alert('请点击 Safari 右上角“分享”按钮，然后选择“添加到主屏幕”。');
+      showGuide('点击浏览器下方的分享按钮，选择“添加到主屏幕”。', '添加到主屏幕');
       return;
     }
     window.location.href = '/';
   });
+
+  nodes.shareGuideClose?.addEventListener('click', () => {
+    nodes.shareGuide.classList.add('hidden');
+  });
+  nodes.shareGuide?.addEventListener('click', (event) => {
+    if (event.target === nodes.shareGuide) {
+      nodes.shareGuide.classList.add('hidden');
+    }
+  });
+}
+
+function markFromWeChat() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('from_wechat') === '1') return;
+  url.searchParams.set('from_wechat', '1');
+  history.replaceState(null, '', url.toString());
+}
+
+function fromWeChatParam() {
+  const usp = new URLSearchParams(window.location.search);
+  return usp.get('from_wechat') === '1';
+}
+
+function ensureCtaShown() {
+  if (!nodes.shareCta) return;
+  ctaShown = true;
+  nodes.shareCta.classList.remove('hidden');
+}
+
+function maybeAutoTriggerAfterWeChat() {
+  if (isWeChat()) return;
+  if (!fromWeChatParam()) return;
+  ensureCtaShown();
+
+  const platform = getPlatform();
+  if (platform === 'android') {
+    if (sessionStorage.getItem('rw_auto_downloaded') === '1') return;
+    sessionStorage.setItem('rw_auto_downloaded', '1');
+    if (ANDROID_APK_URL) {
+      setTimeout(() => {
+        window.location.href = ANDROID_APK_URL;
+      }, 300);
+    }
+    return;
+  }
+
+  if (platform === 'ios') {
+    nodes.shareCtaBtn.textContent = '添加到主屏幕';
+    showGuide('点击浏览器下方的分享按钮，选择“添加到主屏幕”。', '添加到主屏幕');
+  }
 }
 
 async function init() {
+  if (isWeChat()) {
+    markFromWeChat();
+  }
   initCtaByPlatform();
   bindEvents();
   await fetchArticle();
+  maybeAutoTriggerAfterWeChat();
 }
 
 init();

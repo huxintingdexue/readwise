@@ -200,6 +200,49 @@ body {
   z-index: 70;
 }
 
+.share-guide {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 80;
+}
+
+.share-guide-card {
+  width: min(360px, 88vw);
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 16px 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  text-align: center;
+}
+
+.share-guide-card strong {
+  font-size: 16px;
+  color: #111827;
+  display: block;
+}
+
+.share-guide-card p {
+  margin: 8px 0 14px;
+  font-size: 13px;
+  color: #475467;
+  line-height: 1.5;
+}
+
+.share-guide-card button {
+  border: 0;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #f0fdfa;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
 .hidden {
   display: none !important;
 }

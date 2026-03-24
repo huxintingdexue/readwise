@@ -30,6 +30,20 @@
 
 ---
 
+## 2026-03-24 — 微信内分享页下载引导优化（v2.16.2）
+
+### 已完成
+- ✅ 微信内置浏览器下，按钮统一显示“安装APP”并弹出“用浏览器打开”引导
+- ✅ 从微信跳转至外部浏览器后自动触发安卓下载
+- ✅ iOS 外部浏览器自动提示“添加到主屏幕”
+
+### 变更文件
+- frontend/share.html
+- frontend/css/share.css
+- frontend/js/share.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 分享页 APK 下载直链接入（v2.16.1）
 
 ### 已完成
