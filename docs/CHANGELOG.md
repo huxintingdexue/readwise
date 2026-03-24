@@ -2378,3 +2378,18 @@
 - frontend/css/reader.css
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-24 — 阅读滚动流畅度优化 V1
+
+### 已完成
+- ✅ 移除阅读区 `touchmove + preventDefault` 的自动滚动选区逻辑，避免浏览器滚动链路被 JS 触摸监听阻塞
+- ✅ 阅读容器滚动约束放宽：`overscroll-behavior-y` 从 `contain` 调整为 `auto`
+- ✅ 阅读容器关闭 `contain`，并补充 `touch-action: pan-y pinch-zoom`，优先系统原生滚动/惯性
+
+### 变更文件
+- frontend/js/highlight.js
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

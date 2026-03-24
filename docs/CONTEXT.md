@@ -365,3 +365,13 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
   - 阅读容器 contain（`perf_no_reader_contain=1`）
   - 阅读头 sticky（`perf_no_reader_sticky=1`）
   - 顶/底栏图层提升（`perf_no_layer_promote=1`）
+
+---
+
+## 2026-03-24（阅读滚动优化 V1）
+
+- 目标：提升阅读页滚动跟手性与惯性感，降低“抖/颤”的主观体感。
+- 策略：
+  - 减少触摸事件对滚动主线程路径的干预（去掉 `touchmove` 阻塞）
+  - 回归更接近系统默认的滚动链路（放宽 overscroll + 关闭 contain）
+  - 显式声明 `touch-action: pan-y pinch-zoom`

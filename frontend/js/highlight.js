@@ -275,7 +275,6 @@ export function initHighlightFeature({
   openOriginSnippet
 }) {
   const lastStartRef = { value: 0 };
-  let selectionDragActive = false;
   customMenuEnabled = true;
   document.body.classList.add('custom-selection');
 
@@ -285,28 +284,6 @@ export function initHighlightFeature({
     if (!getPlainSelectionText(selection)) return false;
     const range = selection.getRangeAt(0);
     return readerContent.contains(range.commonAncestorContainer);
-  }
-
-  function edgeZoneHeight() {
-    const lineHeight = Number.parseFloat(getComputedStyle(readerContent).lineHeight) || 22;
-    return Math.max(18, Math.min(42, Math.round(lineHeight * 1.1)));
-  }
-
-  function maybeAutoScrollOnSelectionDrag(clientY) {
-    const zone = edgeZoneHeight();
-    const topDistance = clientY;
-    const bottomDistance = window.innerHeight - clientY;
-    if (topDistance > zone && bottomDistance > zone) return;
-
-    let delta = 0;
-    if (topDistance <= zone) {
-      const ratio = 1 - (topDistance / zone);
-      delta = -Math.max(4, Math.round(14 * ratio));
-    } else if (bottomDistance <= zone) {
-      const ratio = 1 - (bottomDistance / zone);
-      delta = Math.max(4, Math.round(14 * ratio));
-    }
-    if (delta !== 0) window.scrollBy({ top: delta, behavior: 'auto' });
   }
 
   // Show the selection bubble for an existing .highlight-mark the user tapped
@@ -422,7 +399,6 @@ export function initHighlightFeature({
   // was selected it was a pure tap 鈫?show "鍒犻櫎鍒掔嚎". Otherwise treat as regular text
   // selection 鈫?show the normal bubble.
   readerContent.addEventListener('touchend', (e) => {
-    selectionDragActive = false;
     const mark = e.target.closest('.highlight-mark, .highlight-mark-other');
     if (mark) {
       e.preventDefault(); // suppress the resulting click event
@@ -452,26 +428,6 @@ export function initHighlightFeature({
     e.stopPropagation();
     showMenuOnHighlight(mark);
   });
-
-  readerContent.addEventListener('touchstart', () => {
-    selectionDragActive = hasReaderSelection();
-  }, { passive: true });
-
-  readerContent.addEventListener('touchcancel', () => {
-    selectionDragActive = false;
-  }, { passive: true });
-
-  readerContent.addEventListener('touchmove', (event) => {
-    if (!selectionDragActive) return;
-    if (!hasReaderSelection()) {
-      selectionDragActive = false;
-      return;
-    }
-    const touch = event.touches?.[0];
-    if (!touch) return;
-    event.preventDefault();
-    maybeAutoScrollOnSelectionDrag(touch.clientY);
-  }, { passive: false });
 
   readerContent.addEventListener('contextmenu', (event) => {
     event.preventDefault();
@@ -651,4 +607,3 @@ export function initHighlightFeature({
     }
   });
 }
-

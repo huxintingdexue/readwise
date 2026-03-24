@@ -1895,8 +1895,9 @@ body.theme-dark .bottom-nav {
   padding: 0 14px max(env(safe-area-inset-bottom, 0px), 12px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-  contain: layout paint;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y pinch-zoom;
+  contain: none;
 }
 
 .reading-mode .reader-header {
@@ -1926,6 +1927,7 @@ body.theme-dark .bottom-nav {
   -webkit-touch-callout: none;
   -webkit-user-select: text;
   user-select: text;
+  touch-action: pan-y pinch-zoom;
 }
 
 .no-custom-selection .reader-content {
