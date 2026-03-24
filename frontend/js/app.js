@@ -255,6 +255,37 @@ function buildShareUrl(articleId) {
   return `${window.location.origin}/share/${encoded}`;
 }
 
+async function copyTextWithFallback(text) {
+  const value = String(text || '');
+  if (!value) return false;
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch (_) {
+      // fallback below
+    }
+  }
+
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.setAttribute('readonly', 'true');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const copied = document.execCommand && document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return Boolean(copied);
+  } catch (_) {
+    return false;
+  }
+}
+
 function hideSplashScreen() {
   if (!nodes.splashScreen) return;
   nodes.splashScreen.classList.add('is-hidden');
@@ -993,34 +1024,27 @@ function bindEvents() {
     const shareTitle = detail.title_zh || detail.title_en || '推荐阅读';
     const shareText = detail.summary_zh || detail.summary_en || '来自 ReadWise 的精选内容';
 
-    try {
-      if (navigator.share) {
+    if (navigator.share) {
+      try {
         await navigator.share({
           title: shareTitle,
           text: shareText,
           url: shareUrl
         });
         return;
+      } catch (err) {
+        if (String(err?.name || '') === 'AbortError') {
+          return;
+        }
       }
-
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
-        showToast('分享链接已复制', 1800);
-        return;
-      }
-
-      const copied = document.execCommand && document.execCommand('copy');
-      if (copied) {
-        showToast('分享链接已复制', 1800);
-      } else {
-        showToast('请手动复制链接', 1800);
-      }
-    } catch (err) {
-      if (String(err?.name || '') === 'AbortError') {
-        return;
-      }
-      showToast('分享失败，请重试', 1800);
     }
+
+    const copied = await copyTextWithFallback(shareUrl);
+    if (copied) {
+      showToast('分享链接已复制', 1800);
+      return;
+    }
+    showToast('请手动复制链接', 1800);
   });
 
   nodes.hideArticleCloseBtn?.addEventListener('click', () => {

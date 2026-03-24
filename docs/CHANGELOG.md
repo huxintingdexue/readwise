@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-24 — 分享按钮降级修复（v2.14.5）
+
+### 已完成
+- ✅ 修复阅读页“分享本文”在部分设备/浏览器下报“分享失败，请重试”的问题
+- ✅ 调整分享逻辑：`navigator.share` 失败后自动降级为复制链接
+- ✅ 新增复制兜底：`clipboard.writeText` 失败时使用隐藏 `textarea + execCommand('copy')`
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 文章分享页 + 阅读页分享入口（v2.14.4）
 
 ### 已完成
