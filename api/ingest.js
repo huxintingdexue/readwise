@@ -514,6 +514,34 @@ async function resolveAuthor(poolClient, rawAuthor) {
   }
 }
 
+async function resolveAuthorAvatarUrl(poolClient, author, inputAvatarUrl) {
+  const directAvatar = String(inputAvatarUrl || '').trim();
+  if (directAvatar) {
+    return directAvatar;
+  }
+  const normalizedAuthor = String(author || '').trim();
+  if (!normalizedAuthor) {
+    return null;
+  }
+  try {
+    const { rows } = await poolClient.query(
+      `
+        SELECT author_avatar_url
+        FROM articles
+        WHERE LOWER(author) = LOWER($1)
+          AND author_avatar_url IS NOT NULL
+          AND author_avatar_url <> ''
+        ORDER BY fetched_at DESC NULLS LAST, published_at DESC NULLS LAST
+        LIMIT 1
+      `,
+      [normalizedAuthor]
+    );
+    return rows[0]?.author_avatar_url || null;
+  } catch (_) {
+    return null;
+  }
+}
+
 async function handleIngestFullText(req, res, userId) {
   if (!isPrivilegedUser(userId)) {
     res.status(403).json({ error: 'forbidden', message: '无权限' });
@@ -609,6 +637,7 @@ async function handleIngestFullText(req, res, userId) {
   }
 
   const author = await resolveAuthor(poolClient, authorRaw);
+  const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, author, authorAvatarUrl);
   const contentEn = contentEnRaw ? normalizeHtmlForStorage(contentEnRaw) : null;
   const contentPlain = contentEn ? htmlToPlain(contentEn, titleEn) : sanitizeToPlain(contentZh);
   const translatedChars = contentPlain.length;
@@ -649,7 +678,7 @@ async function handleIngestFullText(req, res, userId) {
     summaryEn || null,
     summaryZh,
     author || null,
-    authorAvatarUrl,
+    finalAuthorAvatarUrl,
     contentEn,
     contentPlain || null,
     contentZh,
@@ -734,6 +763,7 @@ async function handleIngestSubmit(req, res, userId) {
   const publishedAt = extractPublishedAt(rawHtml);
   const rawAuthor = cleaned.author || extractAuthor(rawHtml);
   const author = await resolveAuthor(poolClient, rawAuthor);
+  const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, author, authorAvatarUrl);
   const summaryEn = summarizeText(cleaned.contentPlain);
 
   const translationStatus = cleaned.summaryOnly ? 'summary_only' : 'partial';
@@ -773,7 +803,7 @@ async function handleIngestSubmit(req, res, userId) {
     title,
     summaryEn || null,
     author || null,
-    authorAvatarUrl,
+    finalAuthorAvatarUrl,
     cleaned.contentEn || null,
     cleaned.contentPlain || null,
     translationStatus,
