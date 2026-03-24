@@ -37,6 +37,32 @@ let swRegisterTimer = null;
 let readerFeaturesReady = false;
 let readerFeaturesInitPromise = null;
 let openArticleNotesHandler = null;
+const searchParams = new URLSearchParams(window.location.search);
+const PERF_FLAGS = {
+  noSelection: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_selection') || '').toLowerCase()),
+  noGlass: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_glass') || '').toLowerCase()),
+  noReaderContain: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_reader_contain') || '').toLowerCase()),
+  noReaderSticky: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_reader_sticky') || '').toLowerCase()),
+  noLayerPromote: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_layer_promote') || '').toLowerCase())
+};
+
+function applyPerfFlags() {
+  if (PERF_FLAGS.noGlass) {
+    document.body.classList.add('perf-no-glass');
+  }
+  if (PERF_FLAGS.noReaderContain) {
+    document.body.classList.add('perf-no-reader-contain');
+  }
+  if (PERF_FLAGS.noReaderSticky) {
+    document.body.classList.add('perf-no-reader-sticky');
+  }
+  if (PERF_FLAGS.noLayerPromote) {
+    document.body.classList.add('perf-no-layer-promote');
+  }
+  if (PERF_FLAGS.noSelection) {
+    document.body.classList.add('no-custom-selection');
+  }
+}
 
 function setReadingMode(enabled) {
   document.body.classList.toggle('reading-mode', enabled);
@@ -165,10 +191,11 @@ async function ensureReaderFeaturesInitialized() {
   }
 
   readerFeaturesInitPromise = (async () => {
-    const [{ initHighlightFeature }, { initArticleNotesPanel }] = await Promise.all([
-      import('./highlight.js'),
+    const [highlightModule, notesModule] = await Promise.all([
+      PERF_FLAGS.noSelection ? Promise.resolve(null) : import('./highlight.js'),
       import('./notes.js')
     ]);
+    const { initArticleNotesPanel } = notesModule;
 
     openArticleNotesHandler = initArticleNotesPanel({
       panel: nodes.articleNotesPanel,
@@ -179,16 +206,21 @@ async function ensureReaderFeaturesInitialized() {
       scrollToPosition: scrollToPlainPosition
     });
 
-    initHighlightFeature({
-      readerContent: nodes.readerContent,
-      getCurrentArticle: () => state.currentArticle,
-      showToast,
-      openOriginSnippet: (text) =>
-        openOriginSnippetPanel(
-          { originSnippet: nodes.originSnippet, originSnippetText: nodes.originSnippetText },
-          text
-        )
-    });
+    if (highlightModule?.initHighlightFeature) {
+      document.body.classList.remove('no-custom-selection');
+      highlightModule.initHighlightFeature({
+        readerContent: nodes.readerContent,
+        getCurrentArticle: () => state.currentArticle,
+        showToast,
+        openOriginSnippet: (text) =>
+          openOriginSnippetPanel(
+            { originSnippet: nodes.originSnippet, originSnippetText: nodes.originSnippetText },
+            text
+          )
+      });
+    } else {
+      document.body.classList.add('no-custom-selection');
+    }
 
     readerFeaturesReady = true;
   })();
@@ -1658,6 +1690,7 @@ async function startApp() {
 }
 
 async function init() {
+  applyPerfFlags();
   splashFallbackTimer = setTimeout(() => {
     hideSplashScreen();
   }, SPLASH_FALLBACK_MS);

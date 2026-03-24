@@ -2363,3 +2363,18 @@
 - scripts/avatar-config.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-24 — 阅读滚动流畅度定位开关（仅测试）
+
+### 已完成
+- ✅ 新增 URL 级性能定位开关（默认关闭，不影响正常用户）
+- ✅ 支持按开关禁用：选区/划线触摸链路、毛玻璃滤镜、阅读容器 contain、阅读头部 sticky、图层强制提升
+- ✅ 用于 staging 快速 A/B 定位滚动抖动来源
+
+### 变更文件
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

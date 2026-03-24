@@ -353,3 +353,15 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 
 - 列表页作者展示：`AI小编` 统一对外显示为 `AI编辑室`（仅展示层映射）。
 - 头像映射已兼容新旧名，避免历史数据和迁移脚本失配。
+
+---
+
+## 2026-03-24（阅读滚动性能定位）
+
+- 为滚动抖动定位新增 query 参数开关（staging 诊断用，默认不生效）。
+- 可分别排查：
+  - 选区/划线触摸监听链路（`perf_no_selection=1`）
+  - 毛玻璃滤镜重绘（`perf_no_glass=1`）
+  - 阅读容器 contain（`perf_no_reader_contain=1`）
+  - 阅读头 sticky（`perf_no_reader_sticky=1`）
+  - 顶/底栏图层提升（`perf_no_layer_promote=1`）
