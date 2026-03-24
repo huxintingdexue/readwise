@@ -146,16 +146,6 @@ function formatDate(iso) {
   });
 }
 
-function sourceName(sourceKey) {
-  if (sourceKey === 'sam') return 'Sam Altman';
-  if (sourceKey === 'andrej') return 'Andrej Karpathy';
-  if (sourceKey === 'peter') return 'Peter Steipete';
-  if (sourceKey === 'lenny') return 'Lenny Rachitsky';
-  if (sourceKey === 'naval') return 'Naval Ravikant';
-  if (sourceKey === 'manual') return '人工导入';
-  return sourceKey || '未知来源';
-}
-
 function getArticleIdFromUrl() {
   const match = window.location.pathname.match(/^\/share\/([^/?#]+)/);
   if (match?.[1]) return decodeURIComponent(match[1]);
@@ -187,17 +177,17 @@ function sharePageUrl() {
 function initCtaByPlatform() {
   const platform = getPlatform();
   if (platform === 'android') {
-    nodes.shareCtaBtn.textContent = '下载安卓版';
-    nodes.shareCtaSub.textContent = '一键安装 App，继续阅读完整内容';
+    nodes.shareCtaBtn.textContent = '立即下载';
+    nodes.shareCtaSub.textContent = '每日同步硅谷圈最新一手信息';
     return;
   }
   if (platform === 'ios') {
     nodes.shareCtaBtn.textContent = '添加到主屏幕';
-    nodes.shareCtaSub.textContent = 'Safari 右上角“分享”后选择“添加到主屏幕”';
+    nodes.shareCtaSub.textContent = '每日同步硅谷圈最新一手信息';
     return;
   }
-  nodes.shareCtaBtn.textContent = '打开 ReadWise';
-  nodes.shareCtaSub.textContent = '获取每日精选文章与沉浸式阅读体验';
+  nodes.shareCtaBtn.textContent = '立即打开';
+  nodes.shareCtaSub.textContent = '每日同步硅谷圈最新一手信息';
 }
 
 async function fetchArticle() {
@@ -218,9 +208,8 @@ async function fetchArticle() {
     const article = data.article;
     const title = article.title_zh || article.title_en || '未命名文章';
     const summary = article.summary_zh || article.summary_en || '';
-    const source = sourceName(article.source_key);
     const author = String(article.author || '').trim();
-    const meta = [source, author, formatDate(article.published_at)].filter(Boolean).join(' · ');
+    const meta = [author, formatDate(article.published_at)].filter(Boolean).join(' · ');
     const body = String(article.content_zh || article.content_plain || '').trim();
 
     document.title = `${title} - ReadWise 分享`;
