@@ -135,6 +135,40 @@ function renderMarkdown(markdown) {
   return blocks.join('');
 }
 
+function normalizeTitleText(text) {
+  return String(text || '')
+    .replace(/[“”"'`~!@#$%^&*()_+\-=[\]{};:\\|,.<>/?，。！？：；（）【】《》、\s]/g, '')
+    .toLowerCase();
+}
+
+function stripLeadingDuplicateTitle(body, title) {
+  const lines = String(body || '').replace(/\r\n/g, '\n').split('\n');
+  const normalizedTitle = normalizeTitleText(title);
+  if (!normalizedTitle || !lines.length) return body;
+
+  let firstIndex = -1;
+  for (let i = 0; i < lines.length; i += 1) {
+    if (lines[i].trim()) {
+      firstIndex = i;
+      break;
+    }
+  }
+  if (firstIndex < 0) return body;
+
+  const firstRaw = lines[firstIndex].trim();
+  const firstStripped = firstRaw.replace(/^#{1,6}\s+/, '').trim();
+  const normalizedFirst = normalizeTitleText(firstStripped);
+  if (!normalizedFirst || normalizedFirst !== normalizedTitle) {
+    return body;
+  }
+
+  const remaining = lines.slice(firstIndex + 1);
+  while (remaining.length && !remaining[0].trim()) {
+    remaining.shift();
+  }
+  return remaining.join('\n');
+}
+
 function formatDate(iso) {
   if (!iso) return '未知时间';
   const d = new Date(iso);
@@ -210,7 +244,8 @@ async function fetchArticle() {
     const summary = article.summary_zh || article.summary_en || '';
     const author = String(article.author || '').trim();
     const meta = [author, formatDate(article.published_at)].filter(Boolean).join(' · ');
-    const body = String(article.content_zh || article.content_plain || '').trim();
+    const bodyRaw = String(article.content_zh || article.content_plain || '').trim();
+    const body = stripLeadingDuplicateTitle(bodyRaw, title);
 
     document.title = `${title} - 今日硅谷`;
     nodes.shareTitle.textContent = title;
