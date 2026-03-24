@@ -1027,6 +1027,62 @@ body.theme-dark .topbar p {
   color: var(--muted);
 }
 
+/* ── 历史快讯入口 ── */
+.brief-history-entry {
+  list-style: none;
+}
+
+.brief-history-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--accent);
+  text-align: center;
+  opacity: 0.85;
+}
+
+.brief-history-btn:active {
+  opacity: 0.6;
+}
+
+/* ── 历史快讯页头部 ── */
+.brief-history-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 4px 8px;
+}
+
+.brief-history-header.hidden {
+  display: none;
+}
+
+.brief-history-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--accent);
+  padding: 4px 0;
+}
+
+.brief-history-back:active {
+  opacity: 0.6;
+}
+
+.brief-history-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .notes-placeholder {
   border: 1px dashed var(--line);
   border-radius: 14px;

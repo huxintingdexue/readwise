@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- 文章表
 CREATE TABLE IF NOT EXISTS articles (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  source_key          TEXT NOT NULL,                        -- 'sam' | 'andrej' | 'peter' | 'lenny' | 'naval' | 'manual'
+  source_key          TEXT NOT NULL,                        -- 'sam' | 'andrej' | 'peter' | 'lenny' | 'naval' | 'manual' | 'daily_brief'
   title_en            TEXT NOT NULL,
   title_zh            TEXT,
   summary_en          TEXT,

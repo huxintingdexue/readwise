@@ -45,6 +45,13 @@ function normalizePublishStatus(rawValue) {
   return null;
 }
 
+function normalizeSourceKey(rawValue) {
+  const value = String(rawValue || '').trim();
+  if (!value || value === 'manual') return 'manual';
+  if (value === 'daily_brief') return 'daily_brief';
+  return null;
+}
+
 async function getUserId(req, res) {
   return resolveUserId(req, res);
 }
@@ -560,6 +567,16 @@ async function handleIngestFullText(req, res, userId) {
   const sourceUrl = String(payload.source_url || payload.url || '').trim();
   const publishedAtRaw = String(payload.published_at || '').trim();
   const publishStatus = normalizePublishStatus(payload.publish_status);
+  const sourceKey = normalizeSourceKey(payload.source_key);
+
+  if (!sourceKey) {
+    badRequest(
+      res,
+      'SOURCE_KEY_INVALID',
+      "source_key 仅支持 'manual' 或 'daily_brief'"
+    );
+    return;
+  }
 
   if (!publishStatus) {
     badRequest(
@@ -672,7 +689,7 @@ async function handleIngestFullText(req, res, userId) {
   `;
 
   const { rows } = await poolClient.query(insertSql, [
-    'manual',
+    sourceKey,
     titleEn,
     titleZh,
     summaryEn || null,
@@ -708,12 +725,21 @@ async function handleIngestSubmit(req, res, userId) {
     return;
   }
   const publishStatus = normalizePublishStatus(body.publish_status);
+  const sourceKey = normalizeSourceKey(body.source_key);
   const authorAvatarUrl = String(body.author_avatar_url || '').trim() || null;
   if (!publishStatus) {
     badRequest(
       res,
       'PUBLISH_STATUS_INVALID',
       "publish_status 仅支持 'published' 或 'pending_review'"
+    );
+    return;
+  }
+  if (!sourceKey) {
+    badRequest(
+      res,
+      'SOURCE_KEY_INVALID',
+      "source_key 仅支持 'manual' 或 'daily_brief'"
     );
     return;
   }
@@ -799,7 +825,7 @@ async function handleIngestSubmit(req, res, userId) {
 
   const finalPublishedAt = publishedAt || null;
   const { rows } = await poolClient.query(insertSql, [
-    'manual',
+    sourceKey,
     title,
     summaryEn || null,
     author || null,

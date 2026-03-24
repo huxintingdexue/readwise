@@ -23,10 +23,11 @@ const state = {
   listScrollTop: {
     today: 0,
     notes: 0
-  }
+  },
+  briefHistoryOpen: false
 };
 
-const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v1';
+const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
 const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
@@ -168,6 +169,8 @@ const nodes = {
   sortFilter: document.querySelector('#sortFilter'),
   articlesState: document.querySelector('#articlesState'),
   articlesList: document.querySelector('#articlesList'),
+  briefHistoryHeader: document.querySelector('#briefHistoryHeader'),
+  briefHistoryBack: document.querySelector('#briefHistoryBack'),
   readerView: document.querySelector('#readerView'),
   readerTitle: document.querySelector('#readerTitle'),
   readerMeta: document.querySelector('#readerMeta'),
@@ -452,14 +455,16 @@ function displayAuthorName(author) {
 
 function sourceName(sourceKey, author) {
   if (sourceKey === 'manual') return displayAuthorName(author) || '未知作者';
+  if (sourceKey === 'daily_brief') return '今日硅谷';
   if (sourceKey === 'sam') return 'Sam Altman';
   if (sourceKey === 'andrej') return 'Andrej Karpathy';
   if (sourceKey === 'peter') return 'Peter Steipete';
   if (sourceKey === 'naval') return 'Naval Ravikant';
-  return sourceKey || '鏈煡鏉ユ簮';
+  return sourceKey || '未知来源';
 }
 
 function topicLabel(sourceKey) {
+  if (sourceKey === 'daily_brief') return '快讯';
   if (sourceKey === 'sam') return 'Sam';
   if (sourceKey === 'andrej') return 'Andrej';
   if (sourceKey === 'naval') return 'Naval';
@@ -700,8 +705,89 @@ function showLongPressMenu(x, y, articleId) {
   nodes.longPressMenu.classList.remove('hidden');
 }
 
+function buildArticleCard(item) {
+  const li = document.createElement('li');
+  const isTranslating = item.status === 'translating';
+  const isOwner = item.submitted_by && item.submitted_by === getUserId();
+  const showBadge = Boolean(isOwner);
+  const badgeLabel = isTranslating ? '导入中' : '已导入';
+  const isManual = Boolean(item.submitted_by || item.source_key === 'manual');
+  const isManualTranslating = isManual && isTranslating;
+  const progress = progressMeta(item);
+  const readMinutes = estimatedReadMinutes(item);
+  const avatarUrl = resolveAuthorAvatarUrl(item);
+  const summaryText = String(item.summary_zh || item.summary_en || '暂无摘要');
+  const summaryClass = summaryText.length > 66 ? 'article-summary summary-long' : 'article-summary';
+  li.innerHTML = `
+    <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManualTranslating ? ' is-recommend' : ''} bg-white rounded-xl p-4 relative group active:scale-[0.99] transition-all duration-200 shadow-[0_1px_6px_rgba(0,0,0,0.02)]" data-id="${item.id}">
+      <div class="article-card-top">
+        <div class="article-author">
+          <img class="article-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(sourceName(item.source_key, item.author))}"/>
+          <div class="article-author-text">
+            <span class="article-author-name">${escapeHtml(sourceName(item.source_key, item.author))}</span>
+            <span class="article-reading-time">· ${readMinutes} min</span>
+          </div>
+        </div>
+        <div class="article-card-status">
+          ${showBadge ? `<span class="article-badge">${badgeLabel}</span>` : ''}
+          <span class="article-progress ${progress.className}">${escapeHtml(progress.label)}</span>
+        </div>
+      </div>
+      <div class="article-body">
+        <h3 class="article-title">${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
+        <p class="${summaryClass}">${escapeHtml(summaryText)}</p>
+      </div>
+      <div class="article-bottom">
+        <span class="article-topic">${escapeHtml(topicLabel(item.source_key))}</span>
+        <span class="article-dot"></span>
+        <span class="article-date">${escapeHtml(formatDate(item.published_at))}</span>
+      </div>
+    </article>
+  `;
+
+  const card = li.firstElementChild;
+  const avatarNode = li.querySelector('.article-avatar');
+  if (avatarNode) {
+    avatarNode.addEventListener('error', () => {
+      if (avatarNode.src.endsWith(DEFAULT_AVATAR_URL)) return;
+      avatarNode.src = DEFAULT_AVATAR_URL;
+    }, { once: true });
+  }
+  if (!isTranslating) {
+    card.addEventListener('click', () => openArticle(item.id));
+  }
+  return li;
+}
+
+function openBriefHistory() {
+  state.briefHistoryOpen = true;
+  history.pushState({ view: 'brief_history' }, '', location.href);
+  nodes.briefHistoryHeader?.classList.remove('hidden');
+  renderArticles();
+}
+
+function closeBriefHistory() {
+  state.briefHistoryOpen = false;
+  nodes.briefHistoryHeader?.classList.add('hidden');
+  renderArticles();
+}
+
 function renderArticles() {
   nodes.articlesList.innerHTML = '';
+
+  if (state.briefHistoryOpen) {
+    nodes.articlesState.textContent = '';
+    const briefs = state.articles
+      .filter((a) => a.source_key === 'daily_brief')
+      .slice()
+      .sort((a, b) => (Date.parse(b.fetched_at || '') || 0) - (Date.parse(a.fetched_at || '') || 0));
+    if (briefs.length === 0) {
+      nodes.articlesState.textContent = '暂无历史快讯';
+      return;
+    }
+    briefs.forEach((item) => nodes.articlesList.appendChild(buildArticleCard(item)));
+    return;
+  }
 
   if (state.articles.length === 0) {
     nodes.articlesState.textContent = '暂无文章';
@@ -710,68 +796,27 @@ function renderArticles() {
 
   nodes.articlesState.textContent = '';
 
-  const ordered = state.articles
+  const briefs = state.articles
+    .filter((a) => a.source_key === 'daily_brief')
     .slice()
-    .sort((a, b) => {
-      const aTime = Date.parse(a.published_at || '') || 0;
-      const bTime = Date.parse(b.published_at || '') || 0;
-      return bTime - aTime;
-    });
+    .sort((a, b) => (Date.parse(b.fetched_at || '') || 0) - (Date.parse(a.fetched_at || '') || 0));
 
-  ordered.forEach((item) => {
-    const li = document.createElement('li');
-    const isTranslating = item.status === 'translating';
-    const isOwner = item.submitted_by && item.submitted_by === getUserId();
-    const showBadge = Boolean(isOwner);
-    const badgeLabel = isTranslating ? '导入中' : '已导入';
-    const isManual = Boolean(item.submitted_by || item.source_key === 'manual');
-    const isManualTranslating = isManual && isTranslating;
-    const progress = progressMeta(item);
-    const readMinutes = estimatedReadMinutes(item);
-    const avatarUrl = resolveAuthorAvatarUrl(item);
-    const summaryText = String(item.summary_zh || item.summary_en || '暂无摘要');
-    const summaryClass = summaryText.length > 66 ? 'article-summary summary-long' : 'article-summary';
-    li.innerHTML = `
-      <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManualTranslating ? ' is-recommend' : ''} bg-white rounded-xl p-4 relative group active:scale-[0.99] transition-all duration-200 shadow-[0_1px_6px_rgba(0,0,0,0.02)]" data-id="${item.id}">
-        <div class="article-card-top">
-          <div class="article-author">
-            <img class="article-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(sourceName(item.source_key, item.author))}"/>
-            <div class="article-author-text">
-              <span class="article-author-name">${escapeHtml(sourceName(item.source_key, item.author))}</span>
-              <span class="article-reading-time">· ${readMinutes} min</span>
-            </div>
-          </div>
-          <div class="article-card-status">
-            ${showBadge ? `<span class="article-badge">${badgeLabel}</span>` : ''}
-            <span class="article-progress ${progress.className}">${escapeHtml(progress.label)}</span>
-          </div>
-        </div>
-        <div class="article-body">
-          <h3 class="article-title">${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
-          <p class="${summaryClass}">${escapeHtml(summaryText)}</p>
-        </div>
-        <div class="article-bottom">
-          <span class="article-topic">${escapeHtml(topicLabel(item.source_key))}</span>
-          <span class="article-dot"></span>
-          <span class="article-date">${escapeHtml(formatDate(item.published_at))}</span>
-        </div>
-      </article>
-    `;
+  const normal = state.articles
+    .filter((a) => a.source_key !== 'daily_brief')
+    .slice()
+    .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
 
-    const card = li.firstElementChild;
-    const avatarNode = li.querySelector('.article-avatar');
-    if (avatarNode) {
-      avatarNode.addEventListener('error', () => {
-        if (avatarNode.src.endsWith(DEFAULT_AVATAR_URL)) return;
-        avatarNode.src = DEFAULT_AVATAR_URL;
-      }, { once: true });
-    }
-    if (!isTranslating) {
-      card.addEventListener('click', () => openArticle(item.id));
-    }
+  if (briefs.length > 0) {
+    nodes.articlesList.appendChild(buildArticleCard(briefs[0]));
 
-    nodes.articlesList.appendChild(li);
-  });
+    const entryLi = document.createElement('li');
+    entryLi.className = 'brief-history-entry';
+    entryLi.innerHTML = `<button class="brief-history-btn">查看历史快讯</button>`;
+    entryLi.querySelector('.brief-history-btn').addEventListener('click', openBriefHistory);
+    nodes.articlesList.appendChild(entryLi);
+  }
+
+  normal.forEach((item) => nodes.articlesList.appendChild(buildArticleCard(item)));
 }
 async function loadArticles(options = {}) {
   const preferCache = options.preferCache !== false;
@@ -972,6 +1017,10 @@ function bindEvents() {
 
   nodes.backBtn?.addEventListener('click', async () => {
     await exitReaderView(false);
+  });
+
+  nodes.briefHistoryBack?.addEventListener('click', () => {
+    history.back();
   });
 
   nodes.closeOriginSnippet?.addEventListener('click', () => {
@@ -1221,6 +1270,10 @@ function bindEvents() {
 
   if (!state.historyBound) {
     window.addEventListener('popstate', () => {
+      if (state.briefHistoryOpen) {
+        closeBriefHistory();
+        return;
+      }
       if (document.body.classList.contains('admin-mode')) {
         closeAdminConsole({ fromPopstate: true });
         return;

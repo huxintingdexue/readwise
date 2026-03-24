@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-03-24 — 硅谷快讯收纳（v2.16.0）
+
+### 已完成
+- ✅ 新增 `daily_brief` source_key，ingest 接口支持传入并校验
+- ✅ 文章列表 API 返回 `fetched_at` 字段
+- ✅ 首页只展示最新一条快讯卡片，其下方附"查看历史快讯"入口
+- ✅ 历史快讯独立列表页（在今日 tab 内切换），按 fetched_at 倒序展示所有快讯
+- ✅ 浏览器返回键 / 页内返回按钮均可退出历史快讯视图
+- ✅ 列表缓存升级为 v2，避免旧结构脏缓存
+
+### 变更文件
+- api/ingest.js
+- api/articles.js
+- frontend/index.html
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/schema.sql
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+### 后续操作（需手动）
+- 在 Neon 执行 `UPDATE articles SET source_key = 'daily_brief' WHERE <快讯条件>` 回填历史 4 篇
+- 告知小龙虾入库时传 `source_key: 'daily_brief'`
+
+---
+
 ## 2026-03-24 — 划线按钮风格与颜色统一（v2.15.4）
 
 ### 已完成

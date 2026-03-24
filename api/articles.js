@@ -5,7 +5,7 @@ import { resolveUserId } from './_utils/auth.js';
 dotenv.config({ path: '.env.local' });
 
 const VALID_STATUS = new Set(['unread', 'read', 'archived']);
-const VALID_AUTHOR = new Set(['sam', 'andrej', 'peter', 'naval', 'manual']);
+const VALID_AUTHOR = new Set(['sam', 'andrej', 'peter', 'naval', 'manual', 'daily_brief']);
 const VALID_SORT = new Set(['date_desc', 'date_asc']);
 
 let pool;
@@ -118,6 +118,7 @@ async function listArticles(res, query, userId) {
       COALESCE(a.translation_job_status, a.status, 'ready') AS status,
       a.publish_status,
       a.submitted_by,
+      a.fetched_at,
       a.read_status,
       CASE
         WHEN NULLIF(LENGTH(COALESCE(a.content_zh, '')), 0) IS NOT NULL THEN ROUND(
