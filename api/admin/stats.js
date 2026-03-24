@@ -26,10 +26,15 @@ async function ensureEventsTable() {
     CREATE TABLE IF NOT EXISTS events (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR(50),
+      client_ip TEXT,
       event VARCHAR(50),
       article_id UUID,
       created_at TIMESTAMP DEFAULT NOW()
     )
+  `);
+  await getPool().query(`
+    ALTER TABLE events
+    ADD COLUMN IF NOT EXISTS client_ip TEXT
   `);
 }
 
@@ -81,6 +86,16 @@ export default async function handler(req, res) {
            FROM events
            WHERE event = 'open_article'
              AND created_at >= date_trunc('day', now())`,
+          [{ count: 0 }]
+        )
+      : { rows: [{ count: 0 }] };
+
+    const todayUniqueIps = eventsReady
+      ? await safeQuery(
+          `SELECT COUNT(DISTINCT client_ip)::int AS count
+           FROM events
+           WHERE created_at >= date_trunc('day', now())
+             AND NULLIF(TRIM(client_ip), '') IS NOT NULL`,
           [{ count: 0 }]
         )
       : { rows: [{ count: 0 }] };
@@ -167,6 +182,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       today_active_users: todayActive.rows[0]?.count ?? 0,
+      today_unique_visitors: todayUniqueIps.rows[0]?.count ?? 0,
       today_active_user_ids: todayActiveUsers.rows.map((row) => row.user_id).filter(Boolean),
       today_active_users_detail: todayActiveUsers.rows.map((row) => ({
         user_id: row.user_id || '',

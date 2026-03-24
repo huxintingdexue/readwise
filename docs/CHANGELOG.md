@@ -30,6 +30,19 @@
 
 ---
 
+## 2026-03-24 — 独立访客数统计（v2.16.0）
+
+### 已完成
+- ✅ events 表新增 `client_ip` 记录（从请求头获取）
+- ✅ 管理后台新增“独立访客数”统计（今日）
+
+### 变更文件
+- api/events.js
+- api/admin/stats.js
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 桌面端复制提示文案与行为更新（v2.15.9）
 
 ### 已完成

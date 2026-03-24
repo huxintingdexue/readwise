@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
-import { resolveUserId } from './_utils/auth.js';
+import { resolveUserId, getClientIp } from './_utils/auth.js';
 
 dotenv.config({ path: '.env.local' });
 
@@ -28,10 +28,15 @@ async function ensureTable() {
     CREATE TABLE IF NOT EXISTS events (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR(50),
+      client_ip TEXT,
       event VARCHAR(50),
       article_id TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     )
+  `);
+  await getPool().query(`
+    ALTER TABLE events
+    ADD COLUMN IF NOT EXISTS client_ip TEXT
   `);
   // Older environments created article_id as integer/uuid; normalize to text for compatibility.
   await getPool().query(`
@@ -60,9 +65,10 @@ export default async function handler(req, res) {
     }
 
     await ensureTable();
+    const clientIp = getClientIp(req) || null;
     await getPool().query(
-      'INSERT INTO events (user_id, event, article_id) VALUES ($1, $2, $3)',
-      [userId, event, articleId]
+      'INSERT INTO events (user_id, client_ip, event, article_id) VALUES ($1, $2, $3, $4)',
+      [userId, clientIp, event, articleId]
     );
     res.status(200).json({ success: true });
   } catch (err) {

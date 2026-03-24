@@ -1493,6 +1493,7 @@ async function loadAdminStats() {
     nodes.adminStatsList.appendChild(
       renderStatBlock('今日概览', [
         { label: '今日活跃用户数', value: String(data.today_active_users ?? 0) },
+        { label: '独立访客数', value: String(data.today_unique_visitors ?? 0) },
         { label: '今日活跃用户', value: activeUsers.length ? activeUsers.join(', ') : '-' },
         { label: '今日文章打开次数', value: String(data.today_open_articles ?? 0) }
       ])
