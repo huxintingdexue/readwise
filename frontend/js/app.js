@@ -37,6 +37,109 @@ let swRegisterTimer = null;
 let readerFeaturesReady = false;
 let readerFeaturesInitPromise = null;
 let openArticleNotesHandler = null;
+const searchParams = new URLSearchParams(window.location.search);
+const PERF_FLAGS = {
+  noSelection: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_selection') || '').toLowerCase()),
+  noGlass: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_glass') || '').toLowerCase()),
+  noReaderContain: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_reader_contain') || '').toLowerCase()),
+  noReaderSticky: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_reader_sticky') || '').toLowerCase()),
+  noLayerPromote: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_layer_promote') || '').toLowerCase()),
+  overlay: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_overlay') || '').toLowerCase())
+};
+
+function applyPerfFlags() {
+  if (PERF_FLAGS.noGlass) document.body.classList.add('perf-no-glass');
+  if (PERF_FLAGS.noReaderContain) document.body.classList.add('perf-no-reader-contain');
+  if (PERF_FLAGS.noReaderSticky) document.body.classList.add('perf-no-reader-sticky');
+  if (PERF_FLAGS.noLayerPromote) document.body.classList.add('perf-no-layer-promote');
+  if (PERF_FLAGS.noSelection) document.body.classList.add('no-custom-selection');
+  if (PERF_FLAGS.overlay) document.body.classList.add('perf-overlay-on');
+}
+
+function initPerfOverlay() {
+  if (!PERF_FLAGS.overlay) return;
+
+  const panel = document.createElement('div');
+  panel.className = 'perf-overlay';
+  panel.innerHTML = `
+    <div class="perf-overlay-title">Perf Overlay</div>
+    <div class="perf-overlay-grid">
+      <span>FPS</span><strong data-k="fps">0</strong>
+      <span>慢帧 &gt;16.7ms</span><strong data-k="slow">0</strong>
+      <span>超长帧 &gt;50ms</span><strong data-k="jank">0</strong>
+      <span>LongTask &gt;50ms</span><strong data-k="longtask">0</strong>
+      <span>滚动活跃</span><strong data-k="scroll">否</strong>
+    </div>
+  `;
+  document.body.appendChild(panel);
+
+  const fpsEl = panel.querySelector('[data-k="fps"]');
+  const slowEl = panel.querySelector('[data-k="slow"]');
+  const jankEl = panel.querySelector('[data-k="jank"]');
+  const longTaskEl = panel.querySelector('[data-k="longtask"]');
+  const scrollEl = panel.querySelector('[data-k="scroll"]');
+
+  let lastTs = performance.now();
+  let frameCount = 0;
+  let sumDelta = 0;
+  let slowFrames = 0;
+  let jankFrames = 0;
+  let longTaskCount = 0;
+  let lastScrollAt = 0;
+  let lastUiUpdate = 0;
+
+  const onScroll = () => {
+    lastScrollAt = performance.now();
+  };
+  nodes.readerView?.addEventListener('scroll', onScroll, { passive: true });
+  nodes.appShell?.addEventListener('scroll', onScroll, { passive: true });
+
+  if ('PerformanceObserver' in window) {
+    try {
+      const observer = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        for (let i = 0; i < entries.length; i += 1) {
+          if (entries[i].duration > 50) longTaskCount += 1;
+        }
+      });
+      observer.observe({ type: 'longtask', buffered: true });
+    } catch (_) {
+      // Ignore unsupported browsers.
+    }
+  }
+
+  function tick(ts) {
+    const delta = ts - lastTs;
+    lastTs = ts;
+    frameCount += 1;
+    sumDelta += delta;
+    if (delta > 16.7) slowFrames += 1;
+    if (delta > 50) jankFrames += 1;
+
+    if (ts - lastUiUpdate >= 500) {
+      const avgDelta = frameCount > 0 ? (sumDelta / frameCount) : 16.7;
+      const fps = Math.max(0, Math.min(60, Math.round(1000 / Math.max(1, avgDelta))));
+      const scrolling = (performance.now() - lastScrollAt) < 140;
+
+      if (fpsEl) fpsEl.textContent = String(fps);
+      if (slowEl) slowEl.textContent = String(slowFrames);
+      if (jankEl) jankEl.textContent = String(jankFrames);
+      if (longTaskEl) longTaskEl.textContent = String(longTaskCount);
+      if (scrollEl) scrollEl.textContent = scrolling ? '是' : '否';
+
+      lastUiUpdate = ts;
+      frameCount = 0;
+      sumDelta = 0;
+      slowFrames = 0;
+      jankFrames = 0;
+      longTaskCount = 0;
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+}
 
 function setReadingMode(enabled) {
   document.body.classList.toggle('reading-mode', enabled);
@@ -165,10 +268,11 @@ async function ensureReaderFeaturesInitialized() {
   }
 
   readerFeaturesInitPromise = (async () => {
-    const [{ initHighlightFeature }, { initArticleNotesPanel }] = await Promise.all([
-      import('./highlight.js'),
+    const [highlightModule, notesModule] = await Promise.all([
+      PERF_FLAGS.noSelection ? Promise.resolve(null) : import('./highlight.js'),
       import('./notes.js')
     ]);
+    const { initArticleNotesPanel } = notesModule;
 
     openArticleNotesHandler = initArticleNotesPanel({
       panel: nodes.articleNotesPanel,
@@ -179,16 +283,21 @@ async function ensureReaderFeaturesInitialized() {
       scrollToPosition: scrollToPlainPosition
     });
 
-    initHighlightFeature({
-      readerContent: nodes.readerContent,
-      getCurrentArticle: () => state.currentArticle,
-      showToast,
-      openOriginSnippet: (text) =>
-        openOriginSnippetPanel(
-          { originSnippet: nodes.originSnippet, originSnippetText: nodes.originSnippetText },
-          text
-        )
-    });
+    if (highlightModule?.initHighlightFeature) {
+      document.body.classList.remove('no-custom-selection');
+      highlightModule.initHighlightFeature({
+        readerContent: nodes.readerContent,
+        getCurrentArticle: () => state.currentArticle,
+        showToast,
+        openOriginSnippet: (text) =>
+          openOriginSnippetPanel(
+            { originSnippet: nodes.originSnippet, originSnippetText: nodes.originSnippetText },
+            text
+          )
+      });
+    } else {
+      document.body.classList.add('no-custom-selection');
+    }
 
     readerFeaturesReady = true;
   })();
@@ -1658,6 +1767,8 @@ async function startApp() {
 }
 
 async function init() {
+  applyPerfFlags();
+  initPerfOverlay();
   splashFallbackTimer = setTimeout(() => {
     hideSplashScreen();
   }, SPLASH_FALLBACK_MS);

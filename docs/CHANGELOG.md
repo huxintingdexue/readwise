@@ -2363,3 +2363,17 @@
 - scripts/avatar-config.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-24 — 阅读滚动性能浮层（staging 诊断）
+
+### 已完成
+- ✅ 新增 `perf_overlay=1` 调试浮层（FPS、慢帧、超长帧、LongTask、滚动活跃）
+- ✅ 与已有 `perf_no_*` 开关配合，支持定量 A/B，不依赖主观手感
+
+### 变更文件
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
