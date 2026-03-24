@@ -1941,3 +1941,16 @@ body.theme-dark .bottom-nav {
     font-size: 17px;
   }
 }
+
+@media (min-width: 1024px) {
+  .reading-mode .reader {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .reading-mode .reader > * {
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
