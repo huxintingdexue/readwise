@@ -2740,3 +2740,16 @@
 - frontend/js/app.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-25 — 分享页长链接/代码撑宽修复
+
+### 已完成
+- ✅ 分享页正文增加强制断行规则，防止长 URL 或内联代码撑破卡片宽度
+- ✅ 保留代码块横向滚动可读性（`pre code` 不强制断词）
+
+### 变更文件
+- frontend/css/share.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
