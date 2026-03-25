@@ -2712,3 +2712,17 @@
 - frontend/js/app.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-25 — 修复邀请码账号进度读取丢失
+
+### 已完成
+- ✅ 阅读进度读写兼容 legacy_user_id（例如 `admin`）
+- ✅ 读取优先当前账号，缺失时回退读取 legacy 进度
+- ✅ 写入时同步写入 legacy 进度，避免账号切换后丢失
+
+### 变更文件
+- api/reading-progress.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
