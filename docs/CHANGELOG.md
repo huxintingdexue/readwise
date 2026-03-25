@@ -2753,3 +2753,21 @@
 - frontend/css/share.css
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-25 — 首页新增安装引导（与分享页一致）
+
+### 已完成
+- ✅ 浏览器/微信打开首页时展示安装引导浮条（移动端）
+- ✅ 微信内点击按钮提示“用浏览器打开”
+- ✅ iOS 浏览器点击按钮提示“添加到主屏幕”
+- ✅ Android 浏览器点击按钮直接跳 APK 下载
+- ✅ PWA 独立模式与桌面端不显示该引导
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

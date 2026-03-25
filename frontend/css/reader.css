@@ -1622,6 +1622,106 @@ body.theme-dark .topbar p {
   color: #e2e8f0;
 }
 
+.home-install-cta {
+  position: fixed;
+  left: 50%;
+  bottom: calc(max(12px, env(safe-area-inset-bottom, 0px)) + 64px);
+  transform: translateX(-50%);
+  width: min(620px, calc(100vw - 24px));
+  background: #111827;
+  color: #f9fafb;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 16px 30px rgba(2, 6, 23, 0.35);
+  z-index: 120;
+}
+
+.home-install-text {
+  min-width: 0;
+}
+
+.home-install-text strong,
+.home-install-text span {
+  display: block;
+}
+
+.home-install-text strong {
+  font-size: 14px;
+}
+
+.home-install-text span {
+  margin-top: 2px;
+  color: #cbd5e1;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-install-cta button {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #14b8a6, #0ea5a0);
+  color: #032721;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  padding: 8px 12px;
+}
+
+.home-install-guide {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 130;
+}
+
+.home-install-guide-card {
+  width: min(360px, 88vw);
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 16px 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  text-align: center;
+}
+
+.home-install-guide-card strong {
+  font-size: 16px;
+  color: #111827;
+  display: block;
+}
+
+.home-install-guide-card strong.hidden {
+  display: none;
+}
+
+.home-install-guide-card p {
+  margin: 8px 0 14px;
+  font-size: 13px;
+  color: #475467;
+  line-height: 1.5;
+}
+
+.home-install-guide-card button {
+  border: 0;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #f0fdfa;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
 .origin-snippet {
   position: fixed;
   z-index: 40;
@@ -2160,5 +2260,11 @@ body.perf-no-layer-promote .bottom-nav {
 
   .reader-content {
     font-size: 17px;
+  }
+}
+
+@media (min-width: 960px) {
+  .home-install-cta {
+    display: none !important;
   }
 }

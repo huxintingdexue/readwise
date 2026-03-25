@@ -34,6 +34,7 @@ const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
 const SW_REGISTER_DELAY_MS = 1200;
 const DESKTOP_TIP_KEY = 'rw_desktop_tip_dismissed';
+const ANDROID_APK_URL = 'https://gitee.com/byguang/apk-download/releases/download/v1.0.0/readwise.apk';
 let splashFallbackTimer = null;
 let swRegisterTimer = null;
 let readerFeaturesReady = false;
@@ -215,6 +216,13 @@ const nodes = {
   desktopTip: document.querySelector('#desktopTip'),
   desktopTipCopy: document.querySelector('#desktopTipCopy'),
   desktopTipClose: document.querySelector('#desktopTipClose'),
+  homeInstallCta: document.querySelector('#homeInstallCta'),
+  homeInstallBtn: document.querySelector('#homeInstallBtn'),
+  homeInstallSub: document.querySelector('#homeInstallSub'),
+  homeInstallGuide: document.querySelector('#homeInstallGuide'),
+  homeInstallGuideTitle: document.querySelector('#homeInstallGuideTitle'),
+  homeInstallGuideText: document.querySelector('#homeInstallGuideText'),
+  homeInstallGuideClose: document.querySelector('#homeInstallGuideClose'),
   originSnippet: document.querySelector('#originSnippet'),
   originSnippetText: document.querySelector('#originSnippetText'),
   closeOriginSnippet: document.querySelector('#closeOriginSnippet'),
@@ -260,6 +268,78 @@ function isDesktopDevice() {
   const ua = navigator.userAgent.toLowerCase();
   const isMobileUa = /iphone|ipad|ipod|android/i.test(ua);
   return !isMobileUa && window.innerWidth >= 960;
+}
+
+function getMobilePlatform() {
+  const ua = (navigator.userAgent || '').toLowerCase();
+  if (ua.includes('android')) return 'android';
+  if (/iphone|ipad|ipod/.test(ua)) return 'ios';
+  return 'other';
+}
+
+function isWeChat() {
+  return /micromessenger/i.test(navigator.userAgent || '');
+}
+
+function showHomeInstallGuide(text, title = '') {
+  if (!nodes.homeInstallGuide || !nodes.homeInstallGuideText) return;
+  nodes.homeInstallGuideTitle.textContent = title;
+  nodes.homeInstallGuideTitle.classList.toggle('hidden', !title);
+  nodes.homeInstallGuideText.textContent = text;
+  nodes.homeInstallGuide.classList.remove('hidden');
+}
+
+function initHomeInstallPrompt() {
+  if (!nodes.homeInstallCta || !nodes.homeInstallBtn) return;
+  if (isStandalonePwa()) return;
+  if (isDesktopDevice()) return;
+
+  const platform = getMobilePlatform();
+  const inWechat = isWeChat();
+  if (!inWechat && platform === 'other') return;
+
+  nodes.homeInstallSub.textContent = '每天更新硅谷圈大佬最新动态和文章';
+  if (inWechat) {
+    nodes.homeInstallBtn.textContent = '安装APP';
+  } else if (platform === 'android') {
+    nodes.homeInstallBtn.textContent = '立即下载';
+  } else if (platform === 'ios') {
+    nodes.homeInstallBtn.textContent = '添加到主屏幕';
+  }
+
+  window.setTimeout(() => {
+    nodes.homeInstallCta.classList.remove('hidden');
+  }, 600);
+
+  nodes.homeInstallBtn.addEventListener('click', () => {
+    if (isWeChat()) {
+      showHomeInstallGuide('点击右上角 ... ，选择用浏览器打开');
+      return;
+    }
+    const currentPlatform = getMobilePlatform();
+    if (currentPlatform === 'android') {
+      if (ANDROID_APK_URL) {
+        window.location.href = ANDROID_APK_URL;
+      } else {
+        showToast('下载链接暂不可用，请稍后重试');
+      }
+      return;
+    }
+    if (currentPlatform === 'ios') {
+      showHomeInstallGuide('点击浏览器下方“分享”按钮，选择“添加到主屏幕”。', '添加到主屏幕');
+      return;
+    }
+  });
+
+  nodes.homeInstallGuideClose?.addEventListener('click', () => {
+    nodes.homeInstallGuide.classList.add('hidden');
+  });
+
+  nodes.homeInstallGuide?.addEventListener('click', (event) => {
+    if (event.target === nodes.homeInstallGuide) {
+      nodes.homeInstallGuide.classList.add('hidden');
+    }
+  });
 }
 
 function initDesktopTip() {
@@ -1990,6 +2070,7 @@ async function init() {
   bindLoginEvents();
   maybeShowA2hsHint();
   initDesktopTip();
+  initHomeInstallPrompt();
 
   const authed = await bootstrapAuth();
   hideLoginOverlay();
