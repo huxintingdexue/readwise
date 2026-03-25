@@ -2789,3 +2789,14 @@
 - frontend/js/share.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+## 2026-03-25 — 安装浮条关闭按钮位置修正
+
+### 已完成
+- ✅ 安装浮条 `×` 从左上角调整到右上角，避免遮挡标题文案
+
+### 变更文件
+- frontend/css/reader.css
+- frontend/css/share.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
