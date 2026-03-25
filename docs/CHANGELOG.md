@@ -2771,3 +2771,21 @@
 - frontend/js/app.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+## 2026-03-25 — 安装浮条支持手动关闭（24小时免打扰）
+
+### 已完成
+- ✅ 首页安装浮条新增左上角 `×` 关闭按钮
+- ✅ 分享页安装浮条新增左上角 `×` 关闭按钮
+- ✅ 关闭后写入本地 24 小时免打扰时间，期间不再展示安装浮条
+- ✅ 首页与分享页共用同一抑制键，避免重复打扰
+
+### 变更文件
+- frontend/index.html
+- frontend/share.html
+- frontend/css/reader.css
+- frontend/css/share.css
+- frontend/js/app.js
+- frontend/js/share.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

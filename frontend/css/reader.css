@@ -1632,13 +1632,33 @@ body.theme-dark .topbar p {
   color: #f9fafb;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 12px 14px;
+  padding: 16px 14px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   box-shadow: 0 16px 30px rgba(2, 6, 23, 0.35);
   z-index: 120;
+}
+
+.install-cta-close {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(248, 250, 252, 0.72);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.install-cta-close:active {
+  transform: scale(0.94);
 }
 
 .home-install-text {
@@ -1663,7 +1683,7 @@ body.theme-dark .topbar p {
   text-overflow: ellipsis;
 }
 
-.home-install-cta button {
+.home-install-cta button:not(.install-cta-close) {
   border: 0;
   border-radius: 999px;
   background: linear-gradient(90deg, #14b8a6, #0ea5a0);

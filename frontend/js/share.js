@@ -1,4 +1,6 @@
 const ANDROID_APK_URL = 'https://gitee.com/byguang/apk-download/releases/download/v1.0.0/readwise.apk';
+const INSTALL_CTA_DISMISS_KEY = 'rw_install_cta_dismiss_until';
+const INSTALL_CTA_DISMISS_MS = 24 * 60 * 60 * 1000;
 
 const nodes = {
   shareTitle: document.querySelector('#shareTitle'),
@@ -8,6 +10,7 @@ const nodes = {
   openOriginalLink: document.querySelector('#openOriginalLink'),
   copyShareBtn: document.querySelector('#copyShareBtn'),
   shareCta: document.querySelector('#shareCta'),
+  shareCtaClose: document.querySelector('#shareCtaClose'),
   shareCtaBtn: document.querySelector('#shareCtaBtn'),
   shareCtaSub: document.querySelector('#shareCtaSub'),
   shareToast: document.querySelector('#shareToast'),
@@ -19,6 +22,26 @@ const nodes = {
 
 let currentArticleId = '';
 let ctaShown = false;
+
+function getInstallCtaDismissUntil() {
+  try {
+    return Number(localStorage.getItem(INSTALL_CTA_DISMISS_KEY) || 0);
+  } catch (_) {
+    return 0;
+  }
+}
+
+function isInstallCtaDismissed() {
+  return getInstallCtaDismissUntil() > Date.now();
+}
+
+function dismissInstallCtaForOneDay() {
+  try {
+    localStorage.setItem(INSTALL_CTA_DISMISS_KEY, String(Date.now() + INSTALL_CTA_DISMISS_MS));
+  } catch (_) {
+    // ignore storage failures
+  }
+}
 
 function escapeHtml(text) {
   return String(text || '')
@@ -294,7 +317,7 @@ function bindEvents() {
   let lastY = 0;
   window.addEventListener('scroll', () => {
     const y = window.scrollY || 0;
-    if (!ctaShown && y > 24 && y > lastY) {
+    if (!ctaShown && !isInstallCtaDismissed() && y > 24 && y > lastY) {
       ctaShown = true;
       nodes.shareCta.classList.remove('hidden');
     }
@@ -337,6 +360,11 @@ function bindEvents() {
     window.location.href = '/';
   });
 
+  nodes.shareCtaClose?.addEventListener('click', () => {
+    dismissInstallCtaForOneDay();
+    nodes.shareCta?.classList.add('hidden');
+  });
+
   nodes.shareGuideClose?.addEventListener('click', () => {
     nodes.shareGuide.classList.add('hidden');
   });
@@ -361,11 +389,13 @@ function fromWeChatParam() {
 
 function ensureCtaShown() {
   if (!nodes.shareCta) return;
+  if (isInstallCtaDismissed()) return;
   ctaShown = true;
   nodes.shareCta.classList.remove('hidden');
 }
 
 function maybeAutoTriggerAfterWeChat() {
+  if (isInstallCtaDismissed()) return;
   if (isWeChat()) return;
   if (!fromWeChatParam()) return;
   ensureCtaShown();

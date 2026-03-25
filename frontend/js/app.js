@@ -34,6 +34,8 @@ const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
 const SW_REGISTER_DELAY_MS = 1200;
 const DESKTOP_TIP_KEY = 'rw_desktop_tip_dismissed';
+const INSTALL_CTA_DISMISS_KEY = 'rw_install_cta_dismiss_until';
+const INSTALL_CTA_DISMISS_MS = 24 * 60 * 60 * 1000;
 const ANDROID_APK_URL = 'https://gitee.com/byguang/apk-download/releases/download/v1.0.0/readwise.apk';
 let splashFallbackTimer = null;
 let swRegisterTimer = null;
@@ -217,6 +219,7 @@ const nodes = {
   desktopTipCopy: document.querySelector('#desktopTipCopy'),
   desktopTipClose: document.querySelector('#desktopTipClose'),
   homeInstallCta: document.querySelector('#homeInstallCta'),
+  homeInstallClose: document.querySelector('#homeInstallClose'),
   homeInstallBtn: document.querySelector('#homeInstallBtn'),
   homeInstallSub: document.querySelector('#homeInstallSub'),
   homeInstallGuide: document.querySelector('#homeInstallGuide'),
@@ -289,8 +292,29 @@ function showHomeInstallGuide(text, title = '') {
   nodes.homeInstallGuide.classList.remove('hidden');
 }
 
+function getInstallCtaDismissUntil() {
+  try {
+    return Number(localStorage.getItem(INSTALL_CTA_DISMISS_KEY) || 0);
+  } catch (_) {
+    return 0;
+  }
+}
+
+function isInstallCtaDismissed() {
+  return getInstallCtaDismissUntil() > Date.now();
+}
+
+function dismissInstallCtaForOneDay() {
+  try {
+    localStorage.setItem(INSTALL_CTA_DISMISS_KEY, String(Date.now() + INSTALL_CTA_DISMISS_MS));
+  } catch (_) {
+    // ignore storage failures
+  }
+}
+
 function initHomeInstallPrompt() {
   if (!nodes.homeInstallCta || !nodes.homeInstallBtn) return;
+  if (isInstallCtaDismissed()) return;
   if (isStandalonePwa()) return;
   if (isDesktopDevice()) return;
 
@@ -329,6 +353,11 @@ function initHomeInstallPrompt() {
       showHomeInstallGuide('点击浏览器下方“分享”按钮，选择“添加到主屏幕”。', '添加到主屏幕');
       return;
     }
+  });
+
+  nodes.homeInstallClose?.addEventListener('click', () => {
+    dismissInstallCtaForOneDay();
+    nodes.homeInstallCta.classList.add('hidden');
   });
 
   nodes.homeInstallGuideClose?.addEventListener('click', () => {
