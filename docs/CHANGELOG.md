@@ -2726,3 +2726,17 @@
 - api/reading-progress.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+---
+
+## 2026-03-25 — 分享页 A2HS 先跳首页
+
+### 已完成
+- ✅ 分享页 iOS “添加到主屏幕”按钮先跳首页（`/?a2hs=1`）
+- ✅ 首页识别参数后给出一次提示，引导从首页添加到主屏幕
+
+### 变更文件
+- frontend/js/share.js
+- frontend/js/app.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

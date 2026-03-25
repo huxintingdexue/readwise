@@ -331,7 +331,7 @@ function bindEvents() {
       return;
     }
     if (platform === 'ios') {
-      showGuide('点击浏览器下方的分享按钮，选择“添加到主屏幕”。', '添加到主屏幕');
+      window.location.href = '/?a2hs=1';
       return;
     }
     window.location.href = '/';

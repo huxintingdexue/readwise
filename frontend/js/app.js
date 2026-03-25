@@ -418,6 +418,21 @@ function normalizeThemeValue(value) {
   return 'light';
 }
 
+function isIOS() {
+  const ua = navigator.userAgent || '';
+  return /iPad|iPhone|iPod/.test(ua);
+}
+
+function maybeShowA2hsHint() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('a2hs') !== '1') return;
+  url.searchParams.delete('a2hs');
+  history.replaceState(null, '', url.toString());
+  if (isIOS()) {
+    showToast('请点击浏览器下方“分享”按钮，选择“添加到主屏幕”');
+  }
+}
+
 function setThemeChoice(theme) {
   const normalized = normalizeThemeValue(theme);
   localStorage.setItem('theme', normalized);
@@ -1973,6 +1988,7 @@ async function init() {
   initTheme();
   initFontPreset();
   bindLoginEvents();
+  maybeShowA2hsHint();
   initDesktopTip();
 
   const authed = await bootstrapAuth();
