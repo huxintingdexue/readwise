@@ -16,6 +16,8 @@ body {
   background: radial-gradient(circle at 12% 8%, #ffffff 0%, var(--bg) 55%);
   color: var(--text);
   font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .share-shell {
@@ -68,10 +70,16 @@ body {
   margin-top: 26px;
   font-size: 21px;
   line-height: 1.9;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .share-content p {
   margin: 0 0 1.35em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .share-content h1,
@@ -97,6 +105,8 @@ body {
   padding: 0.25em 0 0.25em 0.9em;
   border-left: 3px solid #cbd5e1;
   color: #475467;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .share-content pre {
@@ -110,10 +120,19 @@ body {
 
 .share-content code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.share-content pre code {
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .share-content a {
   color: var(--accent);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .share-footer {
