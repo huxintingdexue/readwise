@@ -774,6 +774,17 @@ function clearLastReaderState() {
   } catch (_) {}
 }
 
+function ensureHomeHistoryState() {
+  const view = String(history.state?.view || '').trim();
+  if (view === 'home' || view === 'admin' || view === 'brief_history') return;
+  const baseUrl = new URL(window.location.href);
+  baseUrl.searchParams.delete('article');
+  if (baseUrl.searchParams.get('view') === 'admin') {
+    baseUrl.searchParams.delete('view');
+  }
+  history.replaceState({ view: 'home' }, '', `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`);
+}
+
 function calcScrollPositionByBaseLength(baseLength, scroller = window) {
   if (!baseLength || baseLength <= 0) return 0;
   const ratio = Math.min(1, Math.max(0, currentScrollTop(scroller) / maxScrollableDistance(scroller)));
@@ -2168,6 +2179,7 @@ function bindLoginEvents() {
 async function startApp() {
   if (state.appStarted) return;
   state.appStarted = true;
+  ensureHomeHistoryState();
   const uiState = readUiState();
   const lastReaderState = readLastReaderState();
   if (uiState?.listScrollTop) {
