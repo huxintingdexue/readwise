@@ -462,3 +462,8 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 ## 2026-03-25（安装浮条关闭按钮位置）
 
 - 安装引导浮条的关闭按钮由左上角改为右上角，修复遮挡文案问题。
+
+## 2026-03-27（APK 安装引导拦截）
+
+- 新增已安装运行时识别：`display-mode: standalone`、`navigator.standalone`、`android-app://`、Android `wv` WebView。
+- 安卓 APK/WebView 壳内不再显示“安装 APP”浮条（首页与分享页一致）。

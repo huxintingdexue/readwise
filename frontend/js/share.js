@@ -225,6 +225,22 @@ function isWeChat() {
   return /micromessenger/i.test(navigator.userAgent || '');
 }
 
+function isAndroidWebViewShell() {
+  const ua = String(navigator.userAgent || '').toLowerCase();
+  if (!ua.includes('android')) return false;
+  if (isWeChat()) return false;
+  if (/\bwv\b/.test(ua)) return true;
+  return false;
+}
+
+function isInstalledAppRuntime() {
+  if (window.matchMedia?.('(display-mode: standalone)')?.matches) return true;
+  if (window.navigator?.standalone === true) return true;
+  if ((document.referrer || '').startsWith('android-app://')) return true;
+  if (isAndroidWebViewShell()) return true;
+  return false;
+}
+
 function showToast(message, duration = 1800) {
   if (!nodes.shareToast) return;
   nodes.shareToast.textContent = message;
@@ -248,6 +264,7 @@ function showGuide(text, title = '') {
 }
 
 function initCtaByPlatform() {
+  if (isInstalledAppRuntime()) return;
   const platform = getPlatform();
   if (isWeChat()) {
     nodes.shareCtaBtn.textContent = '安装APP';
@@ -317,7 +334,7 @@ function bindEvents() {
   let lastY = 0;
   window.addEventListener('scroll', () => {
     const y = window.scrollY || 0;
-    if (!ctaShown && !isInstallCtaDismissed() && y > 24 && y > lastY) {
+    if (!ctaShown && !isInstalledAppRuntime() && !isInstallCtaDismissed() && y > 24 && y > lastY) {
       ctaShown = true;
       nodes.shareCta.classList.remove('hidden');
     }
@@ -389,12 +406,14 @@ function fromWeChatParam() {
 
 function ensureCtaShown() {
   if (!nodes.shareCta) return;
+  if (isInstalledAppRuntime()) return;
   if (isInstallCtaDismissed()) return;
   ctaShown = true;
   nodes.shareCta.classList.remove('hidden');
 }
 
 function maybeAutoTriggerAfterWeChat() {
+  if (isInstalledAppRuntime()) return;
   if (isInstallCtaDismissed()) return;
   if (isWeChat()) return;
   if (!fromWeChatParam()) return;

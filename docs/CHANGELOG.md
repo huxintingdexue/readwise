@@ -2800,3 +2800,16 @@
 - frontend/css/share.css
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+## 2026-03-27 — 安卓 APK 内关闭安装引导浮条
+
+### 已完成
+- ✅ 新增安卓 WebView 壳环境识别（`wv` UA + `android-app://` referrer）
+- ✅ 首页在已安装运行时（PWA / APK 壳）不再展示安装引导浮条
+- ✅ 分享页在已安装运行时（PWA / APK 壳）不再展示安装引导浮条
+
+### 变更文件
+- frontend/js/app.js
+- frontend/js/share.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

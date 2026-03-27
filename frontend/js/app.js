@@ -284,6 +284,21 @@ function isWeChat() {
   return /micromessenger/i.test(navigator.userAgent || '');
 }
 
+function isAndroidWebViewShell() {
+  const ua = String(navigator.userAgent || '').toLowerCase();
+  if (!ua.includes('android')) return false;
+  if (isWeChat()) return false;
+  if (/\bwv\b/.test(ua)) return true;
+  return false;
+}
+
+function isInstalledAppRuntime() {
+  if (isStandalonePwa()) return true;
+  if ((document.referrer || '').startsWith('android-app://')) return true;
+  if (isAndroidWebViewShell()) return true;
+  return false;
+}
+
 function showHomeInstallGuide(text, title = '') {
   if (!nodes.homeInstallGuide || !nodes.homeInstallGuideText) return;
   nodes.homeInstallGuideTitle.textContent = title;
@@ -315,7 +330,7 @@ function dismissInstallCtaForOneDay() {
 function initHomeInstallPrompt() {
   if (!nodes.homeInstallCta || !nodes.homeInstallBtn) return;
   if (isInstallCtaDismissed()) return;
-  if (isStandalonePwa()) return;
+  if (isInstalledAppRuntime()) return;
   if (isDesktopDevice()) return;
 
   const platform = getMobilePlatform();
