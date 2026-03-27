@@ -30,6 +30,7 @@ const state = {
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
 const UI_STATE_STORAGE_KEY = 'rw:ui-state:v1';
+const LAST_READER_STATE_KEY = 'rw:last-reader:v1';
 const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
@@ -733,6 +734,36 @@ function writeUiState() {
   } catch (_) {}
 }
 
+function readLastReaderState() {
+  try {
+    const raw = localStorage.getItem(LAST_READER_STATE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const articleId = String(parsed?.articleId || '').trim();
+    if (!articleId) return null;
+    return { articleId };
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeLastReaderState(articleId) {
+  const id = String(articleId || '').trim();
+  if (!id) return;
+  try {
+    localStorage.setItem(LAST_READER_STATE_KEY, JSON.stringify({
+      articleId: id,
+      savedAt: Date.now()
+    }));
+  } catch (_) {}
+}
+
+function clearLastReaderState() {
+  try {
+    localStorage.removeItem(LAST_READER_STATE_KEY);
+  } catch (_) {}
+}
+
 function calcScrollPositionByBaseLength(baseLength, scroller = window) {
   if (!baseLength || baseLength <= 0) return 0;
   const ratio = Math.min(1, Math.max(0, currentScrollTop(scroller) / maxScrollableDistance(scroller)));
@@ -861,6 +892,7 @@ function updateListProgress(articleId, percent) {
 
 async function exitReaderView(shouldReload = false) {
   const progressResult = await persistReadingProgressNow();
+  clearLastReaderState();
   state.currentArticle = null;
   document.body.classList.add('restoring-list-scroll');
   setReadingMode(false);
@@ -1099,6 +1131,7 @@ async function openArticle(id, jumpTo = null) {
         const baseLength = getReadingBaseLength(cachedDetail, nodes.readerContent);
         scrollToPlainPosition(baseLength, jumpTo);
       }
+      writeLastReaderState(cachedDetail.id);
       detailPromise
         .then((freshDetail) => {
           writeDetailCache(freshDetail);
@@ -1144,7 +1177,9 @@ async function openArticle(id, jumpTo = null) {
       const baseLength = getReadingBaseLength(detail, nodes.readerContent);
       scrollToPlainPosition(baseLength, jumpTo);
     }
+    writeLastReaderState(detail.id);
   } catch (err) {
+    clearLastReaderState();
     showToast(`打开文章失败：${err.message}`);
     setReadingMode(false);
     document.body.classList.remove('reader-bar-hidden');
@@ -2124,6 +2159,7 @@ async function startApp() {
   if (state.appStarted) return;
   state.appStarted = true;
   const uiState = readUiState();
+  const lastReaderState = readLastReaderState();
   if (uiState?.listScrollTop) {
     state.listScrollTop = {
       today: Math.max(0, Number(uiState.listScrollTop.today || 0)),
@@ -2145,7 +2181,19 @@ async function startApp() {
   const initialTab = uiState?.tab === 'notes' ? 'notes' : 'today';
   switchTab(initialTab);
   const loadPromise = loadArticles();
-  loadPromise.then(() => restoreListScroll()).catch(() => {});
+  loadPromise
+    .then(async () => {
+      if (lastReaderState?.articleId) {
+        try {
+          await openArticle(lastReaderState.articleId);
+          return;
+        } catch (_) {
+          clearLastReaderState();
+        }
+      }
+      await restoreListScroll();
+    })
+    .catch(() => {});
   requestAnimationFrame(() => {
     hideSplashScreen();
   });
