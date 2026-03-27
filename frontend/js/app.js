@@ -1108,6 +1108,25 @@ function renderArticles() {
 
   nodes.articlesState.textContent = '';
 
+  const toTs = (value) => Date.parse(value || '') || 0;
+  const isRead = (item) => Number(item?.read_progress || 0) > 0;
+  const shDate = (value) => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(d);
+    const y = parts.find((p) => p.type === 'year')?.value || '';
+    const m = parts.find((p) => p.type === 'month')?.value || '';
+    const day = parts.find((p) => p.type === 'day')?.value || '';
+    return `${y}-${m}-${day}`;
+  };
+  const todaySh = shDate(new Date().toISOString());
+
   const briefs = state.articles
     .filter((a) => a.source_key === 'daily_brief')
     .slice()
@@ -1116,10 +1135,15 @@ function renderArticles() {
   const normal = state.articles
     .filter((a) => a.source_key !== 'daily_brief')
     .slice()
-    .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
+    .sort((a, b) => {
+      const readCmp = Number(isRead(a)) - Number(isRead(b));
+      if (readCmp !== 0) return readCmp;
+      return toTs(b.published_at) - toTs(a.published_at);
+    });
 
   if (briefs.length > 0) {
-    nodes.articlesList.appendChild(buildArticleCard(briefs[0], true));
+    const todayBrief = briefs.find((item) => shDate(item.published_at) === todaySh) || briefs[0];
+    nodes.articlesList.appendChild(buildArticleCard(todayBrief, true));
   }
 
   normal.forEach((item) => nodes.articlesList.appendChild(buildArticleCard(item)));
