@@ -24,7 +24,8 @@ const state = {
     today: 0,
     notes: 0
   },
-  briefHistoryOpen: false
+  briefHistoryOpen: false,
+  readerExitInFlight: false
 };
 
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
@@ -952,27 +953,30 @@ function updateListProgress(articleId, percent) {
 }
 
 async function exitReaderView(shouldReload = false) {
-  const progressResult = await persistReadingProgressNow();
-  clearLastReaderState();
-  state.currentArticle = null;
-  document.body.classList.add('restoring-list-scroll');
-  setReadingMode(false);
-  document.body.classList.remove('reader-bar-hidden');
-  closeReader({
-    readerView: nodes.readerView,
-    listPanels: [nodes.todayTab, nodes.notesTab],
-    readerContent: nodes.readerContent,
-    originSnippet: nodes.originSnippet,
-    originSnippetText: nodes.originSnippetText
-  });
-  setReaderAdminActionsVisible(false);
-  closeHideArticleModal();
-  nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
-  nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
-  if (state.tab === 'today' && progressResult?.articleId) {
-    updateListProgress(progressResult.articleId, progressResult.percent);
-  }
+  if (state.readerExitInFlight) return;
+  state.readerExitInFlight = true;
+  let progressResult = null;
   try {
+    progressResult = await persistReadingProgressNow();
+    clearLastReaderState();
+    state.currentArticle = null;
+    document.body.classList.add('restoring-list-scroll');
+    setReadingMode(false);
+    document.body.classList.remove('reader-bar-hidden');
+    closeReader({
+      readerView: nodes.readerView,
+      listPanels: [nodes.todayTab, nodes.notesTab],
+      readerContent: nodes.readerContent,
+      originSnippet: nodes.originSnippet,
+      originSnippetText: nodes.originSnippetText
+    });
+    setReaderAdminActionsVisible(false);
+    closeHideArticleModal();
+    nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
+    nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
+    if (state.tab === 'today' && progressResult?.articleId) {
+      updateListProgress(progressResult.articleId, progressResult.percent);
+    }
     if (shouldReload && state.tab === 'today') {
       await loadArticles();
     }
@@ -983,6 +987,7 @@ async function exitReaderView(shouldReload = false) {
     }
   } finally {
     document.body.classList.remove('restoring-list-scroll');
+    state.readerExitInFlight = false;
   }
 }
 
@@ -1166,7 +1171,9 @@ async function loadArticles(options = {}) {
 async function openArticle(id, jumpTo = null, options = {}) {
   try {
     const readerFeaturesPromise = ensureReaderFeaturesInitialized();
-    captureListScroll();
+    if (options.preserveSavedListScroll !== true) {
+      captureListScroll();
+    }
     pushReaderHistoryState(id, options);
     setReaderAdminActionsVisible(false);
     const cachedDetail = readDetailCache(id);
@@ -1257,8 +1264,10 @@ async function openArticle(id, jumpTo = null, options = {}) {
   }
 }
 
-function switchTab(nextTab) {
-  captureListScroll();
+function switchTab(nextTab, options = {}) {
+  if (options.captureScroll !== false) {
+    captureListScroll();
+  }
   state.tab = nextTab;
   writeUiState();
   nodes.tabButtons.forEach((btn) => {
@@ -1589,6 +1598,7 @@ function bindEvents() {
 
   if (!state.historyBound) {
     window.addEventListener('popstate', () => {
+      if (state.readerExitInFlight) return;
       if (document.body.classList.contains('admin-mode')) {
         closeAdminConsole({ fromPopstate: true });
         return;
@@ -2248,14 +2258,17 @@ async function startApp() {
     openAppearanceModal();
   });
   const initialTab = uiState?.tab === 'notes' ? 'notes' : 'today';
-  switchTab(initialTab);
+  switchTab(initialTab, { captureScroll: false });
   const loadPromise = loadArticles();
   loadPromise
     .then(async () => {
       if (lastReaderState?.articleId) {
         try {
           ensureAutoRestoreHistoryStack();
-          await openArticle(lastReaderState.articleId, null, { withBackGuard: true });
+          await openArticle(lastReaderState.articleId, null, {
+            withBackGuard: true,
+            preserveSavedListScroll: true
+          });
           return;
         } catch (_) {
           clearLastReaderState();
