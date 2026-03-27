@@ -2265,8 +2265,9 @@ async function startApp() {
       if (lastReaderState?.articleId) {
         try {
           ensureAutoRestoreHistoryStack();
+          history.pushState({ view: 'home' }, '', getCleanHomeUrl());
           await openArticle(lastReaderState.articleId, null, {
-            withBackGuard: true,
+            withBackGuard: false,
             preserveSavedListScroll: true
           });
           return;
