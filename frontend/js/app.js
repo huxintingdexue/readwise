@@ -785,6 +785,31 @@ function ensureHomeHistoryState() {
   history.replaceState({ view: 'home' }, '', `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`);
 }
 
+function pushHomeHistoryAnchor() {
+  const view = String(history.state?.view || '').trim();
+  if (view !== 'home') return;
+  const url = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  history.pushState({ view: 'home_restore_anchor' }, '', url);
+}
+
+function ensureAutoRestoreHistoryStack() {
+  const baseUrl = new URL(window.location.href);
+  baseUrl.searchParams.delete('article');
+  if (baseUrl.searchParams.get('view') === 'admin') {
+    baseUrl.searchParams.delete('view');
+  }
+  const cleanUrl = `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`;
+  const currentView = String(history.state?.view || '').trim();
+
+  if (currentView !== 'home') {
+    history.replaceState({ view: 'home' }, '', cleanUrl);
+  } else if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== cleanUrl) {
+    history.replaceState({ view: 'home' }, '', cleanUrl);
+  }
+
+  pushHomeHistoryAnchor();
+}
+
 function calcScrollPositionByBaseLength(baseLength, scroller = window) {
   if (!baseLength || baseLength <= 0) return 0;
   const ratio = Math.min(1, Math.max(0, currentScrollTop(scroller) / maxScrollableDistance(scroller)));
@@ -2207,6 +2232,7 @@ async function startApp() {
     .then(async () => {
       if (lastReaderState?.articleId) {
         try {
+          ensureAutoRestoreHistoryStack();
           await openArticle(lastReaderState.articleId);
           return;
         } catch (_) {

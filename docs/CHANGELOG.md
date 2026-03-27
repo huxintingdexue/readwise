@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-27 — 自动恢复阅读回退链路兜底（v2.16.10）
+
+### 已完成
+- ✅ 自动恢复阅读前强制清理 URL 到首页基准态（移除 `article/view=admin`）
+- ✅ 自动恢复阅读前统一构建 `home -> home_restore_anchor -> reader` 历史栈
+- ✅ 修复部分场景下右滑返回直接退出应用的问题，确保先回列表页
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 硅谷快讯收纳（v2.16.0）
 
 ### 已完成
