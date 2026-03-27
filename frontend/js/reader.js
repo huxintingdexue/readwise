@@ -246,6 +246,18 @@ function stopReadingSession(nodes) {
     clearTimeout(readingSession.debounceTimer);
     readingSession.debounceTimer = null;
   }
+  if (Array.isArray(readingSession.restoreTimers)) {
+    readingSession.restoreTimers.forEach((timerId) => clearTimeout(timerId));
+    readingSession.restoreTimers = [];
+  }
+  if (Array.isArray(readingSession.imageLoadHandlers)) {
+    readingSession.imageLoadHandlers.forEach(({ img, onLoad }) => {
+      if (img && onLoad) {
+        img.removeEventListener('load', onLoad);
+      }
+    });
+    readingSession.imageLoadHandlers = [];
+  }
 
   readingSession = null;
   hideOriginSnippet(nodes);
@@ -283,6 +295,8 @@ function startReadingSession(detail, nodes, initialProgress) {
 
   const onScroll = () => {
     if (!readingSession) return;
+    if (readingSession.autoRestoring) return;
+    readingSession.userInteracted = true;
 
     maybeTrackFinish();
 
@@ -311,6 +325,10 @@ function startReadingSession(detail, nodes, initialProgress) {
     scroller,
     readerContent: nodes.readerContent || null,
     debounceTimer: null,
+    restoreTimers: [],
+    imageLoadHandlers: [],
+    autoRestoring: false,
+    userInteracted: false,
     onScroll,
     onVisibilityChange,
     onBeforeUnload,
@@ -320,7 +338,34 @@ function startReadingSession(detail, nodes, initialProgress) {
   scroller.addEventListener('scroll', onScroll, { passive: true });
   document.addEventListener('visibilitychange', onVisibilityChange);
   window.addEventListener('beforeunload', onBeforeUnload);
-  restoreScrollByBaseLength(initialProgress?.scroll_position || 0, baseLength, scroller);
+  const restoreTarget = Number(initialProgress?.scroll_position || 0);
+  const restoreIfIdle = () => {
+    if (!readingSession || readingSession.articleId !== articleId) return;
+    if (readingSession.userInteracted) return;
+    readingSession.autoRestoring = true;
+    restoreScrollByBaseLength(restoreTarget, baseLength, scroller);
+    requestAnimationFrame(() => {
+      if (readingSession && readingSession.articleId === articleId) {
+        readingSession.autoRestoring = false;
+      }
+    });
+  };
+
+  [0, 350, 1200].forEach((delay) => {
+    const timerId = setTimeout(restoreIfIdle, delay);
+    readingSession.restoreTimers.push(timerId);
+  });
+
+  if (nodes?.readerContent) {
+    const pendingImages = [...nodes.readerContent.querySelectorAll('img')].filter((img) => !img.complete);
+    pendingImages.forEach((img) => {
+      const onLoad = () => {
+        restoreIfIdle();
+      };
+      img.addEventListener('load', onLoad, { once: true });
+      readingSession.imageLoadHandlers.push({ img, onLoad });
+    });
+  }
   requestAnimationFrame(() => {
     maybeTrackFinish();
   });
