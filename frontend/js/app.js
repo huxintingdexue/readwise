@@ -36,11 +36,13 @@ const LAST_READER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
+const SPLASH_MIN_MS = 1500;
 const SW_REGISTER_DELAY_MS = 1200;
 const DESKTOP_TIP_KEY = 'rw_desktop_tip_dismissed';
 const INSTALL_CTA_DISMISS_KEY = 'rw_install_cta_dismiss_until';
 const INSTALL_CTA_DISMISS_MS = 24 * 60 * 60 * 1000;
 const ANDROID_APK_URL = 'https://gitee.com/byguang/apk-download/releases/download/v1.0.0/readwise.apk';
+let splashShownAt = Date.now();
 let splashFallbackTimer = null;
 let swRegisterTimer = null;
 let readerFeaturesReady = false;
@@ -2260,14 +2262,15 @@ async function startApp() {
   const initialTab = uiState?.tab === 'notes' ? 'notes' : 'today';
   switchTab(initialTab, { captureScroll: false });
   const loadPromise = loadArticles();
+  const minSplashPromise = new Promise(r => setTimeout(r, Math.max(0, SPLASH_MIN_MS - (Date.now() - splashShownAt))));
   loadPromise
     .then(async () => {
       await restoreListScroll();
     })
     .catch(() => {});
-  requestAnimationFrame(() => {
-    hideSplashScreen();
-  });
+  Promise.all([loadPromise, minSplashPromise])
+    .then(() => { hideSplashScreen(); })
+    .catch(() => { hideSplashScreen(); });
   loadPromise.catch(() => {});
   scheduleServiceWorkerRegistration();
 }
