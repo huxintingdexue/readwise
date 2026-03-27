@@ -31,6 +31,7 @@ const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
 const UI_STATE_STORAGE_KEY = 'rw:ui-state:v1';
 const LAST_READER_STATE_KEY = 'rw:last-reader:v1';
+const LAST_READER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
@@ -741,6 +742,15 @@ function readLastReaderState() {
     const parsed = JSON.parse(raw);
     const articleId = String(parsed?.articleId || '').trim();
     if (!articleId) return null;
+    const savedAt = Number(parsed?.savedAt || 0);
+    if (!Number.isFinite(savedAt) || savedAt <= 0) {
+      clearLastReaderState();
+      return null;
+    }
+    if ((Date.now() - savedAt) > LAST_READER_MAX_AGE_MS) {
+      clearLastReaderState();
+      return null;
+    }
     return { articleId };
   } catch (_) {
     return null;
