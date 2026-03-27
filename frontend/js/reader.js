@@ -339,7 +339,10 @@ export function renderReader(detail, nodes, initialProgress = null) {
   readerContent.innerHTML = renderContent(detail);
 
   if (detail.id) {
-    trackEvent('open_article', detail.id);
+    trackEvent('open_article', detail.id, {
+      article_title: detail.title_zh || detail.title_en || '',
+      source_key: detail.source_key || ''
+    });
   }
 
   // Re-apply stored highlights after content renders

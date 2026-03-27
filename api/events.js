@@ -49,7 +49,7 @@ async function ensureTable() {
   `);
 }
 
-async function sendToPostHog({ userId, clientIp, event, articleId }) {
+async function sendToPostHog({ userId, clientIp, event, articleId, properties = {} }) {
   if (!IS_PRODUCTION_ENV) return;
   if (!POSTHOG_API_KEY || !POSTHOG_HOST) return;
   const endpoint = `${POSTHOG_HOST}/capture/`;
@@ -63,7 +63,8 @@ async function sendToPostHog({ userId, clientIp, event, articleId }) {
       user_id: userId || null,
       article_id: articleId || null,
       client_ip: clientIp || null,
-      source: 'readwise-web'
+      source: 'readwise-web',
+      ...properties
     }
   };
   try {
@@ -75,6 +76,25 @@ async function sendToPostHog({ userId, clientIp, event, articleId }) {
   } catch (err) {
     console.warn('[api/events] posthog capture failed', err?.message || err);
   }
+}
+
+function normalizeExtraProperties(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const result = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const propKey = String(key || '').trim();
+    if (!propKey) continue;
+    if (['string', 'number', 'boolean'].includes(typeof value)) {
+      result[propKey] = value;
+      continue;
+    }
+    if (value === null) {
+      result[propKey] = null;
+      continue;
+    }
+    result[propKey] = String(value);
+  }
+  return result;
 }
 
 export default async function handler(req, res) {
@@ -90,6 +110,7 @@ export default async function handler(req, res) {
   try {
     const event = String(req.body?.event || '').trim();
     const articleId = req.body?.article_id || null;
+    const extraProperties = normalizeExtraProperties(req.body?.properties);
     if (!VALID_EVENTS.has(event)) {
       res.status(200).json({ success: false });
       return;
@@ -101,7 +122,13 @@ export default async function handler(req, res) {
       'INSERT INTO events (user_id, client_ip, event, article_id) VALUES ($1, $2, $3, $4)',
       [userId, clientIp, event, articleId]
     );
-    sendToPostHog({ userId, clientIp, event, articleId });
+    sendToPostHog({
+      userId,
+      clientIp,
+      event,
+      articleId,
+      properties: extraProperties
+    });
     res.status(200).json({ success: true });
   } catch (err) {
     console.error('[api/events] error', err);

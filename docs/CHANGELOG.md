@@ -2860,3 +2860,17 @@
 - api/events.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+## 2026-03-27 — open_article 增加文章标题属性
+
+### 已完成
+- ✅ `open_article` 上报新增 `article_title`（中文优先，回退英文）
+- ✅ 同步上报 `source_key`，便于后续来源拆分
+- ✅ `/api/events` 支持透传 `properties` 到 PostHog
+
+### 变更文件
+- frontend/js/api.js
+- frontend/js/reader.js
+- api/events.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

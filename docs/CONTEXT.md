@@ -484,3 +484,8 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 
 - PostHog 转发增加生产环境门控，仅在 `VERCEL_ENV=production` 时上报。
 - 建议在 Vercel 中将 `POSTHOG_API_KEY` 与 `POSTHOG_HOST` 仅配置到 Production。
+
+## 2026-03-27（文章点击标题化）
+
+- `open_article` 埋点新增 `article_title` 属性，PostHog 可直接按标题 breakdown。
+- 服务端 events 接口支持接收并透传自定义 `properties`（用于标题/来源等业务字段）。

@@ -371,12 +371,14 @@ export async function translateIngestStep(articleId) {
   });
 }
 
-export function trackEvent(event, articleId) {
+export function trackEvent(event, articleId, properties = null) {
+  const extraProps = properties && typeof properties === 'object' ? properties : null;
   requestJson('/api/events', {
     method: 'POST',
     body: {
       event,
-      article_id: articleId || null
+      article_id: articleId || null,
+      properties: extraProps
     }
   }).catch(() => {});
 }
