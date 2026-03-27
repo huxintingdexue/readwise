@@ -550,6 +550,18 @@ function isIOS() {
   return /iPad|iPhone|iPod/.test(ua);
 }
 
+function isAndroid() {
+  const ua = navigator.userAgent || '';
+  return /Android/i.test(ua);
+}
+
+function shouldAutoRestoreReader() {
+  // Hotfix: Android PWA back gesture can bypass expected in-app history stack.
+  // Disable reader auto-restore in this environment to prioritize stability.
+  if (isAndroid() && isStandalonePwa()) return false;
+  return true;
+}
+
 function maybeShowA2hsHint() {
   const url = new URL(window.location.href);
   if (url.searchParams.get('a2hs') !== '1') return;
@@ -2230,7 +2242,7 @@ async function startApp() {
   const loadPromise = loadArticles();
   loadPromise
     .then(async () => {
-      if (lastReaderState?.articleId) {
+      if (lastReaderState?.articleId && shouldAutoRestoreReader()) {
         try {
           ensureAutoRestoreHistoryStack();
           await openArticle(lastReaderState.articleId);
