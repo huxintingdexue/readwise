@@ -550,19 +550,6 @@ function isIOS() {
   return /iPad|iPhone|iPod/.test(ua);
 }
 
-function isAndroid() {
-  const ua = navigator.userAgent || '';
-  return /Android/i.test(ua);
-}
-
-function shouldAutoRestoreReader() {
-  // Hotfix: Android installed runtimes (PWA/APK WebView shell) can bypass expected
-  // in-app history stack under auto-restore and directly exit the app on back.
-  // Disable reader auto-restore in these environments to prioritize stability.
-  if (isAndroid() && (isStandalonePwa() || isAndroidWebViewShell())) return false;
-  return true;
-}
-
 function maybeShowA2hsHint() {
   const url = new URL(window.location.href);
   if (url.searchParams.get('a2hs') !== '1') return;
@@ -787,15 +774,19 @@ function clearLastReaderState() {
   } catch (_) {}
 }
 
-function ensureHomeHistoryState() {
-  const view = String(history.state?.view || '').trim();
-  if (view === 'home' || view === 'admin' || view === 'brief_history') return;
+function getCleanHomeUrl() {
   const baseUrl = new URL(window.location.href);
   baseUrl.searchParams.delete('article');
   if (baseUrl.searchParams.get('view') === 'admin') {
     baseUrl.searchParams.delete('view');
   }
-  history.replaceState({ view: 'home' }, '', `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`);
+  return `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`;
+}
+
+function ensureHomeHistoryState() {
+  const view = String(history.state?.view || '').trim();
+  if (view === 'home' || view === 'admin' || view === 'brief_history') return;
+  history.replaceState({ view: 'home' }, '', getCleanHomeUrl());
 }
 
 function pushHomeHistoryAnchor() {
@@ -806,12 +797,7 @@ function pushHomeHistoryAnchor() {
 }
 
 function ensureAutoRestoreHistoryStack() {
-  const baseUrl = new URL(window.location.href);
-  baseUrl.searchParams.delete('article');
-  if (baseUrl.searchParams.get('view') === 'admin') {
-    baseUrl.searchParams.delete('view');
-  }
-  const cleanUrl = `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`;
+  const cleanUrl = getCleanHomeUrl();
   const currentView = String(history.state?.view || '').trim();
 
   if (currentView !== 'home') {
@@ -821,6 +807,22 @@ function ensureAutoRestoreHistoryStack() {
   }
 
   pushHomeHistoryAnchor();
+}
+
+function pushReaderHistoryState(articleId, options = {}) {
+  const id = String(articleId || '').trim();
+  if (!id) return;
+  const withBackGuard = options.withBackGuard === true;
+  const readerUrl = `?article=${encodeURIComponent(id)}`;
+  const currentView = String(history.state?.view || '').trim();
+  const currentArticleId = String(history.state?.articleId || '').trim();
+
+  if (currentView !== 'reader' || currentArticleId !== id) {
+    history.pushState({ view: 'reader', articleId: id }, '', readerUrl);
+  }
+  if (withBackGuard) {
+    history.pushState({ view: 'reader_back_guard', articleId: id }, '', readerUrl);
+  }
 }
 
 function calcScrollPositionByBaseLength(baseLength, scroller = window) {
@@ -975,6 +977,10 @@ async function exitReaderView(shouldReload = false) {
       await loadArticles();
     }
     await restoreListScroll();
+    const view = String(history.state?.view || '').trim();
+    if (view === 'reader' || view === 'reader_back_guard') {
+      history.replaceState({ view: 'home' }, '', getCleanHomeUrl());
+    }
   } finally {
     document.body.classList.remove('restoring-list-scroll');
   }
@@ -1157,13 +1163,11 @@ async function loadArticles(options = {}) {
     }
   }
 }
-async function openArticle(id, jumpTo = null) {
+async function openArticle(id, jumpTo = null, options = {}) {
   try {
     const readerFeaturesPromise = ensureReaderFeaturesInitialized();
     captureListScroll();
-    if (!history.state || history.state.view !== 'reader' || history.state.articleId !== id) {
-      history.pushState({ view: 'reader', articleId: id }, '', `?article=${id}`);
-    }
+    pushReaderHistoryState(id, options);
     setReaderAdminActionsVisible(false);
     const cachedDetail = readDetailCache(id);
     const progressPromise = getReadingProgress(id);
@@ -1326,6 +1330,11 @@ function bindEvents() {
   });
 
   nodes.backBtn?.addEventListener('click', async () => {
+    const view = String(history.state?.view || '').trim();
+    if (view === 'reader' || view === 'reader_back_guard') {
+      history.back();
+      return;
+    }
     await exitReaderView(false);
   });
 
@@ -2243,10 +2252,10 @@ async function startApp() {
   const loadPromise = loadArticles();
   loadPromise
     .then(async () => {
-      if (lastReaderState?.articleId && shouldAutoRestoreReader()) {
+      if (lastReaderState?.articleId) {
         try {
           ensureAutoRestoreHistoryStack();
-          await openArticle(lastReaderState.articleId);
+          await openArticle(lastReaderState.articleId, null, { withBackGuard: true });
           return;
         } catch (_) {
           clearLastReaderState();

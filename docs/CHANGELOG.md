@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-03-27 — 重启恢复逻辑重构（v2.16.14）
+
+### 已完成
+- ✅ 移除“按平台关闭自动恢复”的临时分叉，恢复统一自动回读能力
+- ✅ 自动恢复阅读改为固定回退链路：`home -> home_restore_anchor -> reader -> reader_back_guard`
+- ✅ 阅读页返回按钮统一优先 `history.back()`，与系统左滑返回保持同一路径
+- ✅ 兜底修正：若在阅读态直接执行退出逻辑，会将当前 history 状态归一到 `home`
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-27 — 已安装运行时自动恢复总熔断（v2.16.13）
+
+### 已完成
+- ✅ 自动恢复熔断扩展到全部“已安装运行时”（PWA standalone + Android APK WebView）
+- ✅ 已安装形态重启后不再自动跳阅读页，避免返回手势直接退出应用
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-27 — Android APK(WebView) 自动恢复熔断（v2.16.12）
 
 ### 已完成
