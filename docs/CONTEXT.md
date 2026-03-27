@@ -468,3 +468,9 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 
 - 新增已安装运行时识别：`display-mode: standalone`、`navigator.standalone`、`android-app://`、Android `wv` WebView。
 - 安卓 APK/WebView 壳内不再显示“安装 APP”浮条（首页与分享页一致）。
+
+## 2026-03-27（PostHog 接入）
+
+- 复用现有 `/api/events` 上报链路，不改前端埋点调用点。
+- 服务端 events 落库后同步转发到 PostHog `/capture/`。
+- 需要线上环境变量：`POSTHOG_API_KEY`、`POSTHOG_HOST`。

@@ -2825,3 +2825,16 @@
 - frontend/js/share.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+## 2026-03-27 — PostHog 接入（基于现有 events API）
+
+### 已完成
+- ✅ `api/events` 在落库后同步上报 PostHog `/capture/`
+- ✅ 使用现有事件：`open_app`、`open_article`、`finish_article`
+- ✅ 上报属性包含：`user_id`、`article_id`、`client_ip`、`source`
+- ✅ 使用环境变量：`POSTHOG_API_KEY`、`POSTHOG_HOST`
+
+### 变更文件
+- api/events.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

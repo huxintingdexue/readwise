@@ -5,6 +5,8 @@ import { resolveUserId, getClientIp } from './_utils/auth.js';
 dotenv.config({ path: '.env.local' });
 
 const VALID_EVENTS = new Set(['open_app', 'open_article', 'finish_article']);
+const POSTHOG_API_KEY = String(process.env.POSTHOG_API_KEY || '').trim();
+const POSTHOG_HOST = String(process.env.POSTHOG_HOST || '').trim().replace(/\/+$/, '');
 
 let pool;
 
@@ -46,6 +48,33 @@ async function ensureTable() {
   `);
 }
 
+async function sendToPostHog({ userId, clientIp, event, articleId }) {
+  if (!POSTHOG_API_KEY || !POSTHOG_HOST) return;
+  const endpoint = `${POSTHOG_HOST}/capture/`;
+  const distinctId = String(userId || '').trim() || String(clientIp || '').trim() || 'anonymous';
+  const payload = {
+    api_key: POSTHOG_API_KEY,
+    event,
+    distinct_id: distinctId,
+    properties: {
+      distinct_id: distinctId,
+      user_id: userId || null,
+      article_id: articleId || null,
+      client_ip: clientIp || null,
+      source: 'readwise-web'
+    }
+  };
+  try {
+    await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    console.warn('[api/events] posthog capture failed', err?.message || err);
+  }
+}
+
 export default async function handler(req, res) {
   const userId = await getUserId(req, res);
   if (!userId) return;
@@ -70,6 +99,7 @@ export default async function handler(req, res) {
       'INSERT INTO events (user_id, client_ip, event, article_id) VALUES ($1, $2, $3, $4)',
       [userId, clientIp, event, articleId]
     );
+    sendToPostHog({ userId, clientIp, event, articleId });
     res.status(200).json({ success: true });
   } catch (err) {
     console.error('[api/events] error', err);
