@@ -2262,19 +2262,6 @@ async function startApp() {
   const loadPromise = loadArticles();
   loadPromise
     .then(async () => {
-      if (lastReaderState?.articleId) {
-        try {
-          ensureAutoRestoreHistoryStack();
-          history.pushState({ view: 'home' }, '', getCleanHomeUrl());
-          await openArticle(lastReaderState.articleId, null, {
-            withBackGuard: false,
-            preserveSavedListScroll: true
-          });
-          return;
-        } catch (_) {
-          clearLastReaderState();
-        }
-      }
       await restoreListScroll();
     })
     .catch(() => {});
