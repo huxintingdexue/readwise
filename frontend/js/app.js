@@ -29,6 +29,7 @@ const state = {
 
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
+const UI_STATE_STORAGE_KEY = 'rw:ui-state:v1';
 const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
@@ -701,6 +702,37 @@ function maxScrollableDistance(scroller = window) {
   return Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
 }
 
+function readUiState() {
+  try {
+    const raw = localStorage.getItem(UI_STATE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const tab = parsed.tab === 'notes' ? 'notes' : 'today';
+    const today = Math.max(0, Number(parsed?.listScrollTop?.today || 0));
+    const notes = Math.max(0, Number(parsed?.listScrollTop?.notes || 0));
+    return {
+      tab,
+      listScrollTop: { today, notes }
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeUiState() {
+  try {
+    localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify({
+      tab: state.tab === 'notes' ? 'notes' : 'today',
+      listScrollTop: {
+        today: Math.max(0, Number(state.listScrollTop?.today || 0)),
+        notes: Math.max(0, Number(state.listScrollTop?.notes || 0))
+      },
+      savedAt: Date.now()
+    }));
+  } catch (_) {}
+}
+
 function calcScrollPositionByBaseLength(baseLength, scroller = window) {
   if (!baseLength || baseLength <= 0) return 0;
   const ratio = Math.min(1, Math.max(0, currentScrollTop(scroller) / maxScrollableDistance(scroller)));
@@ -710,6 +742,7 @@ function calcScrollPositionByBaseLength(baseLength, scroller = window) {
 function captureListScroll() {
   const tab = state.tab || 'today';
   state.listScrollTop[tab] = currentScrollTop(getListScroller());
+  writeUiState();
 }
 
 function restoreListScroll() {
@@ -1127,7 +1160,9 @@ async function openArticle(id, jumpTo = null) {
 }
 
 function switchTab(nextTab) {
+  captureListScroll();
   state.tab = nextTab;
+  writeUiState();
   nodes.tabButtons.forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.tab === nextTab);
   });
@@ -1160,9 +1195,21 @@ function switchTab(nextTab) {
 }
 
 function bindEvents() {
+  let listScrollRaf = null;
   nodes.tabButtons.forEach((btn) => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
+
+  nodes.appShell?.addEventListener('scroll', () => {
+    if (isReadingMode() || document.body.classList.contains('admin-mode')) return;
+    if (listScrollRaf) return;
+    listScrollRaf = requestAnimationFrame(() => {
+      listScrollRaf = null;
+      const tab = state.tab || 'today';
+      state.listScrollTop[tab] = currentScrollTop(getListScroller());
+      writeUiState();
+    });
+  }, { passive: true });
 
   nodes.filterToggle?.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -2076,6 +2123,13 @@ function bindLoginEvents() {
 async function startApp() {
   if (state.appStarted) return;
   state.appStarted = true;
+  const uiState = readUiState();
+  if (uiState?.listScrollTop) {
+    state.listScrollTop = {
+      today: Math.max(0, Number(uiState.listScrollTop.today || 0)),
+      notes: Math.max(0, Number(uiState.listScrollTop.notes || 0))
+    };
+  }
   trackEvent('open_app');
   bindEvents();
   bindAdminBlockAccordion();
@@ -2088,8 +2142,10 @@ async function startApp() {
   nodes.readerAppearanceBtn?.addEventListener('click', () => {
     openAppearanceModal();
   });
-  switchTab('today');
+  const initialTab = uiState?.tab === 'notes' ? 'notes' : 'today';
+  switchTab(initialTab);
   const loadPromise = loadArticles();
+  loadPromise.then(() => restoreListScroll()).catch(() => {});
   requestAnimationFrame(() => {
     hideSplashScreen();
   });
