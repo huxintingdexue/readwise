@@ -556,9 +556,10 @@ function isAndroid() {
 }
 
 function shouldAutoRestoreReader() {
-  // Hotfix: Android PWA back gesture can bypass expected in-app history stack.
-  // Disable reader auto-restore in this environment to prioritize stability.
-  if (isAndroid() && isStandalonePwa()) return false;
+  // Hotfix: Android installed runtimes (PWA/APK WebView shell) can bypass expected
+  // in-app history stack under auto-restore and directly exit the app on back.
+  // Disable reader auto-restore in these environments to prioritize stability.
+  if (isAndroid() && (isStandalonePwa() || isAndroidWebViewShell())) return false;
   return true;
 }
 

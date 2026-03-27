@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-27 — Android APK(WebView) 自动恢复熔断（v2.16.12）
+
+### 已完成
+- ✅ 自动恢复熔断范围从 Android PWA 扩展到 Android APK WebView 壳
+- ✅ 避免 APK 场景在自动回读后返回手势直退应用
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-27 — Android 桌面模式自动恢复熔断（v2.16.11）
 
 ### 已完成
