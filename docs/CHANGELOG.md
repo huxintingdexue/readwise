@@ -30,6 +30,18 @@
 
 ---
 
+## 2026-03-27 — Ingest 半年文章硬限制（v2.16.4）
+
+### 已完成
+- ✅ `/api/ingest` 新增 `published_at` 180 天硬限制，超时返回 `422` + `published_at_too_old`
+- ✅ 统一使用服务端当前时间进行 UTC 比较
+- ✅ 保留受控绕过：`admin` 默认可绕过；`openclaw/user_claw` 仅在 `X-Allow-Old: 1` 时可绕过
+
+### 变更文件
+- api/ingest.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 分享引导文案微调（v2.16.3）
 
 ### 已完成

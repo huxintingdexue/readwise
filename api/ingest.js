@@ -8,6 +8,7 @@ const TRANSLATE_PROMPT =
   '你是一个技术文章翻译专家。请将以下英文翻译成中文，要求：保留所有专有名词英文原文（如 Transformer、Attention、LLM），人名不翻译，翻译风格自然流畅，不要逐字直译。以下【上文参考】部分仅供理解上下文，不需要翻译。';
 
 const TRANSLATE_SEGMENT_CHARS = 1500;
+const MAX_INGEST_AGE_DAYS = 180;
 
 let pool;
 let cachedAuthorsTable = null;
@@ -259,6 +260,21 @@ function parsePublishedAt(value) {
     return null;
   }
   return date.toISOString();
+}
+
+function canBypassOldPublishedAt(req, userId) {
+  if (isAdmin(userId)) return true;
+  const allowOldHeader = String(req.headers['x-allow-old'] || '').trim();
+  if (allowOldHeader !== '1') return false;
+  return userId === 'openclaw' || userId === 'user_claw';
+}
+
+function isPublishedAtTooOld(publishedAtIso) {
+  if (!publishedAtIso) return false;
+  const publishedMs = Date.parse(publishedAtIso);
+  if (!Number.isFinite(publishedMs)) return false;
+  const thresholdMs = Date.now() - (MAX_INGEST_AGE_DAYS * 24 * 60 * 60 * 1000);
+  return publishedMs < thresholdMs;
 }
 
 function extractPublishedAt(html) {
@@ -637,6 +653,14 @@ async function handleIngestFullText(req, res, userId) {
     });
     return;
   }
+  if (isPublishedAtTooOld(publishedAt) && !canBypassOldPublishedAt(req, userId)) {
+    res.status(422).json({
+      success: false,
+      error: 'published_at_too_old',
+      message: `published_at older than ${MAX_INGEST_AGE_DAYS} days is not allowed`
+    });
+    return;
+  }
 
   const poolClient = getPool();
   const dupCheck = await poolClient.query(
@@ -824,6 +848,14 @@ async function handleIngestSubmit(req, res, userId) {
   `;
 
   const finalPublishedAt = publishedAt || null;
+  if (finalPublishedAt && isPublishedAtTooOld(finalPublishedAt) && !canBypassOldPublishedAt(req, userId)) {
+    res.status(422).json({
+      success: false,
+      error: 'published_at_too_old',
+      message: `published_at older than ${MAX_INGEST_AGE_DAYS} days is not allowed`
+    });
+    return;
+  }
   const { rows } = await poolClient.query(insertSql, [
     sourceKey,
     title,
