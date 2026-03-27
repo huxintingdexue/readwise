@@ -474,3 +474,13 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 - 复用现有 `/api/events` 上报链路，不改前端埋点调用点。
 - 服务端 events 落库后同步转发到 PostHog `/capture/`。
 - 需要线上环境变量：`POSTHOG_API_KEY`、`POSTHOG_HOST`。
+
+## 2026-03-27（PostHog 环境隔离）
+
+- PostHog 转发增加生产环境门控，仅在 `VERCEL_ENV=production` 时上报。
+- 建议在 Vercel 中将 `POSTHOG_API_KEY` 与 `POSTHOG_HOST` 仅配置到 Production。
+
+## 2026-03-27（PostHog 环境隔离）
+
+- PostHog 转发增加生产环境门控，仅在 `VERCEL_ENV=production` 时上报。
+- 建议在 Vercel 中将 `POSTHOG_API_KEY` 与 `POSTHOG_HOST` 仅配置到 Production。

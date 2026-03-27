@@ -2838,3 +2838,25 @@
 - api/events.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+## 2026-03-27 — PostHog 仅生产上报
+
+### 已完成
+- ✅ PostHog 上报增加环境门控：仅 `VERCEL_ENV=production` 时发送
+- ✅ 避免 staging / 本地测试数据进入生产分析数据
+
+### 变更文件
+- api/events.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md
+
+## 2026-03-27 — PostHog 仅生产上报
+
+### 已完成
+- ✅ PostHog 上报增加环境门控：仅 `VERCEL_ENV=production` 时发送
+- ✅ 避免 staging / 本地测试数据进入生产分析数据
+
+### 变更文件
+- api/events.js
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

@@ -7,6 +7,7 @@ dotenv.config({ path: '.env.local' });
 const VALID_EVENTS = new Set(['open_app', 'open_article', 'finish_article']);
 const POSTHOG_API_KEY = String(process.env.POSTHOG_API_KEY || '').trim();
 const POSTHOG_HOST = String(process.env.POSTHOG_HOST || '').trim().replace(/\/+$/, '');
+const IS_PRODUCTION_ENV = String(process.env.VERCEL_ENV || '').trim() === 'production';
 
 let pool;
 
@@ -49,6 +50,7 @@ async function ensureTable() {
 }
 
 async function sendToPostHog({ userId, clientIp, event, articleId }) {
+  if (!IS_PRODUCTION_ENV) return;
   if (!POSTHOG_API_KEY || !POSTHOG_HOST) return;
   const endpoint = `${POSTHOG_HOST}/capture/`;
   const distinctId = String(userId || '').trim() || String(clientIp || '').trim() || 'anonymous';
