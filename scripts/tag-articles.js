@@ -33,7 +33,7 @@ async function main() {
         SELECT id, title_zh, title_en, summary_zh
         FROM articles
         WHERE tag IS NULL
-          AND status != 'hidden'
+          AND COALESCE(status, 'ready') != 'hidden'
           AND COALESCE(publish_status, 'published') != 'hidden'
           AND summary_zh IS NOT NULL
       `
@@ -71,4 +71,3 @@ main().catch((err) => {
   console.error('[tag-articles] failed:', err.message);
   process.exit(1);
 });
-
