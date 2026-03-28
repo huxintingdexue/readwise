@@ -2057,6 +2057,7 @@ body.theme-dark .topbar p {
   border-radius: 999px;
   padding: 8px 14px;
   font-size: 13px;
+  z-index: 180;
 }
 
 .desktop-tip {
