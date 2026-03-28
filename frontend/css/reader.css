@@ -245,10 +245,10 @@ body.reading-mode::-webkit-scrollbar-thumb {
   color: #0b7f74;
   font-size: 11px;
   line-height: 1.2;
-  text-align: left;
+  text-align: right;
   padding: 2px 0 0;
-  width: auto;
-  justify-self: start;
+  width: 100%;
+  justify-self: end;
   cursor: pointer;
   user-select: none;
 }
