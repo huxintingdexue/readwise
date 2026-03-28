@@ -13,6 +13,7 @@ import userMe from './user/me.js';
 import userProfile from './user/profile.js';
 import feedback from './feedback.js';
 import events from './events.js';
+import authors from './authors.js';
 import adminStats from './admin/stats.js';
 import adminInviteCodes from './admin/invite-codes.js';
 import adminArticles from './admin/articles.js';
@@ -71,6 +72,9 @@ export default async function handler(req, res) {
   }
   if (pathname === '/api/events') {
     return events(req, res);
+  }
+  if (pathname === '/api/authors') {
+    return authors(req, res);
   }
   if (pathname === '/api/admin/stats') {
     return adminStats(req, res);
