@@ -914,6 +914,22 @@ function toggleFollowAuthor(authorId) {
   writeFollowedAuthorIds(state.followedAuthorIds);
 }
 
+function resolvePersonZhName(person) {
+  const direct = String(person?.name_zh || '').trim();
+  if (direct) return direct;
+  const id = String(person?.id || person?.source_key || '').trim();
+  const name = String(person?.name || '').trim().toLowerCase();
+  const source = Array.isArray(state.authors) && state.authors.length ? state.authors : PEOPLE_PRESET;
+  const list = Array.isArray(source) ? source : [];
+  const byId = list.find((item) => {
+    const key = String(item?.source_key || item?.id || '').trim();
+    return Boolean(key) && key === id;
+  });
+  if (byId?.name_zh) return String(byId.name_zh).trim();
+  const byName = list.find((item) => String(item?.name || '').trim().toLowerCase() === name);
+  return byName?.name_zh ? String(byName.name_zh).trim() : '';
+}
+
 function buildPeopleCard(person) {
   const li = document.createElement('li');
   li.className = 'people-card';
@@ -922,6 +938,7 @@ function buildPeopleCard(person) {
   const tagText = tags.length ? tags.join(' / ') : '科技';
   const countValue = Number(person.count || 0);
   const countLabel = countValue > 0 ? `${countValue}篇` : '计划同步中';
+  const zhName = resolvePersonZhName(person);
   li.innerHTML = `
     <div class="people-card-main" data-person-open="${escapeHtml(person.id)}">
       <img class="people-avatar" src="${escapeHtml(person.avatar_url || DEFAULT_AVATAR_URL)}" alt="${escapeHtml(person.name)}" />
@@ -932,6 +949,7 @@ function buildPeopleCard(person) {
             ${followed ? '已关注' : '关注'}
           </button>
         </div>
+        ${zhName ? `<p class="people-name-zh">${escapeHtml(zhName)}</p>` : ''}
         <p class="people-one-line">${escapeHtml(person.bio_one_line || '暂无简介')}</p>
         <div class="people-meta">
           <span class="people-tag">${escapeHtml(tagText)}</span>
