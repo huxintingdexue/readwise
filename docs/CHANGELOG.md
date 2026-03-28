@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-28 — 埋点补充访问渠道与设备信息（v2.16.35）
+
+### 已完成
+- ✅ 前端埋点统一追加 `access_channel`（`android_apk` / `ios_home_screen` / `web_browser`）
+- ✅ 前端埋点统一追加 `device_model`（iPhone/iPad/Android 机型 best effort）
+- ✅ 兼容现有业务属性透传，保持原事件名与统计口径不变
+
+### 变更文件
+- frontend/js/api.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — Schema 文档同步线上结构（v2.16.34）
 
 ### 已完成

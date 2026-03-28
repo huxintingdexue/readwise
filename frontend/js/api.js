@@ -456,14 +456,68 @@ export async function translateIngestStep(articleId) {
   });
 }
 
+function safeUserAgent() {
+  try {
+    return String(navigator?.userAgent || '');
+  } catch (_) {
+    return '';
+  }
+}
+
+function isIosStandalone() {
+  try {
+    if (!/iphone|ipad|ipod/i.test(safeUserAgent())) return false;
+    if (window.matchMedia?.('(display-mode: standalone)')?.matches) return true;
+    if (window.navigator?.standalone === true) return true;
+  } catch (_) {}
+  return false;
+}
+
+function isAndroidApkRuntime() {
+  const ua = safeUserAgent().toLowerCase();
+  if (!ua.includes('android')) return false;
+  if (/micromessenger/i.test(ua)) return false;
+  if ((document.referrer || '').startsWith('android-app://')) return true;
+  return /\bwv\b/.test(ua);
+}
+
+function detectAccessChannel() {
+  if (isAndroidApkRuntime()) return 'android_apk';
+  if (isIosStandalone()) return 'ios_home_screen';
+  return 'web_browser';
+}
+
+function detectDeviceModel() {
+  const ua = safeUserAgent();
+  const lowerUa = ua.toLowerCase();
+  if (/iphone/i.test(ua)) return 'iPhone';
+  if (/ipad/i.test(ua)) return 'iPad';
+  if (/ipod/i.test(ua)) return 'iPod';
+  if (lowerUa.includes('android')) {
+    const match = ua.match(/Android\s[\d.]+;\s*([^;)]+)/i);
+    if (match?.[1]) return String(match[1]).replace(/\s+build.*$/i, '').trim();
+    return 'Android';
+  }
+  if (/macintosh/i.test(ua)) return 'Mac';
+  if (/windows/i.test(ua)) return 'Windows';
+  return 'Unknown';
+}
+
 export function trackEvent(event, articleId, properties = null) {
-  const extraProps = properties && typeof properties === 'object' ? properties : null;
+  const extraProps = properties && typeof properties === 'object' ? properties : {};
+  const telemetryProps = {
+    access_channel: detectAccessChannel(),
+    device_model: detectDeviceModel()
+  };
   requestJson('/api/events', {
     method: 'POST',
     body: {
       event,
       article_id: articleId || null,
-      properties: extraProps
+      properties: {
+        ...telemetryProps,
+        ...extraProps
+      }
     }
   }).catch(() => {});
 }
