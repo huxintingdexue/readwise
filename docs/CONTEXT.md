@@ -8,6 +8,7 @@
 ## 当前状态（每次任务后必须更新）
 
 - 最近变更：管理员后台“今日/本周”用户统计口径切换为中国时区（`Asia/Shanghai`）✅
+- 最近变更：埋点新增访问渠道与设备信息（`access_channel`、`device_model`），支持区分 Android APK / iOS 主屏幕 / 浏览器 ✅
 - 最近变更：`docs/schema.sql` 已对齐当前线上结构（补 `users` 表、`events.client_ip`、`events.article_id -> TEXT`）✅
 - 最近变更：生产库 `authors` 已将 `paul_graham` 头像更新为 `https://s.turbifycdn.com/aah/paulgraham/bio-20.gif` ✅
 - 最近变更：文章列表摘要改为统一最多 4 行（移除按字符阈值决定 3/4 行），修复“全部/标签页显示不一致” ✅
