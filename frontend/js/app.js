@@ -1183,14 +1183,23 @@ function restoreListScroll() {
   const tab = state.tab || 'today';
   const target = Number(state.listScrollTop[tab] || 0);
   const scroller = getListScroller();
+  const applyTarget = () => {
+    if (scroller && scroller !== window) {
+      scroller.scrollTop = Math.max(0, target);
+    } else {
+      window.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
+    }
+  };
   return new Promise((resolve) => {
     requestAnimationFrame(() => {
-      if (scroller && scroller !== window) {
-        scroller.scrollTop = Math.max(0, target);
-      } else {
-        window.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
-      }
-      requestAnimationFrame(() => resolve());
+      applyTarget();
+      requestAnimationFrame(() => {
+        applyTarget();
+        // iOS Safari may re-apply native scroll restoration after frame commit.
+        setTimeout(applyTarget, 60);
+        setTimeout(applyTarget, 180);
+        resolve();
+      });
     });
   });
 }
@@ -2723,6 +2732,9 @@ async function startApp() {
 }
 
 async function init() {
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
   runOneTimeCacheReset();
   if (isStandalonePwa()) {
     requestAnimationFrame(() => {
