@@ -206,18 +206,22 @@ body.reading-mode::-webkit-scrollbar-thumb {
 }
 
 .auth-field {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .auth-field span {
   font-size: 12px;
   font-weight: 700;
   color: #556166;
+  width: 32px;
+  flex: 0 0 32px;
 }
 
 .auth-form input {
-  width: 100%;
+  width: auto;
+  flex: 1;
   border-radius: 12px;
   border: 1px solid var(--line);
   padding: 10px 12px;

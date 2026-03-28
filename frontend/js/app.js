@@ -338,7 +338,6 @@ const nodes = {
   authLoginAccount: document.querySelector('#authLoginAccount'),
   authLoginPassword: document.querySelector('#authLoginPassword'),
   authLoginSubmit: document.querySelector('#authLoginSubmit'),
-  authRegisterNickname: document.querySelector('#authRegisterNickname'),
   authRegisterAccount: document.querySelector('#authRegisterAccount'),
   authRegisterPassword: document.querySelector('#authRegisterPassword'),
   authRegisterSubmit: document.querySelector('#authRegisterSubmit'),
@@ -2531,10 +2530,10 @@ function showLoginOverlay(message = '', mode = 'login') {
   if (!nodes.loginOverlay) return;
   nodes.loginOverlay.classList.remove('hidden');
   if (nodes.authSheetTitle) {
-    nodes.authSheetTitle.textContent = '登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。';
+    nodes.authSheetTitle.textContent = String(message || '登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。');
   }
   switchAuthSheetMode(mode);
-  setAuthError(message);
+  setAuthError('');
 }
 
 function showBindPromptOverlay() {
@@ -2683,7 +2682,6 @@ function bindLoginEvents() {
   }));
 
   nodes.authRegisterSubmit?.addEventListener('click', () => runWithButton(nodes.authRegisterSubmit, async () => {
-    const nickname = String(nodes.authRegisterNickname?.value || '').trim();
     const account = normalizeAuthAccountInput(nodes.authRegisterAccount?.value);
     const password = String(nodes.authRegisterPassword?.value || '').trim();
     const formatErr = validateAccount(account);
@@ -2698,7 +2696,7 @@ function bindLoginEvents() {
     const data = await accountRegister({
       account,
       password,
-      nickname: nickname || null,
+      nickname: null,
       user_id: getUid() || getStoredUserId()
     });
     await afterAuthSuccess(data);
