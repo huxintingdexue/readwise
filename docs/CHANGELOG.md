@@ -4,102 +4,6 @@
 
 ---
 
-## 2026-03-28 — 顶部文案统一回滚（v2.16.28）
-
-### 已完成
-- ✅ 顶部标题文案在“今日 / 人物 / 我的”三个 Tab 统一为：
-- ✅ 主标题“今日硅谷”，副标题“全球一手信息 触手可及”
-- ✅ 撤销按 Tab 切换顶部文案的差异化逻辑
-
-### 变更文件
-- frontend/js/app.js
-- docs/CONTEXT.md
-- docs/CHANGELOG.md
-
-## 2026-03-28 — 人物页顶部标题与多标签展示修正（v2.16.27）
-
-### 已完成
-- ✅ 顶部标题按 Tab 正确切换：今日 / 人物 / 我的（不再固定“今日硅谷”）
-- ✅ 人物列表卡片支持显示多个领域标签（使用 ` / ` 连接）
-
-### 变更文件
-- frontend/js/app.js
-- docs/CONTEXT.md
-- docs/CHANGELOG.md
-
-## 2026-03-28 — 新增人物Tab与人物主页（v2.16.26）
-
-### 已完成
-- ✅ 底部导航升级为三 Tab：今日 / 人物 / 我的（人物图标为人群轮廓）
-- ✅ 新增人物列表页，支持“全部 / 关注中”胶囊筛选，默认“全部”
-- ✅ 人物卡片支持：48px 头像、姓名、关注按钮、一句话定位、领域标签与文章数量
-- ✅ 新增人物详情页：返回箭头、64px 头像、人物信息、标签、关注按钮、完整简介
-- ✅ 人物详情页“全部文章”复用现有文章卡片样式，并按发布时间倒序展示该人物文章
-- ✅ 关注关系先使用前端 `localStorage` 临时存储（后续可迁移数据库）
-- ✅ 当前人物数据先前端硬编码，字段对齐 `authors` 规划结构（id/name/avatar_url/bio_one_line/bio_full/tag）
-
-### 变更文件
-- frontend/index.html
-- frontend/js/app.js
-- frontend/css/reader.css
-- docs/CONTEXT.md
-- docs/CHANGELOG.md
-
-## 2026-03-28 — 今日页标签筛选栏（v2.16.25）
-
-### 已完成
-- ✅ 今日页标题下新增横向可滑动标签筛选栏（全部/科技/商业/产品/个人成长）
-- ✅ 默认选中“全部”；点击标签按 `tag` 字段筛选文章列表
-- ✅ 筛选与现有列表排序逻辑共存（仅过滤，不改变排序）
-- ✅ 选中标签写入 `localStorage`，重启后自动恢复上次选择
-- ✅ 选中态：绿色填充+白字；未选中态：白底灰字+浅色描边
-
-### 变更文件
-- frontend/index.html
-- frontend/css/reader.css
-- frontend/js/app.js
-- docs/CONTEXT.md
-- docs/CHANGELOG.md
-
-## 2026-03-28 — PostHog 7天回灌修正（v2.16.24）
-
-### 已完成
-- ✅ 新增历史回灌脚本，读取 `events` 最近 7 天并补发到 PostHog
-- ✅ 修正回灌时间字段：使用事件顶层 `timestamp`（不再使用 `properties.$timestamp`）
-- ✅ 回灌标记升级为 `source=readwise-web-backfill-v2`（保留 `backfill=true`），便于看板过滤
-- ✅ 增加网络容错（超时、重试、退避、可配置并发），断网后可稳定重跑
-- ✅ 已完成一次 7 天全量回灌：`total=991, success=991, failed=0`
-
-### 变更文件
-- scripts/backfill-posthog-events.js
-- package.json
-- docs/CONTEXT.md
-- docs/CHANGELOG.md
-
-## 2026-03-28 — 列表排序改为未读优先 + 当天快讯置顶（v2.16.23）
-
-### 已完成
-- ✅ `/api/articles` 排序改为：未读优先（`reading_progress` 缺失或 `scroll_position=0`），已读置后
-- ✅ 两组内部均按 `published_at DESC`（补 `fetched_at DESC` 稳定排序）
-- ✅ 当天 `daily_brief` 快讯固定置顶（基于 Asia/Shanghai 日期）
-
-### 变更文件
-- api/articles.js
-- docs/CONTEXT.md
-- docs/CHANGELOG.md
-
-## 2026-03-28 — 前端列表排序覆盖修复（v2.16.22）
-
-### 已完成
-- ✅ 修复 `renderArticles()` 前端二次排序覆盖后端排序的问题
-- ✅ 非快讯列表改为未读优先 + 组内按发布时间倒序
-- ✅ 首页快讯卡片优先展示“当天快讯”，无当天快讯时回退最新快讯
-
-### 变更文件
-- frontend/js/app.js
-- docs/CONTEXT.md
-- docs/CHANGELOG.md
-
 ## 2026-03-28 — 卡片时间改为相对时间（v2.16.21）
 
 ### 已完成
@@ -179,6 +83,76 @@
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
 
+## 2026-03-27 — 重启恢复缺陷修复（v2.16.15）
+
+### 已完成
+- ✅ 修复启动时 `switchTab` 覆盖已保存列表滚动位置的问题（避免重启后总回到顶部）
+- ✅ 修复自动恢复阅读时误写列表位置为 0 的问题（自动回读不再污染列表恢复位点）
+- ✅ 新增阅读退出并发锁（`readerExitInFlight`），避免返回手势触发多次 `popstate` 导致连退
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-27 — 重启恢复逻辑重构（v2.16.14）
+
+### 已完成
+- ✅ 移除“按平台关闭自动恢复”的临时分叉，恢复统一自动回读能力
+- ✅ 自动恢复阅读改为固定回退链路：`home -> home_restore_anchor -> reader -> reader_back_guard`
+- ✅ 阅读页返回按钮统一优先 `history.back()`，与系统左滑返回保持同一路径
+- ✅ 兜底修正：若在阅读态直接执行退出逻辑，会将当前 history 状态归一到 `home`
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-27 — 已安装运行时自动恢复总熔断（v2.16.13）
+
+### 已完成
+- ✅ 自动恢复熔断扩展到全部“已安装运行时”（PWA standalone + Android APK WebView）
+- ✅ 已安装形态重启后不再自动跳阅读页，避免返回手势直接退出应用
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-27 — Android APK(WebView) 自动恢复熔断（v2.16.12）
+
+### 已完成
+- ✅ 自动恢复熔断范围从 Android PWA 扩展到 Android APK WebView 壳
+- ✅ 避免 APK 场景在自动回读后返回手势直退应用
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-27 — Android 桌面模式自动恢复熔断（v2.16.11）
+
+### 已完成
+- ✅ 针对 Android 桌面图标启动（PWA standalone）临时关闭“自动恢复到上次阅读页”
+- ✅ 保留首页/列表位置恢复，优先规避右滑返回直退与异常卡死风险
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-27 — 自动恢复阅读回退链路兜底（v2.16.10）
+
+### 已完成
+- ✅ 自动恢复阅读前强制清理 URL 到首页基准态（移除 `article/view=admin`）
+- ✅ 自动恢复阅读前统一构建 `home -> home_restore_anchor -> reader` 历史栈
+- ✅ 修复部分场景下右滑返回直接退出应用的问题，确保先回列表页
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-24 — 硅谷快讯收纳（v2.16.0）
 
 ### 已完成
@@ -204,6 +178,51 @@
 - 告知小龙虾入库时传 `source_key: 'daily_brief'`
 
 ---
+
+## 2026-03-27 — 自动恢复阅读返回栈修复（v2.16.9）
+
+### 已完成
+- ✅ 自动恢复阅读前补齐首页 history 基准态（`view=home`）
+- ✅ 修复自动恢复后右滑返回直接退出的问题，改为先回列表页
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-27 — 阅读自动恢复有效期控制（v2.16.8）
+
+### 已完成
+- ✅ 上次阅读自动恢复增加 24 小时有效期
+- ✅ 超过 24 小时的阅读态记录自动清理并不再自动跳回
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-27 — 重启后自动回到上次阅读文章（v2.16.7）
+
+### 已完成
+- ✅ 新增上次阅读文章持久化（`rw:last-reader:v1`）
+- ✅ 应用重启后若存在阅读态记录，自动打开对应文章
+- ✅ 退出阅读时清理该记录，避免误恢复
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-27 — 列表页位置恢复修复（v2.16.6）
+
+### 已完成
+- ✅ 持久化当前 tab（today/notes）与列表滚动位置
+- ✅ 应用重启后自动恢复到上次页面与滚动位置
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
 
 ## 2026-03-27 — 阅读进度回退修复（v2.16.5）
 
