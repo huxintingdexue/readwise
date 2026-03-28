@@ -967,6 +967,7 @@ function closePersonDetail(options = {}) {
   if (nodes.peopleListState && !nodes.peopleList.children.length) {
     nodes.peopleListState.classList.remove('hidden');
   }
+  nodes.peopleFilterBar?.classList.remove('hidden');
   if (!options.fromPopstate && history.state?.view === 'people_detail') {
     history.back();
   }
@@ -979,6 +980,7 @@ function renderPersonDetail(person) {
   nodes.personDetail.classList.remove('hidden');
   nodes.peopleList.classList.add('hidden');
   nodes.peopleListState.classList.add('hidden');
+  nodes.peopleFilterBar?.classList.add('hidden');
 
   if (nodes.personDetailAvatar) {
     nodes.personDetailAvatar.src = person.avatar_url || DEFAULT_AVATAR_URL;
@@ -1286,6 +1288,7 @@ function buildArticleCard(item, showBriefHistoryEntry = false) {
   const isManualTranslating = isManual && isTranslating;
   const progress = progressMeta(item);
   const avatarUrl = resolveAuthorAvatarUrl(item);
+  const authorZhName = String(item.name_zh || '').trim();
   const summaryText = String(item.summary_zh || item.summary_en || '暂无摘要');
   const summaryClass = summaryText.length > 66 ? 'article-summary summary-long' : 'article-summary';
   li.innerHTML = `
@@ -1294,8 +1297,11 @@ function buildArticleCard(item, showBriefHistoryEntry = false) {
         <div class="article-author">
           <img class="article-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(sourceName(item.source_key, item.author))}"/>
           <div class="article-author-text">
-            <span class="article-author-name">${escapeHtml(sourceName(item.source_key, item.author))}</span>
-            <span class="article-reading-time">· ${escapeHtml(formatDate(item.published_at))}</span>
+            <div class="article-author-row">
+              <span class="article-author-name">${escapeHtml(sourceName(item.source_key, item.author))}</span>
+              <span class="article-reading-time">· ${escapeHtml(formatDate(item.published_at))}</span>
+            </div>
+            ${authorZhName ? `<span class="article-author-name-zh">${escapeHtml(authorZhName)}</span>` : ''}
           </div>
         </div>
         <div class="article-card-status">
