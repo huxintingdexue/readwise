@@ -241,38 +241,29 @@ body.reading-mode::-webkit-scrollbar-thumb {
   cursor: pointer;
 }
 
-.auth-subline-row {
+.auth-links-row {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   min-height: 20px;
-}
-
-.auth-subline-link {
-  border: 0;
-  background: transparent;
-  color: #8b9498;
-  font-size: 12px;
-  line-height: 1.2;
-  padding: 0;
-  cursor: pointer;
-}
-
-.auth-subline-link:hover,
-.auth-subline-link:focus-visible {
-  color: #0b7f74;
 }
 
 .auth-link-text {
   color: #0b7f74;
   font-size: 11px;
   line-height: 1.2;
-  text-align: right;
+  text-align: left;
   padding: 2px 0 0;
-  width: 100%;
-  justify-self: end;
   cursor: pointer;
   user-select: none;
+}
+
+.auth-link-left {
+  color: #8b9498;
+}
+
+.auth-link-right {
+  text-align: right;
 }
 
 .bind-prompt {

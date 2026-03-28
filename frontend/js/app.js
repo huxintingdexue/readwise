@@ -2814,6 +2814,12 @@ function bindLoginEvents() {
       nodes.authQuickInvite?.focus();
     });
   });
+  nodes.authInviteToggle?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      nodes.authInviteToggle?.click();
+    }
+  });
 
   nodes.bindNowBtn?.addEventListener('click', () => {
     showLoginOverlay('绑定账号后，换设备也能找回你的阅读记录和关注列表。');
