@@ -1,6 +1,7 @@
 ﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth, createGuestSession } from './api.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 import { DEFAULT_AVATAR_URL, SOURCE_AVATAR_URLS } from './avatar-config.js';
+import { getAuthors } from './api.js';
 
 const state = {
   tab: 'today',
@@ -20,6 +21,7 @@ const state = {
   ingestBusy: false,
   currentUser: null,
   articleDetailCache: new Map(),
+  authors: [],
   selectedTagFilter: '全部',
   listScrollTop: {
     today: 0,
@@ -830,10 +832,25 @@ function articleBelongsToPerson(article, person) {
 }
 
 function getPeopleList() {
-  return PEOPLE_PRESET.map((item) => ({
-    ...item,
-    count: personArticleCount(item)
-  }));
+  const source = Array.isArray(state.authors) && state.authors.length ? state.authors : PEOPLE_PRESET;
+  return source
+    .map((item) => {
+      const id = String(item.source_key || item.id || '').trim();
+      const sourceKey = String(item.source_key || id || '').trim();
+      const normalized = {
+        ...item,
+        id,
+        source_key: sourceKey,
+        name: String(item.name || item.name_zh || id || '').trim(),
+        avatar_url: String(item.avatar_url || '').trim() || sourceFallbackAvatar(sourceKey)
+      };
+      const countFromApi = Number(item?.article_count || 0);
+      return {
+        ...normalized,
+        count: Number.isFinite(countFromApi) && countFromApi >= 0 ? countFromApi : personArticleCount(normalized)
+      };
+    })
+    .filter((item) => Boolean(item.id));
 }
 
 function renderPeopleFilterSelection() {
@@ -1406,6 +1423,18 @@ async function loadArticles(options = {}) {
     }
   }
 }
+
+async function loadAuthors() {
+  try {
+    const rows = await getAuthors();
+    state.authors = Array.isArray(rows) ? rows : [];
+    renderPeople();
+  } catch (_) {
+    state.authors = [];
+    renderPeople();
+  }
+}
+
 async function openArticle(id, jumpTo = null) {
   try {
     const readerFeaturesPromise = ensureReaderFeaturesInitialized();
@@ -2504,6 +2533,7 @@ async function startApp() {
     openAppearanceModal();
   });
   switchTab('today');
+  loadAuthors().catch(() => {});
   const loadPromise = loadArticles();
   requestAnimationFrame(() => {
     hideSplashScreen();

@@ -192,6 +192,11 @@ export async function getArticleById(id) {
   return requestJson(`/api/articles/${encodeURIComponent(id)}`);
 }
 
+export async function getAuthors() {
+  const data = await requestJson('/api/authors');
+  return data.authors || [];
+}
+
 export async function getReadingProgress(articleId) {
   if (!articleId) {
     return { article_id: null, scroll_position: 0, last_read_at: null };
