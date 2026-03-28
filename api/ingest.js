@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import { resolveUserId, isAdmin } from './_utils/auth.js';
+import { inferArticleTag } from './_utils/article-tag.js';
 
 dotenv.config({ path: '.env.local' });
 
@@ -682,6 +683,15 @@ async function handleIngestFullText(req, res, userId) {
   const contentEn = contentEnRaw ? normalizeHtmlForStorage(contentEnRaw) : null;
   const contentPlain = contentEn ? htmlToPlain(contentEn, titleEn) : sanitizeToPlain(contentZh);
   const translatedChars = contentPlain.length;
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  let inferredTag = null;
+  if (summaryZh && apiKey) {
+    try {
+      inferredTag = await inferArticleTag(apiKey, summaryZh);
+    } catch (err) {
+      console.error(`[ingest] infer tag failed for full text: ${err.message}`);
+    }
+  }
 
   const insertSql = `
     INSERT INTO articles (
@@ -704,10 +714,11 @@ async function handleIngestFullText(req, res, userId) {
       status,
       translation_job_status,
       publish_status,
+      tag,
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'full', $11, 'unread', $12, $13, $14, 'ready', 'ready', $15, $16, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'full', $11, 'unread', $12, $13, $14, 'ready', 'ready', $15, $16, $17, NULL
     )
     RETURNING id
   `;
@@ -728,6 +739,7 @@ async function handleIngestFullText(req, res, userId) {
     sourceUrl,
     publishedAt,
     publishStatus,
+    inferredTag,
     userId
   ]);
 
@@ -950,6 +962,14 @@ async function handleTranslateStep(req, res, userId) {
       console.error(`[ingest] summary generate failed for ${article.id}: ${err.message}`);
     }
   }
+  let inferredTag = null;
+  if (step.done && nextTranslationStatus === 'full' && nextSummaryZh) {
+    try {
+      inferredTag = await inferArticleTag(apiKey, nextSummaryZh);
+    } catch (err) {
+      console.error(`[ingest] infer tag failed for ${article.id}: ${err.message}`);
+    }
+  }
 
   await poolClient.query(
     `
@@ -960,7 +980,8 @@ async function handleTranslateStep(req, res, userId) {
           translated_chars = $5,
           status = $6,
           translation_job_status = $6,
-          translation_status = $7
+          translation_status = $7,
+          tag = COALESCE($8, tag)
       WHERE id = $1
     `,
     [
@@ -970,7 +991,8 @@ async function handleTranslateStep(req, res, userId) {
       step.contentZh,
       step.translatedChars,
       nextStatus,
-      nextTranslationStatus
+      nextTranslationStatus,
+      inferredTag
     ]
   );
 
