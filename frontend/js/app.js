@@ -2672,7 +2672,7 @@ function bindLoginEvents() {
   });
 
   const onForgotPassword = () => {
-    const tip = '请添加微信 huxinting0725 联系我们重置密码';
+    const tip = '请添加微信 huxinting0725 联系我们找回账号';
     showToast(tip);
     setAuthError(tip);
   };
