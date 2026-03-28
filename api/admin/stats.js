@@ -5,6 +5,7 @@ import { resolveUserId, isAdmin } from '../_utils/auth.js';
 dotenv.config({ path: '.env.local' });
 
 let pool;
+const CN_TZ = 'Asia/Shanghai';
 
 function getPool() {
   if (!pool) {
@@ -74,7 +75,8 @@ export default async function handler(req, res) {
       ? await safeQuery(
           `SELECT COUNT(DISTINCT user_id)::int AS count
            FROM events
-           WHERE created_at >= date_trunc('day', now())
+           WHERE ((created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
+                 = (now() AT TIME ZONE '${CN_TZ}')::date
              AND NULLIF(TRIM(user_id), '') IS NOT NULL`,
           [{ count: 0 }]
         )
@@ -85,7 +87,8 @@ export default async function handler(req, res) {
           `SELECT COUNT(*)::int AS count
            FROM events
            WHERE event = 'open_article'
-             AND created_at >= date_trunc('day', now())`,
+             AND ((created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
+                 = (now() AT TIME ZONE '${CN_TZ}')::date`,
           [{ count: 0 }]
         )
       : { rows: [{ count: 0 }] };
@@ -94,7 +97,8 @@ export default async function handler(req, res) {
       ? await safeQuery(
           `SELECT COUNT(DISTINCT client_ip)::int AS count
            FROM events
-           WHERE created_at >= date_trunc('day', now())
+           WHERE ((created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
+                 = (now() AT TIME ZONE '${CN_TZ}')::date
              AND NULLIF(TRIM(client_ip), '') IS NOT NULL`,
           [{ count: 0 }]
         )
@@ -108,7 +112,8 @@ export default async function handler(req, res) {
                     NULLIF(TRIM(u.nickname), '') AS nickname
              FROM events e
              LEFT JOIN users u ON u.id = e.user_id
-             WHERE e.created_at >= date_trunc('day', now())
+             WHERE ((e.created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
+                   = (now() AT TIME ZONE '${CN_TZ}')::date
                AND NULLIF(TRIM(e.user_id), '') IS NOT NULL
            ) t
            ORDER BY COALESCE(t.nickname, t.user_id) ASC`,
@@ -124,7 +129,8 @@ export default async function handler(req, res) {
            FROM events e
            LEFT JOIN users u ON u.id = e.user_id
            WHERE e.event = 'finish_article'
-             AND e.created_at >= date_trunc('week', now())
+             AND ((e.created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')
+                 >= date_trunc('week', now() AT TIME ZONE '${CN_TZ}')
            GROUP BY e.user_id, u.nickname
            ORDER BY count DESC`
         )
