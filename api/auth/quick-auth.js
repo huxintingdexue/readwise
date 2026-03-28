@@ -43,6 +43,25 @@ function isValidAccount(account) {
   return false;
 }
 
+async function migrateReadingProgressToAccount(fromUserId, toUserId) {
+  const fromId = String(fromUserId || '').trim();
+  const toId = String(toUserId || '').trim();
+  if (!fromId || !toId || fromId === toId) return;
+
+  await getPool().query(
+    `
+      INSERT INTO reading_progress (article_id, user_id, scroll_position, last_read_at)
+      SELECT article_id, $2, scroll_position, last_read_at
+      FROM reading_progress
+      WHERE user_id = $1
+      ON CONFLICT (article_id, user_id) DO UPDATE SET
+        scroll_position = GREATEST(reading_progress.scroll_position, EXCLUDED.scroll_position),
+        last_read_at = GREATEST(reading_progress.last_read_at, EXCLUDED.last_read_at)
+    `,
+    [fromId, toId]
+  );
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -63,6 +82,7 @@ export default async function handler(req, res) {
 
     const existed = await getUserByAccount(account);
     if (existed) {
+      await migrateReadingProgressToAccount(userIdRaw, existed.id);
       await getPool().query('UPDATE users SET last_seen_at = NOW() WHERE id = $1', [existed.id]);
       const token = signAuthToken({ uid: existed.id, user_id: existed.id });
       res.status(200).json({
@@ -130,4 +150,3 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'internal_error' });
   }
 }
-
