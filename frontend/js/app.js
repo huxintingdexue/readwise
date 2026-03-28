@@ -1,4 +1,4 @@
-﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth, createGuestSession, accountRegister, accountLogin, bindAccount, setAccountSession, getStoredJwtToken, getStoredNickname } from './api.js';
+﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth, createGuestSession, quickAuth, setAccountSession, getStoredJwtToken, getStoredNickname } from './api.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 import { DEFAULT_AVATAR_URL, SOURCE_AVATAR_URLS } from './avatar-config.js';
 import { getAuthors } from './api.js';
@@ -32,8 +32,7 @@ const state = {
   peopleFilter: 'all',
   peopleDetailId: null,
   followedAuthorIds: new Set(),
-  peopleShowZeroAuthors: false,
-  authSheetMode: 'login'
+  peopleShowZeroAuthors: false
 };
 
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v3';
@@ -328,23 +327,9 @@ const nodes = {
   topbarTitle: document.querySelector('#topbarTitle'),
   loginOverlay: document.querySelector('#loginOverlay'),
   authSheetTitle: document.querySelector('#authSheetTitle'),
-  authTabs: document.querySelector('#authTabs'),
-  authTabLogin: document.querySelector('#authTabLogin'),
-  authTabRegister: document.querySelector('#authTabRegister'),
-  authTabBind: document.querySelector('#authTabBind'),
-  authLoginForm: document.querySelector('#authLoginForm'),
-  authRegisterForm: document.querySelector('#authRegisterForm'),
-  authBindForm: document.querySelector('#authBindForm'),
-  authLoginAccount: document.querySelector('#authLoginAccount'),
-  authLoginPassword: document.querySelector('#authLoginPassword'),
-  authLoginSubmit: document.querySelector('#authLoginSubmit'),
-  authRegisterAccount: document.querySelector('#authRegisterAccount'),
-  authRegisterPassword: document.querySelector('#authRegisterPassword'),
-  authRegisterSubmit: document.querySelector('#authRegisterSubmit'),
-  authBindAccount: document.querySelector('#authBindAccount'),
-  authBindPassword: document.querySelector('#authBindPassword'),
-  authBindSubmit: document.querySelector('#authBindSubmit'),
-  forgotPasswordText: document.querySelector('#forgotPasswordText'),
+  authQuickForm: document.querySelector('#authQuickForm'),
+  authQuickAccount: document.querySelector('#authQuickAccount'),
+  authQuickSubmit: document.querySelector('#authQuickSubmit'),
   bindPromptBox: document.querySelector('#bindPromptBox'),
   bindNowBtn: document.querySelector('#bindNowBtn'),
   bindLaterBtn: document.querySelector('#bindLaterBtn'),
@@ -910,7 +895,7 @@ function toggleFollowAuthor(authorId) {
     if (isInviteUserWithoutAccount()) {
       showBindPromptOverlay();
     } else {
-      showLoginOverlay('登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。', 'login');
+      showLoginOverlay('登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。');
     }
     return;
   }
@@ -1754,7 +1739,7 @@ function bindEvents() {
   });
 
   nodes.authEntryBtn?.addEventListener('click', () => {
-    showLoginOverlay('登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。', 'login');
+    showLoginOverlay('登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。');
   });
 
   nodes.exportEntry?.addEventListener('click', () => {
@@ -2512,27 +2497,14 @@ function setAuthError(message = '') {
   nodes.loginError.textContent = String(message || '').trim();
 }
 
-function switchAuthSheetMode(mode = 'login') {
-  state.authSheetMode = mode;
-  const target = mode === 'register' ? 'register' : mode === 'bind' ? 'bind' : 'login';
-  nodes.authTabLogin?.classList.toggle('is-active', target === 'login');
-  nodes.authTabRegister?.classList.toggle('is-active', target === 'register');
-  nodes.authTabBind?.classList.toggle('is-active', target === 'bind');
-  nodes.authTabBind?.classList.toggle('hidden', target !== 'bind');
-  nodes.authLoginForm?.classList.toggle('hidden', target !== 'login');
-  nodes.authRegisterForm?.classList.toggle('hidden', target !== 'register');
-  nodes.authBindForm?.classList.toggle('hidden', target !== 'bind');
-  nodes.bindPromptBox?.classList.add('hidden');
-  nodes.authTabs?.classList.toggle('hidden', false);
-}
-
-function showLoginOverlay(message = '', mode = 'login') {
+function showLoginOverlay(message = '') {
   if (!nodes.loginOverlay) return;
   nodes.loginOverlay.classList.remove('hidden');
   if (nodes.authSheetTitle) {
     nodes.authSheetTitle.textContent = String(message || '登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。');
   }
-  switchAuthSheetMode(mode);
+  nodes.bindPromptBox?.classList.add('hidden');
+  nodes.authQuickForm?.classList.remove('hidden');
   setAuthError('');
 }
 
@@ -2543,17 +2515,15 @@ function showBindPromptOverlay() {
     nodes.authSheetTitle.textContent = '绑定账号后，换设备也能找回你的阅读记录和关注列表。';
   }
   nodes.bindPromptBox?.classList.remove('hidden');
-  nodes.authTabs?.classList.add('hidden');
-  nodes.authLoginForm?.classList.add('hidden');
-  nodes.authRegisterForm?.classList.add('hidden');
-  nodes.authBindForm?.classList.add('hidden');
+  nodes.authQuickForm?.classList.add('hidden');
   setAuthError('');
 }
 
 function hideLoginOverlay() {
   nodes.loginOverlay?.classList.add('hidden');
   setAuthError('');
-  switchAuthSheetMode('login');
+  nodes.bindPromptBox?.classList.add('hidden');
+  nodes.authQuickForm?.classList.remove('hidden');
 }
 
 async function loadCurrentUserProfile() {
@@ -2659,89 +2629,33 @@ function bindLoginEvents() {
     hideLoginOverlay();
   };
 
-  nodes.authTabLogin?.addEventListener('click', () => switchAuthSheetMode('login'));
-  nodes.authTabRegister?.addEventListener('click', () => switchAuthSheetMode('register'));
-  nodes.authTabBind?.addEventListener('click', () => switchAuthSheetMode('bind'));
-
-  nodes.authLoginSubmit?.addEventListener('click', () => runWithButton(nodes.authLoginSubmit, async () => {
-    const account = normalizeAuthAccountInput(nodes.authLoginAccount?.value);
-    const password = String(nodes.authLoginPassword?.value || '').trim();
+  nodes.authQuickSubmit?.addEventListener('click', () => runWithButton(nodes.authQuickSubmit, async () => {
+    const account = normalizeAuthAccountInput(nodes.authQuickAccount?.value);
     const formatErr = validateAccount(account);
     if (formatErr) {
       setAuthError(formatErr);
       return;
     }
-    if (!password) {
-      setAuthError('请输入密码');
-      return;
-    }
-    const data = await accountLogin({ account, password });
-    await afterAuthSuccess(data);
-  }).catch((err) => {
-    setAuthError(err.message || '登录失败');
-  }));
-
-  nodes.authRegisterSubmit?.addEventListener('click', () => runWithButton(nodes.authRegisterSubmit, async () => {
-    const account = normalizeAuthAccountInput(nodes.authRegisterAccount?.value);
-    const password = String(nodes.authRegisterPassword?.value || '').trim();
-    const formatErr = validateAccount(account);
-    if (formatErr) {
-      setAuthError(formatErr);
-      return;
-    }
-    if (password.length < 6) {
-      setAuthError('密码至少6位');
-      return;
-    }
-    const data = await accountRegister({
+    const data = await quickAuth({
       account,
-      password,
-      nickname: null,
       user_id: getUid() || getStoredUserId()
     });
     await afterAuthSuccess(data);
   }).catch((err) => {
-    setAuthError(err.message || '注册失败');
+    setAuthError(err.message || '登录失败');
   }));
-
-  nodes.authBindSubmit?.addEventListener('click', () => runWithButton(nodes.authBindSubmit, async () => {
-    const account = normalizeAuthAccountInput(nodes.authBindAccount?.value);
-    const password = String(nodes.authBindPassword?.value || '').trim();
-    const formatErr = validateAccount(account);
-    if (formatErr) {
-      setAuthError(formatErr);
-      return;
+  nodes.authQuickAccount?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      nodes.authQuickSubmit?.click();
     }
-    if (password.length < 6) {
-      setAuthError('密码至少6位');
-      return;
-    }
-    const data = await bindAccount({
-      user_id: getUid() || getStoredUserId(),
-      account,
-      password
-    });
-    await afterAuthSuccess(data);
-  }).catch((err) => {
-    setAuthError(err.message || '绑定失败');
-  }));
+  });
 
   nodes.bindNowBtn?.addEventListener('click', () => {
-    showLoginOverlay('', 'bind');
+    showLoginOverlay('绑定账号后，换设备也能找回你的阅读记录和关注列表。');
   });
   nodes.bindLaterBtn?.addEventListener('click', () => {
     hideLoginOverlay();
-  });
-
-  const onForgotPassword = () => {
-    showToast('请添加微信 huxinting0725 联系我们重置密码');
-  };
-  nodes.forgotPasswordText?.addEventListener('click', onForgotPassword);
-  nodes.forgotPasswordText?.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onForgotPassword();
-    }
   });
 
   nodes.loginOverlay?.addEventListener('click', (event) => {

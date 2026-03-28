@@ -240,6 +240,14 @@ export async function bindAccount(payload) {
   return data?.data || null;
 }
 
+export async function quickAuth(payload) {
+  const data = await requestJson('/api/auth/quick-auth', {
+    method: 'POST',
+    body: payload
+  });
+  return data?.data || null;
+}
+
 function toQuery(params) {
   const usp = new URLSearchParams();
   Object.entries(params || {}).forEach(([key, value]) => {
