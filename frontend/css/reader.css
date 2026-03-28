@@ -148,34 +148,80 @@ body.reading-mode::-webkit-scrollbar-thumb {
   background: rgba(12, 12, 12, 0.55);
   backdrop-filter: blur(6px);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 120;
 }
 
-.login-card {
-  width: min(360px, 88vw);
+.login-sheet {
+  width: min(520px, 100vw);
   background: var(--panel);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  padding: 10px 16px 20px;
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.login-sheet-handle {
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: #d0d6da;
+  margin: 2px auto 10px;
+}
+
+.login-sheet h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.auth-tab {
+  flex: 1;
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 24px 22px;
-  text-align: center;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  background: #fff;
+  color: #6c757a;
+  border-radius: 999px;
+  height: 32px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.login-card h2 {
-  margin: 0 0 6px;
-  font-size: 20px;
+.auth-tab.is-active {
+  background: #0b7f74;
+  border-color: #0b7f74;
+  color: #fff;
 }
 
-.login-card p {
-  margin: 0 0 16px;
-  color: var(--muted);
-  font-size: 14px;
+.auth-form {
+  display: grid;
+  gap: 8px;
 }
 
-.login-card input {
-  width: 100%;
+.auth-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-field span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #556166;
+  width: 32px;
+  flex: 0 0 32px;
+}
+
+.auth-form input {
+  width: auto;
+  flex: 1;
   border-radius: 12px;
   border: 1px solid var(--line);
   padding: 10px 12px;
@@ -183,20 +229,65 @@ body.reading-mode::-webkit-scrollbar-thumb {
   background: #fff;
 }
 
-.login-card input + input {
-  margin-top: 8px;
-}
-
-.login-card button {
+.auth-form button {
   width: 100%;
-  margin-top: 12px;
   border: none;
   border-radius: 12px;
   padding: 10px 12px;
-  background: var(--text);
-  color: var(--bg);
+  background: #0b7f74;
+  color: #fff;
   font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
+}
+
+.auth-link-text {
+  color: #0b7f74;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: right;
+  padding: 2px 0 0;
+  width: 100%;
+  justify-self: end;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bind-prompt {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: #f6fbfa;
+  border: 1px solid #cfe6e3;
+  border-radius: 12px;
+}
+
+.bind-prompt p {
+  margin: 0 0 10px;
+  color: #3f4b4f;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.bind-prompt-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bind-prompt-actions button {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  background: #0b7f74;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  height: 34px;
+}
+
+.bind-prompt-actions .ghost {
+  background: #fff;
+  border: 1px solid #cad1d4;
+  color: #6d7679;
 }
 
 .login-error {
@@ -299,6 +390,12 @@ body.reading-mode::-webkit-scrollbar-thumb {
   letter-spacing: -0.02em;
 }
 
+.me-profile-name-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .me-profile-invite-row {
   display: inline-flex;
   align-items: center;
@@ -321,6 +418,56 @@ body.reading-mode::-webkit-scrollbar-thumb {
   font-weight: 700;
   font-size: 11px;
   padding: 3px 7px;
+}
+
+.me-profile-account-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.me-profile-account-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.me-profile-account-row code {
+  border-radius: 8px;
+  background: #e5e9eb;
+  color: #006b62;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 3px 7px;
+}
+
+.profile-edit-icon {
+  border: 1px solid #d3d9dc;
+  background: #fff;
+  color: #6e7b80;
+  font-size: 11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.profile-edit-modal {
+  align-items: flex-start;
+  padding-top: 14vh;
+}
+
+.profile-edit-panel {
+  width: min(520px, calc(100vw - 24px));
+}
+
+.profile-edit-panel .login-error {
+  margin-top: 8px;
+  min-height: 18px;
 }
 
 .me-profile-logout {
@@ -1951,6 +2098,7 @@ body.theme-dark .topbar p {
   border-radius: 999px;
   padding: 8px 14px;
   font-size: 13px;
+  z-index: 180;
 }
 
 .desktop-tip {

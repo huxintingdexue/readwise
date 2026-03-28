@@ -81,15 +81,26 @@
 
         <section id="tab-notes" class="tab-panel hidden">
           <div class="me-profile-card">
-            <div class="me-profile-avatar-wrap">
+          <div class="me-profile-avatar-wrap">
               <div class="me-profile-avatar" id="profileAvatarText">-</div>
               <span class="me-profile-verified" aria-hidden="true">✓</span>
             </div>
-            <h2 class="me-profile-name" id="nicknameDisplay">-</h2>
+            <div class="me-profile-name-row">
+              <h2 class="me-profile-name" id="nicknameDisplay">-</h2>
+              <button id="editNicknameBtn" class="profile-edit-icon" type="button" aria-label="修改昵称">✎</button>
+            </div>
+            <div class="me-profile-account-row">
+              <span class="me-profile-invite-label">账号</span>
+              <div class="me-profile-account-main">
+                <code id="accountDisplay">-</code>
+                <button id="editAccountBtn" class="profile-edit-icon" type="button" aria-label="修改账号">✎</button>
+              </div>
+            </div>
             <div class="me-profile-invite-row">
               <span class="me-profile-invite-label">邀请码</span>
               <code id="inviteCodeDisplay">-</code>
             </div>
+            <button id="authEntryBtn" class="me-profile-logout hidden" type="button">登录 / 注册</button>
             <button id="logoutBtn" class="me-profile-logout" type="button">退出登录</button>
             <div class="hidden" id="nicknameHintRow">
               <button id="nicknameHintBtn" class="me-ghost-btn" type="button">设置昵称</button>
@@ -291,11 +302,26 @@
     </div>
 
     <div id="loginOverlay" class="login-overlay hidden" role="dialog" aria-modal="true">
-      <div class="login-card">
-        <h2>开始阅读</h2>
-        <input id="nicknameInput" type="text" placeholder="请输入昵称（必填）" autocomplete="off" />
-        <input id="loginInput" type="text" placeholder="请输入邀请码（选填）" autocomplete="off" />
-        <button id="loginButton" type="button">进入</button>
+      <div class="login-sheet">
+        <div class="login-sheet-handle"></div>
+        <h2 id="authSheetTitle">登录后可同步阅读进度与关注</h2>
+
+        <div id="bindPromptBox" class="bind-prompt hidden">
+          <p>绑定账号后，换设备也能找回你的阅读记录和关注列表。</p>
+          <div class="bind-prompt-actions">
+            <button id="bindNowBtn" type="button">立即绑定</button>
+            <button id="bindLaterBtn" class="ghost" type="button">稍后再说</button>
+          </div>
+        </div>
+
+        <div id="authQuickForm" class="auth-form">
+          <label class="auth-field">
+            <span>账号</span>
+            <input id="authQuickAccount" type="text" placeholder="建议使用邮箱或手机号，避免遗忘" autocomplete="username" />
+          </label>
+          <button id="authQuickSubmit" type="button">登录 / 注册</button>
+          <div id="forgotPasswordText" class="auth-link-text" role="button" tabindex="0">账号忘了？</div>
+        </div>
         <div id="loginError" class="login-error"></div>
       </div>
     </div>
@@ -350,6 +376,18 @@
         </div>
         <textarea id="feedbackInput" class="feedback-input" placeholder="非常欢迎提出改进建议！大家的每条建议我都会认真读的！也欢迎微信跟我讨论！"></textarea>
         <button id="feedbackSubmitBtn" class="feedback-submit" type="button">发送</button>
+      </div>
+    </div>
+
+    <div id="profileEditModal" class="qa-modal hidden profile-edit-modal" role="dialog" aria-modal="true">
+      <div class="me-panel profile-edit-panel">
+        <div class="me-panel-head">
+          <strong id="profileEditTitle">修改资料</strong>
+          <button id="profileEditCloseBtn" type="button" aria-label="关闭">✕</button>
+        </div>
+        <input id="profileEditInput" class="ingest-input" type="text" autocomplete="off" />
+        <div id="profileEditError" class="login-error"></div>
+        <button id="profileEditSubmitBtn" class="feedback-submit" type="button">保存</button>
       </div>
     </div>
 

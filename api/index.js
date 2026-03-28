@@ -6,6 +6,10 @@ import readingProgress from './reading-progress.js';
 import searchReference from './search-reference.js';
 import exportHandler from './export.js';
 import authVerify from './auth/verify.js';
+import authRegister from './auth/register.js';
+import authLogin from './auth/login.js';
+import authBindAccount from './auth/bind-account.js';
+import authQuickAuth from './auth/quick-auth.js';
 import userRegister from './user/register.js';
 import userGuest from './user/guest.js';
 import userMigrate from './user/migrate.js';
@@ -51,6 +55,18 @@ export default async function handler(req, res) {
   }
   if (pathname === '/api/auth/verify') {
     return authVerify(req, res);
+  }
+  if (pathname === '/api/auth/register') {
+    return authRegister(req, res);
+  }
+  if (pathname === '/api/auth/login') {
+    return authLogin(req, res);
+  }
+  if (pathname === '/api/auth/bind-account') {
+    return authBindAccount(req, res);
+  }
+  if (pathname === '/api/auth/quick-auth') {
+    return authQuickAuth(req, res);
   }
   if (pathname === '/api/user/register') {
     return userRegister(req, res);

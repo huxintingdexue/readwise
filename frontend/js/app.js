@@ -1,4 +1,4 @@
-﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth, createGuestSession } from './api.js';
+﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth, createGuestSession, quickAuth, setAccountSession, getStoredJwtToken, getStoredNickname } from './api.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 import { DEFAULT_AVATAR_URL, SOURCE_AVATAR_URLS } from './avatar-config.js';
 import { getAuthors } from './api.js';
@@ -279,8 +279,12 @@ const nodes = {
   articleNotesBody: document.querySelector('#articleNotesBody'),
   closeArticleNotes: document.querySelector('#closeArticleNotes'),
   inviteCodeDisplay: document.querySelector('#inviteCodeDisplay'),
+  accountDisplay: document.querySelector('#accountDisplay'),
   nicknameDisplay: document.querySelector('#nicknameDisplay'),
+  editNicknameBtn: document.querySelector('#editNicknameBtn'),
+  editAccountBtn: document.querySelector('#editAccountBtn'),
   profileAvatarText: document.querySelector('#profileAvatarText'),
+  authEntryBtn: document.querySelector('#authEntryBtn'),
   nicknameHintRow: document.querySelector('#nicknameHintRow'),
   nicknameHintBtn: document.querySelector('#nicknameHintBtn'),
   exportEntry: document.querySelector('#exportEntry'),
@@ -324,9 +328,14 @@ const nodes = {
   closeOriginSnippet: document.querySelector('#closeOriginSnippet'),
   topbarTitle: document.querySelector('#topbarTitle'),
   loginOverlay: document.querySelector('#loginOverlay'),
-  nicknameInput: document.querySelector('#nicknameInput'),
-  loginInput: document.querySelector('#loginInput'),
-  loginButton: document.querySelector('#loginButton'),
+  authSheetTitle: document.querySelector('#authSheetTitle'),
+  authQuickForm: document.querySelector('#authQuickForm'),
+  authQuickAccount: document.querySelector('#authQuickAccount'),
+  authQuickSubmit: document.querySelector('#authQuickSubmit'),
+  forgotPasswordText: document.querySelector('#forgotPasswordText'),
+  bindPromptBox: document.querySelector('#bindPromptBox'),
+  bindNowBtn: document.querySelector('#bindNowBtn'),
+  bindLaterBtn: document.querySelector('#bindLaterBtn'),
   loginError: document.querySelector('#loginError'),
   logoutBtn: document.querySelector('#logoutBtn'),
   hideArticleBtn: document.querySelector('#hideArticleBtn'),
@@ -338,6 +347,12 @@ const nodes = {
   feedbackInput: document.querySelector('#feedbackInput'),
   feedbackSubmitBtn: document.querySelector('#feedbackSubmitBtn'),
   feedbackCloseBtn: document.querySelector('#feedbackCloseBtn'),
+  profileEditModal: document.querySelector('#profileEditModal'),
+  profileEditTitle: document.querySelector('#profileEditTitle'),
+  profileEditInput: document.querySelector('#profileEditInput'),
+  profileEditError: document.querySelector('#profileEditError'),
+  profileEditSubmitBtn: document.querySelector('#profileEditSubmitBtn'),
+  profileEditCloseBtn: document.querySelector('#profileEditCloseBtn'),
   appearanceModal: document.querySelector('#appearanceModal'),
   appearanceCloseBtn: document.querySelector('#appearanceCloseBtn'),
   meAppearanceEntry: document.querySelector('#meAppearanceEntry'),
@@ -885,6 +900,14 @@ function renderPeopleFilterSelection() {
 function toggleFollowAuthor(authorId) {
   const id = String(authorId || '').trim();
   if (!id) return;
+  if (!isAccountLoggedIn()) {
+    if (isInviteUserWithoutAccount()) {
+      showBindPromptOverlay();
+    } else {
+      showLoginOverlay('登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。');
+    }
+    return;
+  }
   if (state.followedAuthorIds.has(id)) {
     state.followedAuthorIds.delete(id);
   } else {
@@ -1168,14 +1191,26 @@ function restoreListScroll() {
   const tab = state.tab || 'today';
   const target = Number(state.listScrollTop[tab] || 0);
   const scroller = getListScroller();
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const applyTarget = () => {
+    if (scroller && scroller !== window) {
+      scroller.scrollTop = Math.max(0, target);
+    } else {
+      window.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
+    }
+  };
   return new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      if (scroller && scroller !== window) {
-        scroller.scrollTop = Math.max(0, target);
-      } else {
-        window.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
-      }
-      requestAnimationFrame(() => resolve());
+    requestAnimationFrame(async () => {
+      applyTarget();
+      requestAnimationFrame(async () => {
+        applyTarget();
+        // Keep the list hidden until delayed iOS stabilization passes.
+        await wait(60);
+        applyTarget();
+        await wait(140);
+        applyTarget();
+        resolve();
+      });
     });
   });
 }
@@ -1719,13 +1754,13 @@ function bindEvents() {
   });
 
   nodes.logoutBtn?.addEventListener('click', () => {
-    if (isGuestUser()) {
-      showLoginOverlay();
-      return;
-    }
     const confirmed = window.confirm('确定退出登录吗？');
     if (!confirmed) return;
     logout();
+  });
+
+  nodes.authEntryBtn?.addEventListener('click', () => {
+    showLoginOverlay('登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。');
   });
 
   nodes.exportEntry?.addEventListener('click', () => {
@@ -1752,6 +1787,63 @@ function bindEvents() {
 
   nodes.nicknameHintBtn?.addEventListener('click', () => {
     promptForNickname();
+  });
+  nodes.editNicknameBtn?.addEventListener('click', () => {
+    promptForNickname();
+  });
+  nodes.editAccountBtn?.addEventListener('click', () => {
+    promptForAccount();
+  });
+
+  const handleProfileEditSubmit = async () => {
+    const mode = String(nodes.profileEditModal?.dataset.mode || 'nickname');
+    const value = String(nodes.profileEditInput?.value || '').trim();
+    if (!value) {
+      setProfileEditError(mode === 'account' ? '请输入账号' : '请输入昵称');
+      return;
+    }
+    if (mode === 'account' && !isValidAccountFormat(value)) {
+      setProfileEditError('请输入邮箱或11位手机号');
+      return;
+    }
+    const payload = mode === 'account' ? { account: value } : { nickname: value };
+    const submitBtn = nodes.profileEditSubmitBtn;
+    if (!submitBtn || submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    const rawText = submitBtn.textContent;
+    submitBtn.textContent = '保存中...';
+    try {
+      const updated = await updateUserProfile(payload);
+      state.currentUser = {
+        ...(state.currentUser || {}),
+        nickname: updated?.nickname ?? state.currentUser?.nickname ?? null,
+        account: updated?.account ?? state.currentUser?.account ?? null
+      };
+      refreshMeTab();
+      closeProfileEditModal();
+      showToast(mode === 'account' ? '账号已更新' : '昵称已更新', 1500);
+    } catch (err) {
+      setProfileEditError(err.message || '更新失败');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = rawText || '保存';
+    }
+  };
+
+  nodes.profileEditSubmitBtn?.addEventListener('click', handleProfileEditSubmit);
+  nodes.profileEditCloseBtn?.addEventListener('click', () => {
+    closeProfileEditModal();
+  });
+  nodes.profileEditInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleProfileEditSubmit();
+    }
+  });
+  nodes.profileEditModal?.addEventListener('click', (event) => {
+    if (event.target === nodes.profileEditModal) {
+      closeProfileEditModal();
+    }
   });
 
   nodes.ingestToggle?.addEventListener('click', () => {
@@ -1969,6 +2061,24 @@ function getInviteCodeLabel() {
   return String(state.currentUser?.inviteCode || '').trim() || getStoredInviteCode() || '-';
 }
 
+function getAccountValue() {
+  return String(state.currentUser?.account || '').trim();
+}
+
+function maskAccount(account) {
+  const text = String(account || '').trim();
+  if (!text) return '-';
+  if (/^\d{11}$/.test(text)) {
+    return `${text.slice(0, 3)}****${text.slice(-4)}`;
+  }
+  if (text.includes('@')) {
+    const [name, domain] = text.split('@');
+    const safeName = name.length <= 1 ? '*' : `${name.slice(0, 1)}***`;
+    return `${safeName}@${domain || ''}`;
+  }
+  return text;
+}
+
 function getUserId() {
   if (state.currentUser?.userId) return state.currentUser.userId;
   return getStoredUserId();
@@ -1985,7 +2095,7 @@ function getAuthIdentity() {
 
 function getNicknameLabel() {
   const nickname = String(state.currentUser?.nickname || '').trim();
-  return nickname || '-';
+  return nickname || getStoredNickname() || '-';
 }
 
 function getAvatarDisplayText() {
@@ -2000,13 +2110,31 @@ function isAdminUser() {
   return getUserId() === 'admin';
 }
 
-function isGuestUser() {
-  return state.currentUser?.source === 'guest_auto';
+function isAccountLoggedIn() {
+  return Boolean(getStoredJwtToken() && getAccountValue());
+}
+
+function isInviteUserWithoutAccount() {
+  return Boolean(getStoredInviteCode() && !isAccountLoggedIn());
+}
+
+function normalizeAuthAccountInput(value) {
+  return String(value || '').trim();
+}
+
+function isValidAccountFormat(account) {
+  if (!account) return false;
+  if (/^\d{11}$/.test(account)) return true;
+  if (account.includes('@')) return true;
+  return false;
 }
 
 function refreshMeTab() {
   if (nodes.inviteCodeDisplay) {
     nodes.inviteCodeDisplay.textContent = getInviteCodeLabel();
+  }
+  if (nodes.accountDisplay) {
+    nodes.accountDisplay.textContent = maskAccount(getAccountValue());
   }
   if (nodes.nicknameDisplay) {
     nodes.nicknameDisplay.textContent = getNicknameLabel();
@@ -2015,11 +2143,20 @@ function refreshMeTab() {
     nodes.profileAvatarText.textContent = getAvatarDisplayText();
   }
   if (nodes.nicknameHintRow) {
-    const shouldShow = !isGuestUser() && !String(state.currentUser?.nickname || '').trim();
+    const shouldShow = isAccountLoggedIn() && !String(state.currentUser?.nickname || '').trim();
     nodes.nicknameHintRow.classList.toggle('hidden', !shouldShow);
   }
+  if (nodes.authEntryBtn) {
+    nodes.authEntryBtn.classList.toggle('hidden', isAccountLoggedIn());
+  }
   if (nodes.logoutBtn) {
-    nodes.logoutBtn.textContent = isGuestUser() ? '登录' : '退出登录';
+    nodes.logoutBtn.classList.toggle('hidden', !isAccountLoggedIn());
+  }
+  if (nodes.editNicknameBtn) {
+    nodes.editNicknameBtn.classList.toggle('hidden', !isAccountLoggedIn());
+  }
+  if (nodes.editAccountBtn) {
+    nodes.editAccountBtn.classList.toggle('hidden', !isAccountLoggedIn());
   }
   const userId = getUserId();
   if (nodes.adminSection) {
@@ -2439,17 +2576,85 @@ function formatAdminUserLabel(item) {
   return nickname || userId || '未知用户';
 }
 
+function setAuthError(message = '') {
+  if (!nodes.loginError) return;
+  nodes.loginError.textContent = String(message || '').trim();
+}
+
+function setProfileEditError(message = '') {
+  if (!nodes.profileEditError) return;
+  nodes.profileEditError.textContent = String(message || '').trim();
+}
+
+function openProfileEditModal(mode) {
+  if (!nodes.profileEditModal || !nodes.profileEditInput || !nodes.profileEditTitle) return;
+  const targetMode = mode === 'account' ? 'account' : 'nickname';
+  nodes.profileEditModal.dataset.mode = targetMode;
+  setProfileEditError('');
+  if (targetMode === 'account') {
+    nodes.profileEditTitle.textContent = '修改账号';
+    nodes.profileEditInput.placeholder = '请输入邮箱或11位手机号';
+    nodes.profileEditInput.value = String(state.currentUser?.account || '').trim();
+    nodes.profileEditInput.inputMode = 'text';
+  } else {
+    nodes.profileEditTitle.textContent = '修改昵称';
+    nodes.profileEditInput.placeholder = '请输入昵称（1-20字）';
+    nodes.profileEditInput.value = String(state.currentUser?.nickname || '').trim();
+    nodes.profileEditInput.inputMode = 'text';
+  }
+  nodes.profileEditModal.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      nodes.profileEditInput?.focus();
+      nodes.profileEditInput?.select?.();
+    });
+  });
+}
+
+function closeProfileEditModal() {
+  nodes.profileEditModal?.classList.add('hidden');
+  setProfileEditError('');
+}
+
 function showLoginOverlay(message = '') {
   if (!nodes.loginOverlay) return;
   nodes.loginOverlay.classList.remove('hidden');
-  if (nodes.loginError) {
-    nodes.loginError.textContent = message;
+  if (nodes.authSheetTitle) {
+    nodes.authSheetTitle.textContent = String(message || '登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。');
   }
+  nodes.bindPromptBox?.classList.add('hidden');
+  nodes.authQuickForm?.classList.remove('hidden');
+  setAuthError('');
+  const input = nodes.authQuickAccount;
+  if (input) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try {
+          input.focus({ preventScroll: true });
+        } catch (_) {
+          input.focus();
+        }
+      });
+    });
+  }
+}
+
+function showBindPromptOverlay() {
+  if (!nodes.loginOverlay) return;
+  nodes.loginOverlay.classList.remove('hidden');
+  if (nodes.authSheetTitle) {
+    nodes.authSheetTitle.textContent = '绑定账号后，换设备也能找回你的阅读记录和关注列表。';
+  }
+  nodes.bindPromptBox?.classList.remove('hidden');
+  nodes.authQuickForm?.classList.add('hidden');
+  setAuthError('');
 }
 
 function hideLoginOverlay() {
   nodes.loginOverlay?.classList.add('hidden');
-  if (nodes.loginError) nodes.loginError.textContent = '';
+  setAuthError('');
+  nodes.bindPromptBox?.classList.add('hidden');
+  nodes.authQuickForm?.classList.remove('hidden');
 }
 
 async function loadCurrentUserProfile() {
@@ -2462,34 +2667,30 @@ async function loadCurrentUserProfile() {
 }
 
 async function promptForNickname() {
-  const current = String(state.currentUser?.nickname || '').trim();
-  const input = window.prompt('设置昵称（1-20 字）', current);
-  if (input == null) return;
-  const nickname = String(input || '').trim();
-  if (!nickname) {
-    showToast('请输入昵称', 2000);
+  if (!isAccountLoggedIn()) {
+    showToast('请先登录账号');
     return;
   }
-  try {
-    const updated = await updateUserProfile({ nickname });
-    if (updated) {
-      state.currentUser = {
-        ...(state.currentUser || {}),
-        nickname: updated.nickname || nickname
-      };
-      refreshMeTab();
-      showToast('昵称已更新', 1500);
-    }
-  } catch (err) {
-    showToast(err.message || '鏇存柊澶辫触', 2000);
+  openProfileEditModal('nickname');
+}
+
+async function promptForAccount() {
+  if (!isAccountLoggedIn()) {
+    showToast('请先登录账号');
+    return;
   }
+  openProfileEditModal('account');
 }
 
 async function bootstrapAuth() {
   const uid = getStoredUid();
   if (uid) {
     await loadCurrentUserProfile();
-    return true;
+    if (state.currentUser) return true;
+    if (getStoredJwtToken()) {
+      localStorage.removeItem('jwt_token');
+      localStorage.removeItem('nickname');
+    }
   }
 
   const legacyInviteCode = getStoredInviteCode();
@@ -2515,66 +2716,81 @@ async function bootstrapAuth() {
 }
 
 function bindLoginEvents() {
-  if (!nodes.loginButton || !nodes.loginInput || !nodes.nicknameInput) return;
-  let loginSubmitting = false;
+  if (!nodes.loginOverlay) return;
 
-  const attemptRegister = async () => {
-    if (loginSubmitting) return;
-    const nickname = nodes.nicknameInput.value.trim();
-    const inviteCode = nodes.loginInput.value.trim();
-    if (!nickname) {
-      showLoginOverlay('请输入昵称');
-      return;
-    }
-
-    loginSubmitting = true;
-    nodes.loginButton.disabled = true;
-    const originText = nodes.loginButton.textContent;
-    nodes.loginButton.textContent = '处理中...';
-
+  const runWithButton = async (button, fn) => {
+    if (!button) return;
+    if (button.disabled) return;
+    button.disabled = true;
+    const text = button.textContent;
+    button.textContent = '处理中...';
     try {
-      if (isGuestUser() && !inviteCode) {
-        await updateUserProfile({ nickname });
-      } else {
-        if (isGuestUser() && inviteCode) {
-          // Ensure virtual keyboard is dismissed before showing confirm on mobile.
-          nodes.nicknameInput.blur();
-          nodes.loginInput.blur();
-          if (document.activeElement && typeof document.activeElement.blur === 'function') {
-            document.activeElement.blur();
-          }
-          await new Promise((resolve) => setTimeout(resolve, 160));
-          const confirmed = window.confirm('使用邀请码会切换到新账号，当前游客数据不会自动合并。是否继续？');
-          if (!confirmed) return;
-        }
-        await registerUser(nickname, inviteCode);
-      }
-      await loadCurrentUserProfile();
-      hideLoginOverlay();
-      refreshMeTab();
-      await startApp();
-    } catch (err) {
-      const message = String(err.message || '娉ㄥ唽澶辫触');
-      if (message.includes('invite') || message.toLowerCase().includes('invite')) {
-        nodes.loginInput.value = '';
-      }
-      showLoginOverlay(message);
+      await fn();
     } finally {
-      loginSubmitting = false;
-      nodes.loginButton.disabled = false;
-      nodes.loginButton.textContent = originText || '进入';
+      button.disabled = false;
+      button.textContent = text || '提交';
     }
   };
 
-  nodes.loginButton.addEventListener('click', attemptRegister);
-  nodes.nicknameInput.addEventListener('keydown', (event) => {
+  const validateAccount = (account) => {
+    if (!account) return '请输入账号';
+    if (!isValidAccountFormat(account)) return '请输入邮箱或11位手机号';
+    return '';
+  };
+
+  const afterAuthSuccess = async (payload) => {
+    const token = String(payload?.token || '').trim();
+    const userId = String(payload?.user_id || '').trim();
+    const nickname = String(payload?.nickname || '').trim();
+    if (!token || !userId) {
+      throw new Error('登录结果异常');
+    }
+    setAccountSession({ token, userId, nickname });
+    await loadCurrentUserProfile();
+    refreshMeTab();
+    renderPeople();
+    hideLoginOverlay();
+  };
+
+  nodes.authQuickSubmit?.addEventListener('click', () => runWithButton(nodes.authQuickSubmit, async () => {
+    const account = normalizeAuthAccountInput(nodes.authQuickAccount?.value);
+    const formatErr = validateAccount(account);
+    if (formatErr) {
+      setAuthError(formatErr);
+      return;
+    }
+    const data = await quickAuth({
+      account,
+      user_id: getUid() || getStoredUserId()
+    });
+    await afterAuthSuccess(data);
+  }).catch((err) => {
+    setAuthError(err.message || '登录失败');
+  }));
+  nodes.authQuickAccount?.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
-      attemptRegister();
+      event.preventDefault();
+      nodes.authQuickSubmit?.click();
     }
   });
-  nodes.loginInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      attemptRegister();
+
+  nodes.bindNowBtn?.addEventListener('click', () => {
+    showLoginOverlay('绑定账号后，换设备也能找回你的阅读记录和关注列表。');
+  });
+  nodes.bindLaterBtn?.addEventListener('click', () => {
+    hideLoginOverlay();
+  });
+
+  const onForgotPassword = () => {
+    const tip = '请添加微信 huxinting0725 联系我们找回账号';
+    showToast(tip);
+    setAuthError(tip);
+  };
+  nodes.forgotPasswordText?.addEventListener('click', onForgotPassword);
+  nodes.forgotPasswordText?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onForgotPassword();
     }
   });
 
@@ -2617,6 +2833,9 @@ async function startApp() {
 }
 
 async function init() {
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
   runOneTimeCacheReset();
   if (isStandalonePwa()) {
     requestAnimationFrame(() => {

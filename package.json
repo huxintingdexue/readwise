@@ -20,7 +20,9 @@
   },
   "dependencies": {
     "@vercel/node": "^5.3.25",
+    "bcrypt": "^6.0.0",
     "dotenv": "^16.6.1",
+    "jsonwebtoken": "^9.0.3",
     "node-fetch": "^3.3.2",
     "pg": "^8.16.3"
   },

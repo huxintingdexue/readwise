@@ -21,6 +21,19 @@ async function getAuthContext(req, res) {
   return resolveAuthContext(req, res);
 }
 
+function collectProgressUserIds(ctx) {
+  const ids = [];
+  const push = (value) => {
+    const normalized = String(value || '').trim();
+    if (!normalized) return;
+    if (!ids.includes(normalized)) ids.push(normalized);
+  };
+  push(ctx?.userId);
+  push(ctx?.uid);
+  push(ctx?.user?.legacy_user_id);
+  return ids;
+}
+
 function readQuery(req) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   return {
@@ -35,14 +48,12 @@ async function getProgress(req, res, ctx) {
     return;
   }
 
-  const primaryUserId = ctx?.userId;
-  if (!primaryUserId) {
+  const userIds = collectProgressUserIds(ctx);
+  const primaryUserId = userIds[0] || '';
+  if (!primaryUserId || userIds.length === 0) {
     res.status(401).json({ error: 'unauthorized', message: '缺少身份凭证' });
     return;
   }
-  const legacyUserId = ctx?.user?.legacy_user_id && ctx.user.legacy_user_id !== primaryUserId
-    ? ctx.user.legacy_user_id
-    : null;
 
   const sql = `
     SELECT article_id, scroll_position, last_read_at
@@ -52,20 +63,15 @@ async function getProgress(req, res, ctx) {
     LIMIT 1
   `;
 
-  const { rows } = await getPool().query(sql, [articleId, primaryUserId]);
-  if (rows.length === 0) {
-    if (legacyUserId) {
-      const legacy = await getPool().query(sql, [articleId, legacyUserId]);
-      if (legacy.rows.length > 0) {
-        res.status(200).json(legacy.rows[0]);
-        return;
-      }
+  for (const userId of userIds) {
+    const { rows } = await getPool().query(sql, [articleId, userId]);
+    if (rows.length > 0) {
+      res.status(200).json(rows[0]);
+      return;
     }
-    res.status(200).json({ article_id: articleId, scroll_position: 0, last_read_at: null });
-    return;
   }
 
-  res.status(200).json(rows[0]);
+  res.status(200).json({ article_id: articleId, scroll_position: 0, last_read_at: null });
 }
 
 async function upsertProgress(req, res, ctx) {
@@ -80,14 +86,12 @@ async function upsertProgress(req, res, ctx) {
     return;
   }
 
-  const primaryUserId = ctx?.userId;
-  if (!primaryUserId) {
+  const userIds = collectProgressUserIds(ctx);
+  const primaryUserId = userIds[0] || '';
+  if (!primaryUserId || userIds.length === 0) {
     res.status(401).json({ error: 'unauthorized', message: '缺少身份凭证' });
     return;
   }
-  const legacyUserId = ctx?.user?.legacy_user_id && ctx.user.legacy_user_id !== primaryUserId
-    ? ctx.user.legacy_user_id
-    : null;
 
   const sql = `
     INSERT INTO reading_progress (article_id, scroll_position, last_read_at, user_id)
@@ -100,8 +104,8 @@ async function upsertProgress(req, res, ctx) {
   `;
 
   const { rows } = await getPool().query(sql, [articleId, rawPosition, primaryUserId]);
-  if (legacyUserId) {
-    await getPool().query(sql, [articleId, rawPosition, legacyUserId]);
+  for (const userId of userIds.slice(1)) {
+    await getPool().query(sql, [articleId, rawPosition, userId]);
   }
   res.status(200).json(rows[0]);
 }
