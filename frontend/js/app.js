@@ -344,7 +344,7 @@ const nodes = {
   authBindAccount: document.querySelector('#authBindAccount'),
   authBindPassword: document.querySelector('#authBindPassword'),
   authBindSubmit: document.querySelector('#authBindSubmit'),
-  forgotPasswordBtn: document.querySelector('#forgotPasswordBtn'),
+  forgotPasswordText: document.querySelector('#forgotPasswordText'),
   bindPromptBox: document.querySelector('#bindPromptBox'),
   bindNowBtn: document.querySelector('#bindNowBtn'),
   bindLaterBtn: document.querySelector('#bindLaterBtn'),
@@ -2733,8 +2733,15 @@ function bindLoginEvents() {
     hideLoginOverlay();
   });
 
-  nodes.forgotPasswordBtn?.addEventListener('click', () => {
+  const onForgotPassword = () => {
     showToast('请添加微信 huxinting0725 联系我们重置密码');
+  };
+  nodes.forgotPasswordText?.addEventListener('click', onForgotPassword);
+  nodes.forgotPasswordText?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onForgotPassword();
+    }
   });
 
   nodes.loginOverlay?.addEventListener('click', (event) => {

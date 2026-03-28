@@ -68,7 +68,10 @@ export default async function handler(req, res) {
       res.status(400).json({ error: 'bad_request', message: '密码至少6位' });
       return;
     }
-    if (nicknameInput !== undefined && nickname === null) {
+    const hasNicknameInput = nicknameInput !== undefined
+      && nicknameInput !== null
+      && String(nicknameInput).trim() !== '';
+    if (hasNicknameInput && nickname === null) {
       res.status(400).json({ error: 'bad_request', message: '昵称长度需为 1-20 字' });
       return;
     }

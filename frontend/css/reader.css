@@ -241,15 +241,16 @@ body.reading-mode::-webkit-scrollbar-thumb {
   cursor: pointer;
 }
 
-.auth-link-btn {
-  border: 0;
-  background: transparent;
+.auth-link-text {
   color: #0b7f74;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.2;
   text-align: left;
   padding: 2px 0 0;
   width: auto;
   justify-self: start;
+  cursor: pointer;
+  user-select: none;
 }
 
 .bind-prompt {
