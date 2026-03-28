@@ -4,6 +4,45 @@
 
 ---
 
+## 2026-03-28 — PostHog 7天回灌修正（v2.16.24）
+
+### 已完成
+- ✅ 新增历史回灌脚本，读取 `events` 最近 7 天并补发到 PostHog
+- ✅ 修正回灌时间字段：使用事件顶层 `timestamp`（不再使用 `properties.$timestamp`）
+- ✅ 回灌标记升级为 `source=readwise-web-backfill-v2`（保留 `backfill=true`），便于看板过滤
+- ✅ 增加网络容错（超时、重试、退避、可配置并发），断网后可稳定重跑
+- ✅ 已完成一次 7 天全量回灌：`total=991, success=991, failed=0`
+
+### 变更文件
+- scripts/backfill-posthog-events.js
+- package.json
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-28 — 列表排序改为未读优先 + 当天快讯置顶（v2.16.23）
+
+### 已完成
+- ✅ `/api/articles` 排序改为：未读优先（`reading_progress` 缺失或 `scroll_position=0`），已读置后
+- ✅ 两组内部均按 `published_at DESC`（补 `fetched_at DESC` 稳定排序）
+- ✅ 当天 `daily_brief` 快讯固定置顶（基于 Asia/Shanghai 日期）
+
+### 变更文件
+- api/articles.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-28 — 前端列表排序覆盖修复（v2.16.22）
+
+### 已完成
+- ✅ 修复 `renderArticles()` 前端二次排序覆盖后端排序的问题
+- ✅ 非快讯列表改为未读优先 + 组内按发布时间倒序
+- ✅ 首页快讯卡片优先展示“当天快讯”，无当天快讯时回退最新快讯
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 卡片时间改为相对时间（v2.16.21）
 
 ### 已完成
