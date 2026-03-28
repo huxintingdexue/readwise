@@ -1459,10 +1459,16 @@ function bindEvents() {
   nodes.todayTagFilterBar?.addEventListener('click', (event) => {
     const chip = event.target.closest('.tag-filter-chip');
     if (!chip) return;
+    const previous = state.selectedTagFilter;
     const next = normalizeTagFilter(chip.dataset.tagFilter);
     if (next === state.selectedTagFilter) return;
     state.selectedTagFilter = next;
     writeTagFilter(next);
+    trackEvent('filter_tag', null, {
+      tag: next,
+      prev_tag: previous || '',
+      page: 'today'
+    });
     renderTagFilterSelection();
     renderArticles();
   });
