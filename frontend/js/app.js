@@ -331,6 +331,9 @@ const nodes = {
   authSheetTitle: document.querySelector('#authSheetTitle'),
   authQuickForm: document.querySelector('#authQuickForm'),
   authQuickAccount: document.querySelector('#authQuickAccount'),
+  authInviteField: document.querySelector('#authInviteField'),
+  authQuickInvite: document.querySelector('#authQuickInvite'),
+  authInviteToggle: document.querySelector('#authInviteToggle'),
   authQuickSubmit: document.querySelector('#authQuickSubmit'),
   forgotPasswordText: document.querySelector('#forgotPasswordText'),
   bindPromptBox: document.querySelector('#bindPromptBox'),
@@ -2581,6 +2584,23 @@ function setAuthError(message = '') {
   nodes.loginError.textContent = String(message || '').trim();
 }
 
+function hideInviteInputRow({ clearValue = false } = {}) {
+  nodes.authInviteField?.classList.add('hidden');
+  if (nodes.authInviteToggle) {
+    nodes.authInviteToggle.textContent = '我有邀请码';
+  }
+  if (clearValue && nodes.authQuickInvite) {
+    nodes.authQuickInvite.value = '';
+  }
+}
+
+function showInviteInputRow() {
+  nodes.authInviteField?.classList.remove('hidden');
+  if (nodes.authInviteToggle) {
+    nodes.authInviteToggle.textContent = '收起邀请码';
+  }
+}
+
 function setProfileEditError(message = '') {
   if (!nodes.profileEditError) return;
   nodes.profileEditError.textContent = String(message || '').trim();
@@ -2624,6 +2644,7 @@ function showLoginOverlay(message = '') {
   }
   nodes.bindPromptBox?.classList.add('hidden');
   nodes.authQuickForm?.classList.remove('hidden');
+  hideInviteInputRow({ clearValue: false });
   setAuthError('');
   const input = nodes.authQuickAccount;
   if (input) {
@@ -2655,6 +2676,7 @@ function hideLoginOverlay() {
   setAuthError('');
   nodes.bindPromptBox?.classList.add('hidden');
   nodes.authQuickForm?.classList.remove('hidden');
+  hideInviteInputRow({ clearValue: true });
 }
 
 async function loadCurrentUserProfile() {
@@ -2754,6 +2776,7 @@ function bindLoginEvents() {
 
   nodes.authQuickSubmit?.addEventListener('click', () => runWithButton(nodes.authQuickSubmit, async () => {
     const account = normalizeAuthAccountInput(nodes.authQuickAccount?.value);
+    const inviteCode = String(nodes.authQuickInvite?.value || '').trim();
     const formatErr = validateAccount(account);
     if (formatErr) {
       setAuthError(formatErr);
@@ -2761,7 +2784,8 @@ function bindLoginEvents() {
     }
     const data = await quickAuth({
       account,
-      user_id: getUid() || getStoredUserId()
+      user_id: getUid() || getStoredUserId(),
+      invite_code: inviteCode || undefined
     });
     await afterAuthSuccess(data);
   }).catch((err) => {
@@ -2772,6 +2796,23 @@ function bindLoginEvents() {
       event.preventDefault();
       nodes.authQuickSubmit?.click();
     }
+  });
+  nodes.authQuickInvite?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      nodes.authQuickSubmit?.click();
+    }
+  });
+  nodes.authInviteToggle?.addEventListener('click', () => {
+    const expanded = !nodes.authInviteField?.classList.contains('hidden');
+    if (expanded) {
+      hideInviteInputRow({ clearValue: true });
+      return;
+    }
+    showInviteInputRow();
+    requestAnimationFrame(() => {
+      nodes.authQuickInvite?.focus();
+    });
   });
 
   nodes.bindNowBtn?.addEventListener('click', () => {
