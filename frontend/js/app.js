@@ -2506,6 +2506,18 @@ function showLoginOverlay(message = '') {
   nodes.bindPromptBox?.classList.add('hidden');
   nodes.authQuickForm?.classList.remove('hidden');
   setAuthError('');
+  const input = nodes.authQuickAccount;
+  if (input) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try {
+          input.focus({ preventScroll: true });
+        } catch (_) {
+          input.focus();
+        }
+      });
+    });
+  }
 }
 
 function showBindPromptOverlay() {
