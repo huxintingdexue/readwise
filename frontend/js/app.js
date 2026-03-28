@@ -32,7 +32,10 @@ const state = {
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
 const TAG_FILTER_STORAGE_KEY = 'rw:today-tag-filter:v1';
-const TAG_FILTER_OPTIONS = ['全部', '科技', '商业', '产品', '个人成长'];
+const TAG_FILTER_OPTIONS = ['全部', '科技', '商业', '产品', '人生哲学'];
+const LEGACY_TAG_MAP = {
+  个人成长: '人生哲学'
+};
 const UI_STATE_STORAGE_KEY = 'rw:ui-state:v1';
 const LAST_READER_STATE_KEY = 'rw:last-reader:v1';
 const LAST_READER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -705,7 +708,8 @@ function sourceFallbackAvatar(sourceKey) {
 }
 
 function normalizeTagFilter(value) {
-  const text = String(value || '').trim();
+  const raw = String(value || '').trim();
+  const text = LEGACY_TAG_MAP[raw] || raw;
   if (TAG_FILTER_OPTIONS.includes(text)) return text;
   return '全部';
 }
@@ -734,7 +738,8 @@ function renderTagFilterSelection() {
 function matchesTagFilter(item) {
   const selected = normalizeTagFilter(state.selectedTagFilter);
   if (selected === '全部') return true;
-  return String(item?.tag || '').trim() === selected;
+  const itemTag = normalizeTagFilter(String(item?.tag || '').trim());
+  return itemTag === selected;
 }
 
 function resolveAuthorAvatarUrl(item) {
