@@ -881,7 +881,7 @@ function getPeopleList() {
           : countFromLocal
       };
     })
-    .filter((item) => Boolean(item.id))
+    .filter((item) => Boolean(item.id) && String(item.source_key || '').trim() !== 'daily_brief')
     .sort((a, b) => {
       const aIsSpecial = ['manual', 'daily_brief'].includes(String(a.source_key || ''));
       const bIsSpecial = ['manual', 'daily_brief'].includes(String(b.source_key || ''));

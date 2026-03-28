@@ -68,6 +68,7 @@ async function listAuthors(res, userId) {
         OR (COALESCE(a.translation_job_status, a.status, 'ready') = 'translating' AND a.submitted_by = $1)
       )
       AND (a.user_id IS NULL OR a.user_id = $1)
+    WHERE au.source_key <> 'daily_brief'
     GROUP BY
       au.id,
       au.source_key,
