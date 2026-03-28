@@ -1307,6 +1307,7 @@ body.theme-dark .topbar p {
   box-shadow: 0 8px 24px rgba(25, 28, 29, 0.06);
   padding: 14px;
   display: flex;
+  align-items: flex-start;
   gap: 12px;
   text-align: left;
   cursor: pointer;
@@ -1331,13 +1332,30 @@ body.theme-dark .topbar p {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .people-name {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
+  line-height: 1.2;
+  min-width: 0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.people-name-zh {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #7a868a;
+  line-height: 1.25;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .people-follow-btn,
@@ -1348,7 +1366,10 @@ body.theme-dark .topbar p {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
-  padding: 4px 12px;
+  height: 28px;
+  line-height: 26px;
+  padding: 0 12px;
+  white-space: nowrap;
 }
 
 .people-follow-btn.is-following,
@@ -1359,7 +1380,7 @@ body.theme-dark .topbar p {
 }
 
 .people-one-line {
-  margin: 0 0 8px;
+  margin: 6px 0 0;
   color: #7a868a;
   font-size: 12px;
   line-height: 1.4;
@@ -1372,6 +1393,7 @@ body.theme-dark .topbar p {
   display: flex;
   align-items: center;
   gap: 7px;
+  margin-top: 8px;
   color: #7a868a;
   font-size: 11px;
 }
