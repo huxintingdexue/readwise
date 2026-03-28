@@ -1009,6 +1009,18 @@ body.theme-dark .topbar p {
   flex: 0 0 auto;
 }
 
+.people-expand-btn {
+  margin: 10px auto 0;
+  display: block;
+  border: 1px solid rgba(17, 159, 146, 0.3);
+  background: rgba(17, 159, 146, 0.08);
+  color: #0e7d72;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .article-card {
   background: var(--panel);
   border: 1px solid rgba(222, 227, 230, 0.75);

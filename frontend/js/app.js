@@ -31,7 +31,8 @@ const state = {
   briefHistoryOpen: false,
   peopleFilter: 'all',
   peopleDetailId: null,
-  followedAuthorIds: new Set()
+  followedAuthorIds: new Set(),
+  peopleShowZeroAuthors: false
 };
 
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v3';
@@ -252,6 +253,7 @@ const nodes = {
   articlesList: document.querySelector('#articlesList'),
   peopleListState: document.querySelector('#peopleListState'),
   peopleList: document.querySelector('#peopleList'),
+  peopleExpandBtn: document.querySelector('#peopleExpandBtn'),
   peopleFilterBar: document.querySelector('.people-filter-bar'),
   peopleFilterChips: [...document.querySelectorAll('.people-filter-chip')],
   personDetail: document.querySelector('#personDetail'),
@@ -918,6 +920,8 @@ function buildPeopleCard(person) {
   const followed = state.followedAuthorIds.has(person.id);
   const tags = personTags(person);
   const tagText = tags.length ? tags.join(' / ') : '科技';
+  const countValue = Number(person.count || 0);
+  const countLabel = countValue > 0 ? `${countValue}篇` : '计划同步中';
   li.innerHTML = `
     <div class="people-card-main" data-person-open="${escapeHtml(person.id)}">
       <img class="people-avatar" src="${escapeHtml(person.avatar_url || DEFAULT_AVATAR_URL)}" alt="${escapeHtml(person.name)}" />
@@ -932,7 +936,7 @@ function buildPeopleCard(person) {
         <div class="people-meta">
           <span class="people-tag">${escapeHtml(tagText)}</span>
           <span class="people-dot"></span>
-          <span class="people-count">${escapeHtml(String(person.count || 0))}篇</span>
+          <span class="people-count">${escapeHtml(countLabel)}</span>
         </div>
       </div>
     </div>
@@ -952,17 +956,32 @@ function renderPeople() {
   if (!nodes.peopleList || !nodes.peopleListState) return;
   const people = getPeopleList();
   const filter = normalizePeopleFilter(state.peopleFilter);
-  const visible = filter === 'following'
+  const base = filter === 'following'
     ? people.filter((person) => state.followedAuthorIds.has(person.id))
     : people;
+  const nonZero = base.filter((person) => Number(person.count || 0) > 0);
+  const zero = base.filter((person) => Number(person.count || 0) <= 0);
+  const visible = state.peopleShowZeroAuthors ? base : nonZero;
+  const hasCollapsed = !state.peopleShowZeroAuthors && zero.length > 0;
 
   nodes.peopleList.innerHTML = '';
+  nodes.peopleExpandBtn?.classList.add('hidden');
   if (!visible.length) {
     nodes.peopleListState.textContent = filter === 'following' ? '你还没有关注人物' : '暂无人物';
     nodes.peopleListState.classList.remove('hidden');
   } else {
     nodes.peopleListState.classList.add('hidden');
     visible.forEach((person) => nodes.peopleList.appendChild(buildPeopleCard(person)));
+  }
+
+  if (hasCollapsed) {
+    nodes.peopleExpandBtn?.classList.remove('hidden');
+    if (nodes.peopleExpandBtn) {
+      nodes.peopleExpandBtn.textContent = `查看更多（${zero.length}位）`;
+    }
+    if (!visible.length) {
+      nodes.peopleListState.classList.add('hidden');
+    }
   }
 
   if (state.peopleDetailId) {
@@ -993,6 +1012,7 @@ function closePersonDetail(options = {}) {
   if (nodes.peopleList) {
     nodes.peopleList.classList.remove('hidden');
   }
+  nodes.peopleExpandBtn?.classList.add('hidden');
   if (nodes.peopleListState && !nodes.peopleList.children.length) {
     nodes.peopleListState.classList.remove('hidden');
   }
@@ -1008,6 +1028,7 @@ function renderPersonDetail(person) {
   const followed = state.followedAuthorIds.has(person.id);
   nodes.personDetail.classList.remove('hidden');
   nodes.peopleList.classList.add('hidden');
+  nodes.peopleExpandBtn?.classList.add('hidden');
   nodes.peopleListState.classList.add('hidden');
   nodes.peopleFilterBar?.classList.add('hidden');
 
@@ -1662,7 +1683,13 @@ function bindEvents() {
     const next = normalizePeopleFilter(chip.dataset.peopleFilter);
     if (next === state.peopleFilter) return;
     state.peopleFilter = next;
+    state.peopleShowZeroAuthors = false;
     renderPeopleFilterSelection();
+    renderPeople();
+  });
+
+  nodes.peopleExpandBtn?.addEventListener('click', () => {
+    state.peopleShowZeroAuthors = true;
     renderPeople();
   });
 
