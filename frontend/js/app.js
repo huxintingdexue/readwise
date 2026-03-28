@@ -346,7 +346,6 @@ const nodes = {
   authBindPassword: document.querySelector('#authBindPassword'),
   authBindSubmit: document.querySelector('#authBindSubmit'),
   forgotPasswordBtn: document.querySelector('#forgotPasswordBtn'),
-  forgotPasswordPanel: document.querySelector('#forgotPasswordPanel'),
   bindPromptBox: document.querySelector('#bindPromptBox'),
   bindNowBtn: document.querySelector('#bindNowBtn'),
   bindLaterBtn: document.querySelector('#bindLaterBtn'),
@@ -2526,9 +2525,6 @@ function switchAuthSheetMode(mode = 'login') {
   nodes.authBindForm?.classList.toggle('hidden', target !== 'bind');
   nodes.bindPromptBox?.classList.add('hidden');
   nodes.authTabs?.classList.toggle('hidden', false);
-  if (nodes.forgotPasswordPanel) {
-    nodes.forgotPasswordPanel.classList.add('hidden');
-  }
 }
 
 function showLoginOverlay(message = '', mode = 'login') {
@@ -2552,9 +2548,6 @@ function showBindPromptOverlay() {
   nodes.authLoginForm?.classList.add('hidden');
   nodes.authRegisterForm?.classList.add('hidden');
   nodes.authBindForm?.classList.add('hidden');
-  if (nodes.forgotPasswordPanel) {
-    nodes.forgotPasswordPanel.classList.add('hidden');
-  }
   setAuthError('');
 }
 
@@ -2743,7 +2736,7 @@ function bindLoginEvents() {
   });
 
   nodes.forgotPasswordBtn?.addEventListener('click', () => {
-    nodes.forgotPasswordPanel?.classList.toggle('hidden');
+    showToast('请添加微信 huxinting0725 联系我们重置密码');
   });
 
   nodes.loginOverlay?.addEventListener('click', (event) => {

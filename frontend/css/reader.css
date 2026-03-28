@@ -205,6 +205,17 @@ body.reading-mode::-webkit-scrollbar-thumb {
   gap: 8px;
 }
 
+.auth-field {
+  display: grid;
+  gap: 6px;
+}
+
+.auth-field span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #556166;
+}
+
 .auth-form input {
   width: 100%;
   border-radius: 12px;
@@ -232,36 +243,9 @@ body.reading-mode::-webkit-scrollbar-thumb {
   color: #0b7f74;
   font-size: 12px;
   text-align: left;
-  padding: 2px 0;
-}
-
-.auth-help {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #6d7679;
-}
-
-.forgot-password-panel {
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px dashed #c8d0d4;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.forgot-password-panel p {
-  margin: 0;
-  color: #5d686d;
-  font-size: 12px;
-}
-
-.forgot-password-panel img {
-  margin-top: 8px;
-  width: 140px;
-  height: 140px;
-  object-fit: contain;
-  border-radius: 8px;
-  background: #fff;
+  padding: 2px 0 0;
+  width: auto;
+  justify-self: start;
 }
 
 .bind-prompt {

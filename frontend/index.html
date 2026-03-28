@@ -315,32 +315,44 @@
         </div>
 
         <div id="authLoginForm" class="auth-form">
-          <input id="authLoginAccount" type="text" placeholder="邮箱或手机号" autocomplete="username" />
-          <input id="authLoginPassword" type="password" placeholder="密码" autocomplete="current-password" />
+          <label class="auth-field">
+            <span>账号</span>
+            <input id="authLoginAccount" type="text" placeholder="邮箱或手机号" autocomplete="username" />
+          </label>
+          <label class="auth-field">
+            <span>密码</span>
+            <input id="authLoginPassword" type="password" placeholder="密码" autocomplete="current-password" />
+          </label>
           <button id="authLoginSubmit" type="button">登录</button>
           <button id="forgotPasswordBtn" class="auth-link-btn" type="button">忘记密码？</button>
         </div>
 
         <div id="authRegisterForm" class="auth-form hidden">
-          <input id="authRegisterNickname" type="text" placeholder="可留空，默认用账号前缀" autocomplete="nickname" />
-          <input id="authRegisterAccount" type="text" placeholder="邮箱或手机号" autocomplete="username" />
-          <input id="authRegisterPassword" type="password" placeholder="至少6位" autocomplete="new-password" />
+          <label class="auth-field">
+            <span>昵称</span>
+            <input id="authRegisterNickname" type="text" placeholder="可留空，默认用账号前缀" autocomplete="nickname" />
+          </label>
+          <label class="auth-field">
+            <span>账号</span>
+            <input id="authRegisterAccount" type="text" placeholder="邮箱或手机号" autocomplete="username" />
+          </label>
+          <label class="auth-field">
+            <span>密码</span>
+            <input id="authRegisterPassword" type="password" placeholder="至少6位" autocomplete="new-password" />
+          </label>
           <button id="authRegisterSubmit" type="button">注册</button>
         </div>
 
         <div id="authBindForm" class="auth-form hidden">
-          <input id="authBindAccount" type="text" placeholder="邮箱或手机号" autocomplete="username" />
-          <input id="authBindPassword" type="password" placeholder="至少6位" autocomplete="new-password" />
+          <label class="auth-field">
+            <span>账号</span>
+            <input id="authBindAccount" type="text" placeholder="邮箱或手机号" autocomplete="username" />
+          </label>
+          <label class="auth-field">
+            <span>密码</span>
+            <input id="authBindPassword" type="password" placeholder="至少6位" autocomplete="new-password" />
+          </label>
           <button id="authBindSubmit" type="button">确认绑定</button>
-        </div>
-
-        <div id="forgotPasswordPanel" class="forgot-password-panel hidden">
-          <p>请添加微信 <strong>huxinting0725</strong> 联系我们重置密码。</p>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=huxinting0725" alt="微信二维码" />
-        </div>
-
-        <div class="auth-help">
-          忘记密码？添加微信 <strong>huxinting0725</strong> 联系我们
         </div>
         <div id="loginError" class="login-error"></div>
       </div>
