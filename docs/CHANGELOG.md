@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-03-28 — 一次性强制缓存刷新（v2.16.23）
+
+### 已完成
+- ✅ Service Worker 缓存版本升级到 `v4`，触发旧静态/API 缓存清理
+- ✅ 文章列表本地缓存 key 升级到 `rw:article-list-cache:v3`
+- ✅ 启动时新增一次性缓存迁移清理：移除旧 `v2` 列表缓存并写入执行标记
+- ✅ 本次仅执行一次，执行后不再重复清理
+
+### 变更文件
+- frontend/sw.js
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 文章列表排序回退为纯时间倒序（v2.16.22）
 
 ### 已完成

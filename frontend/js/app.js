@@ -29,8 +29,9 @@ const state = {
   readerExitInFlight: false
 };
 
-const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
+const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v3';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
+const ONE_TIME_CACHE_RESET_KEY = 'rw:cache-reset:v1:2026-03-28';
 const TAG_FILTER_STORAGE_KEY = 'rw:today-tag-filter:v1';
 const TAG_FILTER_OPTIONS = ['全部', '科技', '商业', '产品', '人生哲学'];
 const LEGACY_TAG_MAP = {
@@ -63,6 +64,14 @@ const PERF_FLAGS = {
   noLayerPromote: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_layer_promote') || '').toLowerCase()),
   overlay: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_overlay') || '').toLowerCase())
 };
+
+function runOneTimeCacheReset() {
+  try {
+    if (localStorage.getItem(ONE_TIME_CACHE_RESET_KEY) === '1') return;
+    sessionStorage.removeItem('rw:article-list-cache:v2');
+    localStorage.setItem(ONE_TIME_CACHE_RESET_KEY, '1');
+  } catch (_) {}
+}
 
 function applyPerfFlags() {
   if (PERF_FLAGS.noGlass) {
@@ -2401,6 +2410,7 @@ async function startApp() {
 }
 
 async function init() {
+  runOneTimeCacheReset();
   if (isStandalonePwa()) {
     requestAnimationFrame(() => {
       hideSplashScreen();
