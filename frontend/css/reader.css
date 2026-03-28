@@ -962,7 +962,6 @@ body.theme-dark .topbar p {
   color: rgba(105, 114, 118, 0.92);
   line-height: 1.3;
 }
-
 .people-follow-btn {
   flex: 0 0 auto;
   border: 1px solid var(--line);
@@ -1027,7 +1026,6 @@ body.theme-dark .topbar p {
   font-size: 13px;
   font-weight: 600;
 }
-
 .article-card {
   background: var(--panel);
   border: 1px solid rgba(222, 227, 230, 0.75);

@@ -16,6 +16,16 @@
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
 
+## 2026-03-28 — Paul Graham 头像更新（v2.16.32）
+
+### 已完成
+- ✅ 生产库 `authors` 表中 `source_key='paul_graham'` 的 `avatar_url` 更新为：`https://s.turbifycdn.com/aah/paulgraham/bio-20.gif`
+- ✅ 已执行回查确认更新生效（命中 1 行）
+
+### 变更文件
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 生产库 schema 盘点与自检命令沉淀（v2.16.31）
 
 ### 已完成
