@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-03-28 — 文章标签功能（v2.16.16）
+
+### 已完成
+- ✅ `articles` 表新增 `tag` 字段（测试库执行：`ALTER TABLE articles ADD COLUMN IF NOT EXISTS tag TEXT`）
+- ✅ 新增批量打标脚本 `scripts/tag-articles.js`（仅处理 `tag IS NULL` 且未隐藏文章，逐篇 500ms 间隔）
+- ✅ 批量脚本调用 DeepSeek 四选一标签（科技/商业/产品/个人成长）并回写 `articles.tag`
+- ✅ `api/ingest` 接入自动打标：全文入库（`full`）与翻译完成升级为 `full` 后自动生成标签
+- ✅ 文章列表接口返回 `tag` 字段，卡片底部左侧显示标签（空值不显示）
+- ✅ 测试库已实际执行一轮批量打标（日志可核查）
+
+### 变更文件
+- api/_utils/article-tag.js
+- api/ingest.js
+- api/articles.js
+- scripts/tag-articles.js
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/schema.sql
+- package.json
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-27 — 重启恢复缺陷修复（v2.16.15）
 
 ### 已完成

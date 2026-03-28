@@ -986,7 +986,9 @@ body.theme-dark .topbar p {
 }
 
 .article-bottom {
-  display: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .article-topic {
