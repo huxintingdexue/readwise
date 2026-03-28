@@ -388,6 +388,7 @@ body.reading-mode::-webkit-scrollbar-thumb {
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.02em;
+  cursor: pointer;
 }
 
 .me-profile-invite-row {
@@ -427,6 +428,7 @@ body.reading-mode::-webkit-scrollbar-thumb {
   font-weight: 700;
   font-size: 11px;
   padding: 3px 7px;
+  cursor: pointer;
 }
 
 .me-profile-logout {

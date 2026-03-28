@@ -1780,6 +1780,12 @@ function bindEvents() {
   nodes.nicknameHintBtn?.addEventListener('click', () => {
     promptForNickname();
   });
+  nodes.nicknameDisplay?.addEventListener('click', () => {
+    promptForNickname();
+  });
+  nodes.accountDisplay?.addEventListener('click', () => {
+    promptForAccount();
+  });
 
   nodes.ingestToggle?.addEventListener('click', () => {
     openIngestModal();
@@ -2561,6 +2567,10 @@ async function loadCurrentUserProfile() {
 }
 
 async function promptForNickname() {
+  if (!isAccountLoggedIn()) {
+    showToast('请先登录账号');
+    return;
+  }
   const current = String(state.currentUser?.nickname || '').trim();
   const input = window.prompt('设置昵称（1-20 字）', current);
   if (input == null) return;
@@ -2581,6 +2591,38 @@ async function promptForNickname() {
     }
   } catch (err) {
     showToast(err.message || '鏇存柊澶辫触', 2000);
+  }
+}
+
+async function promptForAccount() {
+  if (!isAccountLoggedIn()) {
+    showToast('请先登录账号');
+    return;
+  }
+  const current = String(state.currentUser?.account || '').trim();
+  const input = window.prompt('设置账号（邮箱或11位手机号）', current);
+  if (input == null) return;
+  const account = String(input || '').trim();
+  if (!account) {
+    showToast('请输入账号', 2000);
+    return;
+  }
+  if (!isValidAccountFormat(account)) {
+    showToast('请输入邮箱或11位手机号', 2000);
+    return;
+  }
+  try {
+    const updated = await updateUserProfile({ account });
+    if (updated) {
+      state.currentUser = {
+        ...(state.currentUser || {}),
+        account: updated.account || account
+      };
+      refreshMeTab();
+      showToast('账号已更新', 1500);
+    }
+  } catch (err) {
+    showToast(err.message || '更新失败', 2000);
   }
 }
 
