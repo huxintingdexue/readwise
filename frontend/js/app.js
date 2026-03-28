@@ -628,11 +628,41 @@ function formatDate(isoString) {
   const day = Number(parts.find((p) => p.type === 'day')?.value || 0);
   if (!year || !month || !day) return '未知时间';
 
+  const now = new Date();
   const nowParts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Shanghai',
     year: 'numeric'
-  }).formatToParts(new Date());
+  }).formatToParts(now);
   const currentYear = Number(nowParts.find((p) => p.type === 'year')?.value || 0);
+  const diffMs = now.getTime() - d.getTime();
+  if (diffMs < 0) {
+    return `${month}/${day}`;
+  }
+
+  const hourMs = 60 * 60 * 1000;
+  const dayMs = 24 * hourMs;
+  if (diffMs < hourMs) return '刚刚';
+  if (diffMs < dayMs) return `${Math.max(1, Math.floor(diffMs / hourMs))}小时前`;
+
+  const nowDayParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  }).formatToParts(now);
+  const nowYear = Number(nowDayParts.find((p) => p.type === 'year')?.value || 0);
+  const nowMonth = Number(nowDayParts.find((p) => p.type === 'month')?.value || 0);
+  const nowDay = Number(nowDayParts.find((p) => p.type === 'day')?.value || 0);
+  const nowDayUtc = Date.UTC(nowYear, nowMonth - 1, nowDay);
+  const targetDayUtc = Date.UTC(year, month - 1, day);
+  const dayDiff = Math.max(0, Math.floor((nowDayUtc - targetDayUtc) / dayMs));
+
+  if (dayDiff === 1) return '昨天';
+  if (dayDiff >= 2 && dayDiff <= 6) return `${dayDiff}天前`;
+  if (dayDiff >= 7 && dayDiff <= 27) return `${Math.max(1, Math.floor(dayDiff / 7))}周前`;
+
+  const monthDiff = (nowYear - year) * 12 + (nowMonth - month);
+  if (monthDiff >= 1 && monthDiff <= 11) return `${monthDiff}个月前`;
 
   if (year === currentYear) {
     return `${month}/${day}`;
