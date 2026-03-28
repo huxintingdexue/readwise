@@ -8,6 +8,7 @@
 ## 当前状态（每次任务后必须更新）
 
 - 最近变更：管理员后台“今日/本周”用户统计口径切换为中国时区（`Asia/Shanghai`）✅
+- 最近变更：生产库 `authors` 已将 `paul_graham` 头像更新为 `https://s.turbifycdn.com/aah/paulgraham/bio-20.gif` ✅
 - 最近变更：已完成生产库结构盘点并沉淀“数据库自检命令”（含表/字段/索引/外键），用于后续 AI 快速对齐真实 schema ✅
 - 最近变更：今日页标签筛选埋点已接入（`filter_tag`，属性含 `tag/prev_tag/page`）；`open_article` 新增 `current_tag_filter` 可用于按标签分析文章 UV/PV ✅
 - 最近变更：修复前端残留未读优先二次排序，列表最终按纯发布时间倒序；SW 升级 `v5` 触发缓存更新 ✅
