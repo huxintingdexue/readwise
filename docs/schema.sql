@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS articles (
   title_zh            TEXT,
   summary_en          TEXT,
   summary_zh          TEXT,
-  tag                 TEXT,                                 -- 文章标签：科技 | 商业 | 产品 | 个人成长
+  tag                 TEXT,                                 -- 文章标签：科技 | 商业 | 产品 | 人生哲学
   author             TEXT,                                 -- 手动投喂作者名
   author_avatar_url   TEXT,                                 -- 作者头像 URL（可空）
   content_en          TEXT,                                 -- 富文本原文（含 HTML 标签，用于渲染）

@@ -35,7 +35,10 @@ const state = {
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
 const TAG_FILTER_STORAGE_KEY = 'rw:today-tag-filter:v1';
-const TAG_FILTER_OPTIONS = ['全部', '科技', '商业', '产品', '个人成长'];
+const TAG_FILTER_OPTIONS = ['全部', '科技', '商业', '产品', '人生哲学'];
+const LEGACY_TAG_MAP = {
+  个人成长: '人生哲学'
+};
 const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
@@ -69,8 +72,8 @@ const PEOPLE_PRESET = [
     name: 'Naval Ravikant',
     avatar_url: SOURCE_AVATAR_URLS.naval || DEFAULT_AVATAR_URL,
     bio_one_line: '创业者与思想者 · AngelList 创始人',
-    bio_full: 'Naval 的内容兼具商业视角与个人成长视角，常从第一性原理讨论财富、判断与长期主义。阅读他的文章有助于在技术趋势之外，建立更稳的认知框架与决策体系。',
-    tag: ['商业', '个人成长']
+    bio_full: 'Naval 的内容兼具商业视角与人生哲学视角，常从第一性原理讨论财富、判断与长期主义。阅读他的文章有助于在技术趋势之外，建立更稳的认知框架与决策体系。',
+    tag: ['商业', '人生哲学']
   },
   {
     id: 'peter',
@@ -968,7 +971,8 @@ function renderPersonDetail(person) {
 }
 
 function normalizeTagFilter(value) {
-  const text = String(value || '').trim();
+  const raw = String(value || '').trim();
+  const text = LEGACY_TAG_MAP[raw] || raw;
   if (TAG_FILTER_OPTIONS.includes(text)) return text;
   return '全部';
 }
@@ -997,7 +1001,8 @@ function renderTagFilterSelection() {
 function matchesTagFilter(item) {
   const selected = normalizeTagFilter(state.selectedTagFilter);
   if (selected === '全部') return true;
-  return String(item?.tag || '').trim() === selected;
+  const itemTag = normalizeTagFilter(String(item?.tag || '').trim());
+  return itemTag === selected;
 }
 
 function resolveAuthorAvatarUrl(item) {

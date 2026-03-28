@@ -1,12 +1,20 @@
-const TAG_OPTIONS = ['科技', '商业', '产品', '个人成长'];
+const TAG_OPTIONS = ['科技', '商业', '产品', '人生哲学'];
+const LEGACY_TAG_ALIASES = new Map([
+  ['个人成长', '人生哲学']
+]);
 
-const TAG_PROMPT_PREFIX = '从以下四个标签中选择一个最匹配的，只返回标签名，不要其他内容：科技、商业、产品、个人成长。文章摘要：';
+const TAG_PROMPT_PREFIX = '从以下四个标签中选择一个最匹配的，只返回标签名，不要其他内容：科技、商业、产品、人生哲学。文章摘要：';
 
 export function normalizeArticleTag(rawValue) {
   const text = String(rawValue || '').trim();
   if (!text) return null;
+  const alias = LEGACY_TAG_ALIASES.get(text);
+  if (alias) return alias;
   const direct = TAG_OPTIONS.find((tag) => tag === text);
   if (direct) return direct;
+  for (const [legacy, normalized] of LEGACY_TAG_ALIASES.entries()) {
+    if (text.includes(legacy)) return normalized;
+  }
   return TAG_OPTIONS.find((tag) => text.includes(tag)) || null;
 }
 
@@ -41,4 +49,3 @@ export async function inferArticleTag(apiKey, summaryZh) {
   const content = data?.choices?.[0]?.message?.content || '';
   return normalizeArticleTag(content);
 }
-
