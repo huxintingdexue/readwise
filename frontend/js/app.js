@@ -206,6 +206,23 @@ function isReadingMode() {
   return document.body.classList.contains('reading-mode');
 }
 
+function getListPanels() {
+  return [nodes.todayTab, nodes.peopleTab, nodes.notesTab].filter(Boolean);
+}
+
+function updateTopbarForTab(tab) {
+  const h1 = nodes.topbarTitle?.querySelector('h1');
+  const p = nodes.topbarTitle?.querySelector('p');
+  if (!h1 || !p) return;
+  if (tab === 'people') {
+    h1.textContent = '人物';
+    p.textContent = '关注你关心的作者';
+    return;
+  }
+  h1.textContent = '今日硅谷';
+  p.textContent = '全球一手信息 触手可及';
+}
+
 const nodes = {
   appShell: document.querySelector('.app-shell'),
   tabButtons: [...document.querySelectorAll('.tab-btn')],
@@ -754,6 +771,206 @@ function sourceFallbackAvatar(sourceKey) {
   return SOURCE_AVATAR_URLS[sourceKey] || DEFAULT_AVATAR_URL;
 }
 
+function normalizePeopleFilter(value) {
+  const normalized = String(value || '').trim();
+  return PEOPLE_FILTER_OPTIONS.includes(normalized) ? normalized : 'all';
+}
+
+function readFollowedAuthorIds() {
+  try {
+    const raw = localStorage.getItem(PEOPLE_FOLLOW_STORAGE_KEY);
+    if (!raw) return new Set();
+    const ids = JSON.parse(raw);
+    if (!Array.isArray(ids)) return new Set();
+    return new Set(ids.map((id) => String(id || '').trim()).filter(Boolean));
+  } catch (_) {
+    return new Set();
+  }
+}
+
+function writeFollowedAuthorIds(nextSet) {
+  try {
+    localStorage.setItem(PEOPLE_FOLLOW_STORAGE_KEY, JSON.stringify([...nextSet]));
+  } catch (_) {}
+}
+
+function personTags(person) {
+  if (Array.isArray(person?.tag)) {
+    return person.tag.map((item) => String(item || '').trim()).filter(Boolean);
+  }
+  return String(person?.tag || '')
+    .split(/[,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function personArticleCount(person) {
+  if (!person?.id) return 0;
+  return state.articles.filter((article) => articleBelongsToPerson(article, person)).length;
+}
+
+function articleBelongsToPerson(article, person) {
+  if (!article || !person?.id) return false;
+  const sourceKey = String(article.source_key || '').trim();
+  if (sourceKey && sourceKey === person.id) return true;
+  const authorName = String(article.author || '').trim().toLowerCase();
+  const personName = String(person.name || '').trim().toLowerCase();
+  return Boolean(authorName && personName && authorName.includes(personName));
+}
+
+function getPeopleList() {
+  return PEOPLE_PRESET.map((item) => ({
+    ...item,
+    count: personArticleCount(item)
+  }));
+}
+
+function renderPeopleFilterSelection() {
+  const active = normalizePeopleFilter(state.peopleFilter);
+  nodes.peopleFilterChips.forEach((chip) => {
+    chip.classList.toggle('is-active', chip.dataset.peopleFilter === active);
+  });
+}
+
+function toggleFollowAuthor(authorId) {
+  const id = String(authorId || '').trim();
+  if (!id) return;
+  if (state.followedAuthorIds.has(id)) {
+    state.followedAuthorIds.delete(id);
+  } else {
+    state.followedAuthorIds.add(id);
+  }
+  writeFollowedAuthorIds(state.followedAuthorIds);
+}
+
+function buildPeopleCard(person) {
+  const li = document.createElement('li');
+  li.className = 'people-card';
+  const followed = state.followedAuthorIds.has(person.id);
+  const tags = personTags(person);
+  const primaryTag = tags[0] || '科技';
+  li.innerHTML = `
+    <div class="people-card-main" data-person-open="${escapeHtml(person.id)}">
+      <img class="people-avatar" src="${escapeHtml(person.avatar_url || DEFAULT_AVATAR_URL)}" alt="${escapeHtml(person.name)}" />
+      <div class="people-body">
+        <div class="people-row">
+          <h3 class="people-name">${escapeHtml(person.name)}</h3>
+          <button class="people-follow-btn ${followed ? 'is-following' : ''}" type="button" data-person-follow="${escapeHtml(person.id)}">
+            ${followed ? '已关注' : '关注'}
+          </button>
+        </div>
+        <p class="people-one-line">${escapeHtml(person.bio_one_line || '暂无简介')}</p>
+        <div class="people-meta">
+          <span class="people-tag">${escapeHtml(primaryTag)}</span>
+          <span class="people-dot"></span>
+          <span class="people-count">${escapeHtml(String(person.count || 0))}篇</span>
+        </div>
+      </div>
+    </div>
+  `;
+  const openBtn = li.querySelector('[data-person-open]');
+  const followBtn = li.querySelector('[data-person-follow]');
+  openBtn?.addEventListener('click', () => openPersonDetail(person.id));
+  followBtn?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleFollowAuthor(person.id);
+    renderPeople();
+  });
+  return li;
+}
+
+function renderPeople() {
+  if (!nodes.peopleList || !nodes.peopleListState) return;
+  const people = getPeopleList();
+  const filter = normalizePeopleFilter(state.peopleFilter);
+  const visible = filter === 'following'
+    ? people.filter((person) => state.followedAuthorIds.has(person.id))
+    : people;
+
+  nodes.peopleList.innerHTML = '';
+  if (!visible.length) {
+    nodes.peopleListState.textContent = filter === 'following' ? '你还没有关注人物' : '暂无人物';
+    nodes.peopleListState.classList.remove('hidden');
+  } else {
+    nodes.peopleListState.classList.add('hidden');
+    visible.forEach((person) => nodes.peopleList.appendChild(buildPeopleCard(person)));
+  }
+
+  if (state.peopleDetailId) {
+    const current = people.find((item) => item.id === state.peopleDetailId);
+    if (current) {
+      renderPersonDetail(current);
+    } else {
+      closePersonDetail();
+    }
+  }
+}
+
+function openPersonDetail(authorId) {
+  const person = getPeopleList().find((item) => item.id === authorId);
+  if (!person || !nodes.personDetail) return;
+  state.peopleDetailId = person.id;
+  if (!history.state || history.state.view !== 'people_detail' || history.state.authorId !== person.id) {
+    history.pushState({ view: 'people_detail', authorId: person.id }, '', location.href);
+  }
+  renderPersonDetail(person);
+}
+
+function closePersonDetail(options = {}) {
+  state.peopleDetailId = null;
+  if (nodes.personDetail) {
+    nodes.personDetail.classList.add('hidden');
+  }
+  if (nodes.peopleList) {
+    nodes.peopleList.classList.remove('hidden');
+  }
+  if (nodes.peopleListState && !nodes.peopleList.children.length) {
+    nodes.peopleListState.classList.remove('hidden');
+  }
+  if (!options.fromPopstate && history.state?.view === 'people_detail') {
+    history.back();
+  }
+}
+
+function renderPersonDetail(person) {
+  if (!nodes.personDetail || !nodes.personArticleList) return;
+  const tags = personTags(person);
+  const followed = state.followedAuthorIds.has(person.id);
+  nodes.personDetail.classList.remove('hidden');
+  nodes.peopleList.classList.add('hidden');
+  nodes.peopleListState.classList.add('hidden');
+
+  if (nodes.personDetailAvatar) {
+    nodes.personDetailAvatar.src = person.avatar_url || DEFAULT_AVATAR_URL;
+    nodes.personDetailAvatar.alt = person.name;
+  }
+  if (nodes.personDetailName) nodes.personDetailName.textContent = person.name;
+  if (nodes.personDetailOneLine) nodes.personDetailOneLine.textContent = person.bio_one_line || '暂无简介';
+  if (nodes.personDetailBio) nodes.personDetailBio.textContent = person.bio_full || '';
+  if (nodes.personDetailFollowBtn) {
+    nodes.personDetailFollowBtn.textContent = followed ? '已关注' : '关注';
+    nodes.personDetailFollowBtn.classList.toggle('is-following', followed);
+    nodes.personDetailFollowBtn.onclick = () => {
+      toggleFollowAuthor(person.id);
+      renderPeople();
+    };
+  }
+  if (nodes.personDetailTags) {
+    nodes.personDetailTags.innerHTML = tags
+      .slice(0, 2)
+      .map((tag) => `<span class="person-tag-chip">${escapeHtml(tag)}</span>`)
+      .join('');
+  }
+
+  const articles = state.articles
+    .filter((article) => articleBelongsToPerson(article, person))
+    .slice()
+    .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
+  if (nodes.personArticleCount) nodes.personArticleCount.textContent = `共${articles.length}篇`;
+  nodes.personArticleList.innerHTML = '';
+  articles.forEach((item) => nodes.personArticleList.appendChild(buildArticleCard(item)));
+}
+
 function normalizeTagFilter(value) {
   const text = String(value || '').trim();
   if (TAG_FILTER_OPTIONS.includes(text)) return text;
@@ -978,7 +1195,7 @@ async function exitReaderView(shouldReload = false) {
   document.body.classList.remove('reader-bar-hidden');
   closeReader({
     readerView: nodes.readerView,
-    listPanels: [nodes.todayTab, nodes.notesTab],
+    listPanels: getListPanels(),
     readerContent: nodes.readerContent,
     originSnippet: nodes.originSnippet,
     originSnippetText: nodes.originSnippetText
@@ -986,6 +1203,7 @@ async function exitReaderView(shouldReload = false) {
   setReaderAdminActionsVisible(false);
   closeHideArticleModal();
   nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
+  nodes.peopleTab.classList.toggle('hidden', state.tab !== 'people');
   nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
   if (state.tab === 'today' && progressResult?.articleId) {
     updateListProgress(progressResult.articleId, progressResult.percent);
@@ -1137,6 +1355,7 @@ async function loadArticles(options = {}) {
       if (cached && cached.length) {
         state.articles = cached;
         renderArticles();
+        renderPeople();
         renderedFromCache = true;
       }
     }
@@ -1149,6 +1368,7 @@ async function loadArticles(options = {}) {
     state.articles = await getArticles(state.filters);
     writeListCache(state.articles);
     renderArticles();
+    renderPeople();
     ensureIngestPolling();
   } catch (err) {
     if (!renderedFromCache) {
@@ -1196,7 +1416,7 @@ async function openArticle(id, jumpTo = null) {
         readerTitle: nodes.readerTitle,
         readerMeta: nodes.readerMeta,
         readerContent: nodes.readerContent,
-        listPanels: [nodes.todayTab, nodes.notesTab],
+        listPanels: getListPanels(),
         originSnippet: nodes.originSnippet,
         originSnippetText: nodes.originSnippetText,
         articleNotesPanel: nodes.articleNotesPanel
@@ -1222,7 +1442,7 @@ async function openArticle(id, jumpTo = null) {
         readerTitle: nodes.readerTitle,
         readerMeta: nodes.readerMeta,
         readerContent: nodes.readerContent,
-        listPanels: [nodes.todayTab, nodes.notesTab],
+        listPanels: getListPanels(),
         originSnippet: nodes.originSnippet,
         originSnippetText: nodes.originSnippetText
       });
@@ -1241,7 +1461,7 @@ async function openArticle(id, jumpTo = null) {
       readerTitle: nodes.readerTitle,
       readerMeta: nodes.readerMeta,
       readerContent: nodes.readerContent,
-      listPanels: [nodes.todayTab, nodes.notesTab],
+      listPanels: getListPanels(),
       originSnippet: nodes.originSnippet,
       originSnippetText: nodes.originSnippetText,
       articleNotesPanel: nodes.articleNotesPanel
@@ -1257,7 +1477,7 @@ async function openArticle(id, jumpTo = null) {
     setReaderAdminActionsVisible(false);
     closeReader({
       readerView: nodes.readerView,
-      listPanels: [nodes.todayTab, nodes.notesTab],
+      listPanels: getListPanels(),
       readerContent: nodes.readerContent,
       originSnippet: nodes.originSnippet,
       originSnippetText: nodes.originSnippetText
@@ -1267,6 +1487,7 @@ async function openArticle(id, jumpTo = null) {
 
 function switchTab(nextTab) {
   state.tab = nextTab;
+  updateTopbarForTab(nextTab);
   nodes.tabButtons.forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.tab === nextTab);
   });
@@ -1278,12 +1499,13 @@ function switchTab(nextTab) {
   document.body.classList.remove('reader-bar-hidden');
   closeReader({
     readerView: nodes.readerView,
-    listPanels: [nodes.todayTab, nodes.notesTab],
+    listPanels: getListPanels(),
     readerContent: nodes.readerContent,
     originSnippet: nodes.originSnippet,
     originSnippetText: nodes.originSnippetText
   });
   nodes.todayTab.classList.toggle('hidden', nextTab !== 'today');
+  nodes.peopleTab.classList.toggle('hidden', nextTab !== 'people');
   nodes.notesTab.classList.toggle('hidden', nextTab !== 'notes');
   if (nodes.ingestToggle) {
     nodes.ingestToggle.classList.toggle('hidden', nextTab !== 'today');
@@ -1295,6 +1517,10 @@ function switchTab(nextTab) {
 
   if (nextTab === 'notes') {
     refreshMeTab();
+  }
+  if (nextTab === 'people') {
+    renderPeopleFilterSelection();
+    renderPeople();
   }
 }
 
@@ -1334,12 +1560,26 @@ function bindEvents() {
     renderArticles();
   });
 
+  nodes.peopleFilterBar?.addEventListener('click', (event) => {
+    const chip = event.target.closest('.people-filter-chip');
+    if (!chip) return;
+    const next = normalizePeopleFilter(chip.dataset.peopleFilter);
+    if (next === state.peopleFilter) return;
+    state.peopleFilter = next;
+    renderPeopleFilterSelection();
+    renderPeople();
+  });
+
   nodes.backBtn?.addEventListener('click', async () => {
     await exitReaderView(false);
   });
 
   nodes.briefHistoryBack?.addEventListener('click', () => {
     history.back();
+  });
+
+  nodes.personDetailBack?.addEventListener('click', () => {
+    closePersonDetail();
   });
 
   nodes.closeOriginSnippet?.addEventListener('click', () => {
@@ -1599,6 +1839,10 @@ function bindEvents() {
       }
       if (state.briefHistoryOpen) {
         closeBriefHistory();
+        return;
+      }
+      if (state.peopleDetailId) {
+        closePersonDetail({ fromPopstate: true });
       }
     });
     state.historyBound = true;
@@ -1725,6 +1969,7 @@ async function openAdminConsole() {
   }
   document.body.classList.add('admin-mode');
   nodes.todayTab.classList.add('hidden');
+  nodes.peopleTab.classList.add('hidden');
   nodes.notesTab.classList.add('hidden');
   resetAdminBlocksCollapsed();
   nodes.adminConsole.classList.remove('hidden');
@@ -2227,9 +2472,13 @@ async function startApp() {
   if (state.appStarted) return;
   state.appStarted = true;
   state.selectedTagFilter = readTagFilter();
+  state.peopleFilter = 'all';
+  state.followedAuthorIds = readFollowedAuthorIds();
   trackEvent('open_app');
   bindEvents();
   renderTagFilterSelection();
+  renderPeopleFilterSelection();
+  renderPeople();
   bindAdminBlockAccordion();
   nodes.articleNotesBtn.addEventListener('click', async () => {
     await ensureReaderFeaturesInitialized();

@@ -1121,6 +1121,211 @@ body.theme-dark .topbar p {
   color: var(--text);
 }
 
+.people-filter-bar {
+  display: flex;
+  gap: 10px;
+  margin: 2px 0 14px;
+}
+
+.people-filter-chip {
+  border: 1px solid #d8dddf;
+  background: #f1f4f5;
+  color: #536063;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.people-filter-chip.is-active {
+  background: rgba(13, 148, 136, 0.14);
+  border-color: rgba(13, 148, 136, 0.24);
+  color: #0f766e;
+}
+
+.people-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.people-card-main {
+  width: 100%;
+  border: 0;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(25, 28, 29, 0.06);
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.people-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  object-fit: cover;
+  background: #d9dcde;
+  flex-shrink: 0;
+}
+
+.people-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.people-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.people-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.people-follow-btn,
+.person-follow-btn {
+  border: 1px solid #0f766e;
+  color: #0f766e;
+  background: transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+}
+
+.people-follow-btn.is-following,
+.person-follow-btn.is-following {
+  border-color: #ced4d6;
+  color: #7a868a;
+  background: #eef1f3;
+}
+
+.people-one-line {
+  margin: 0 0 8px;
+  color: #7a868a;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.people-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #7a868a;
+  font-size: 11px;
+}
+
+.people-tag {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.people-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: #c0c8cb;
+}
+
+.person-detail-back {
+  border: 0;
+  background: transparent;
+  color: #334044;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0;
+  margin: 0 0 12px;
+}
+
+.person-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.person-hero-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  object-fit: cover;
+  background: #d9dcde;
+}
+
+.person-hero-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.person-hero-name {
+  margin: 0 0 2px;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.person-hero-one-line {
+  margin: 0;
+  color: #7a868a;
+  font-size: 12px;
+}
+
+.person-tags {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.person-tag-chip {
+  background: rgba(13, 148, 136, 0.12);
+  color: #0f766e;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.person-detail-bio {
+  margin: 14px 0 0;
+  color: #718084;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.person-detail-divider {
+  margin: 14px 0;
+  border-top: 1px solid #e3e8ea;
+}
+
+.person-article-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.person-article-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.person-article-head span {
+  color: #7a868a;
+  font-size: 12px;
+}
+
 .notes-placeholder {
   border: 1px dashed var(--line);
   border-radius: 14px;
