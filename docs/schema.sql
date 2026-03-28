@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS articles (
   summary_zh          TEXT,
   tag                 TEXT,                                 -- 文章标签：科技 | 商业 | 产品 | 人生哲学
   author             TEXT,                                 -- 手动投喂作者名
+  author_key          TEXT,                                 -- 作者主键（关联 authors.source_key）
   author_avatar_url   TEXT,                                 -- 作者头像 URL（可空）
   content_en          TEXT,                                 -- 富文本原文（含 HTML 标签，用于渲染）
   content_plain       TEXT,                                 -- 纯文本版本（无 HTML 标签，用于划线字符位置计算和进度记录）
@@ -33,6 +34,20 @@ CREATE TABLE IF NOT EXISTS articles (
   publish_status      VARCHAR(20) DEFAULT 'published',       -- 'published' | 'pending_review' | 'hidden'
   hidden_reason       TEXT,                                 -- 隐藏原因（管理员）
   hidden_at           TIMESTAMP                             -- 隐藏时间
+);
+
+-- 作者表（统一作者主数据）
+CREATE TABLE IF NOT EXISTS authors (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_key TEXT UNIQUE,
+  name TEXT NOT NULL,
+  name_zh TEXT,
+  bio_one_line TEXT,
+  bio_full TEXT,
+  tag TEXT[],
+  avatar_url TEXT,
+  twitter_handle TEXT,
+  created_at TIMESTAMP DEFAULT now()
 );
 
 -- 划线表
@@ -107,6 +122,7 @@ CREATE TABLE IF NOT EXISTS invite_codes (
 
 -- 索引（提升常用查询性能）
 CREATE INDEX IF NOT EXISTS idx_articles_source_key ON articles(source_key);
+CREATE INDEX IF NOT EXISTS idx_articles_author_key ON articles(author_key);
 CREATE INDEX IF NOT EXISTS idx_articles_read_status ON articles(read_status);
 CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_articles_publish_status ON articles(publish_status, published_at DESC);

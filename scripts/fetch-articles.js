@@ -454,6 +454,7 @@ async function insertArticle(pool, article, options = {}) {
     ? `
     INSERT INTO articles (
       source_key,
+      author_key,
       title_en,
       title_zh,
       summary_en,
@@ -469,18 +470,20 @@ async function insertArticle(pool, article, options = {}) {
       published_at,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'unread', $12, $13, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'unread', $13, $14, NULL
     )
     ON CONFLICT (url) DO UPDATE SET
       summary_en = EXCLUDED.summary_en,
       summary_zh = EXCLUDED.summary_zh,
       author_avatar_url = COALESCE(articles.author_avatar_url, EXCLUDED.author_avatar_url),
-      content_plain = EXCLUDED.content_plain
+      content_plain = EXCLUDED.content_plain,
+      author_key = COALESCE(articles.author_key, EXCLUDED.author_key)
     RETURNING id, (xmax = 0) AS inserted
   `
     : `
     INSERT INTO articles (
       source_key,
+      author_key,
       title_en,
       title_zh,
       summary_en,
@@ -496,13 +499,14 @@ async function insertArticle(pool, article, options = {}) {
       published_at,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'unread', $12, $13, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'unread', $13, $14, NULL
     )
     ON CONFLICT (url) DO NOTHING
     RETURNING id
   `;
 
   const values = [
+    article.sourceKey,
     article.sourceKey,
     article.titleEn,
     article.titleZh || null,

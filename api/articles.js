@@ -119,7 +119,7 @@ async function listArticles(res, query, userId) {
       ? 'COALESCE(au.avatar_url, a.author_avatar_url) AS author_avatar_url'
       : 'a.author_avatar_url')
     : 'NULL::text AS author_avatar_url';
-  const authorsJoin = authorsTableExists ? 'LEFT JOIN authors au ON au.source_key = a.source_key' : '';
+  const authorsJoin = authorsTableExists ? 'LEFT JOIN authors au ON au.source_key = a.author_key' : '';
   const nameZhSelect = authorsTableExists ? 'au.name_zh' : 'NULL::text AS name_zh';
   const bioOneLineSelect = authorsTableExists ? 'au.bio_one_line' : 'NULL::text AS bio_one_line';
 
@@ -127,6 +127,7 @@ async function listArticles(res, query, userId) {
     SELECT
       a.id,
       a.source_key,
+      a.author_key,
       a.title_en,
       a.title_zh,
       a.summary_en,
@@ -231,13 +232,14 @@ async function getArticleById(res, id, userId) {
       ? 'COALESCE(au.avatar_url, a.author_avatar_url) AS author_avatar_url'
       : 'a.author_avatar_url')
     : 'NULL::text AS author_avatar_url';
-  const authorsJoin = authorsTableExists ? 'LEFT JOIN authors au ON au.source_key = a.source_key' : '';
+  const authorsJoin = authorsTableExists ? 'LEFT JOIN authors au ON au.source_key = a.author_key' : '';
   const nameZhSelect = authorsTableExists ? 'au.name_zh' : 'NULL::text AS name_zh';
   const bioOneLineSelect = authorsTableExists ? 'au.bio_one_line' : 'NULL::text AS bio_one_line';
   const sql = `
     SELECT
       a.id,
       a.source_key,
+      a.author_key,
       a.title_en,
       a.title_zh,
       a.summary_en,

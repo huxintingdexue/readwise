@@ -11,6 +11,7 @@
     "fetch:articles": "node scripts/fetch-articles.js",
     "tag:articles": "node scripts/tag-articles.js",
     "seed:authors": "node scripts/seed-authors.js",
+    "migrate:author-key": "node scripts/migrate-author-key.js",
     "backfill:posthog:7d": "node scripts/backfill-posthog-events.js",
     "migrate:author-avatar-url": "node scripts/migrate-author-avatar-url.js",
     "migrate:publish-status": "node scripts/migrate-publish-status.js",

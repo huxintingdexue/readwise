@@ -56,7 +56,7 @@ async function listAuthors(res, userId) {
       COUNT(a.id)::int AS article_count
     FROM authors au
     LEFT JOIN articles a
-      ON a.source_key = au.source_key
+      ON a.author_key = au.source_key
       AND (
         COALESCE(a.translation_job_status, a.status, 'ready') = 'ready'
         OR (COALESCE(a.translation_job_status, a.status, 'ready') = 'translating' AND a.submitted_by = $1)

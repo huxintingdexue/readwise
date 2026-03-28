@@ -824,6 +824,8 @@ function personArticleCount(person) {
 
 function articleBelongsToPerson(article, person) {
   if (!article || !person?.id) return false;
+  const authorKey = String(article.author_key || '').trim();
+  if (authorKey && authorKey === person.id) return true;
   const sourceKey = String(article.source_key || '').trim();
   if (sourceKey && sourceKey === person.id) return true;
   const authorName = String(article.author || '').trim().toLowerCase();
@@ -845,9 +847,12 @@ function getPeopleList() {
         avatar_url: String(item.avatar_url || '').trim() || sourceFallbackAvatar(sourceKey)
       };
       const countFromApi = Number(item?.article_count || 0);
+      const countFromLocal = personArticleCount(normalized);
       return {
         ...normalized,
-        count: Number.isFinite(countFromApi) && countFromApi >= 0 ? countFromApi : personArticleCount(normalized)
+        count: Number.isFinite(countFromApi) && countFromApi >= 0
+          ? Math.max(countFromApi, countFromLocal)
+          : countFromLocal
       };
     })
     .filter((item) => Boolean(item.id))
