@@ -611,7 +611,27 @@ function formatDate(isoString) {
   if (!isoString) return '未知时间';
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return '未知时间';
-  return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  }).formatToParts(d);
+  const year = Number(parts.find((p) => p.type === 'year')?.value || 0);
+  const month = Number(parts.find((p) => p.type === 'month')?.value || 0);
+  const day = Number(parts.find((p) => p.type === 'day')?.value || 0);
+  if (!year || !month || !day) return '未知时间';
+
+  const nowParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric'
+  }).formatToParts(new Date());
+  const currentYear = Number(nowParts.find((p) => p.type === 'year')?.value || 0);
+
+  if (year === currentYear) {
+    return `${month}/${day}`;
+  }
+  return `${year}/${month}/${day}`;
 }
 
 function displayAuthorName(author) {
