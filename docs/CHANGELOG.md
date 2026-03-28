@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-03-28 — 标签筛选埋点接入（v2.16.29）
+
+### 已完成
+- ✅ 新增标签筛选事件 `filter_tag`
+- ✅ 今日页点击标签筛选时上报事件，并透传属性：`tag`、`prev_tag`、`page=today`
+- ✅ `/api/events` 放行并转发 `filter_tag` 到 PostHog
+
+### 变更文件
+- frontend/js/app.js
+- api/events.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 协作约定补充：数据库迁移先于代码发布（v2.16.25）
 
 ### 已完成

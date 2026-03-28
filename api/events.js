@@ -4,7 +4,7 @@ import { resolveUserId, getClientIp } from './_utils/auth.js';
 
 dotenv.config({ path: '.env.local' });
 
-const VALID_EVENTS = new Set(['open_app', 'open_article', 'finish_article']);
+const VALID_EVENTS = new Set(['open_app', 'open_article', 'finish_article', 'filter_tag']);
 const POSTHOG_API_KEY = String(process.env.POSTHOG_API_KEY || '').trim();
 const POSTHOG_HOST = String(process.env.POSTHOG_HOST || '').trim().replace(/\/+$/, '');
 const IS_PRODUCTION_ENV = String(process.env.VERCEL_ENV || '').trim() === 'production';
