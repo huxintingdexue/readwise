@@ -1023,6 +1023,7 @@ function buildArticleCard(item, showBriefHistoryEntry = false) {
   const summaryText = String(item.summary_zh || item.summary_en || '暂无摘要');
   const summaryClass = summaryText.length > 66 ? 'article-summary summary-long' : 'article-summary';
   const tagLabel = String(item.tag || '').trim();
+  const isDailyBrief = item.source_key === 'daily_brief';
   li.innerHTML = `
     <article class="article-card${isTranslating ? ' is-disabled' : ''}${isManualTranslating ? ' is-recommend' : ''} bg-white rounded-xl p-4 relative group active:scale-[0.99] transition-all duration-200 shadow-[0_1px_6px_rgba(0,0,0,0.02)]" data-id="${item.id}">
       <div class="article-card-top">
@@ -1042,10 +1043,10 @@ function buildArticleCard(item, showBriefHistoryEntry = false) {
         <h3 class="article-title">${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</h3>
         <p class="${summaryClass}">${escapeHtml(summaryText)}</p>
       </div>
-      <div class="article-bottom">
+      ${isDailyBrief ? '' : `<div class="article-bottom">
         ${tagLabel ? `<span class="article-topic">${escapeHtml(tagLabel)}</span><span class="article-dot"></span>` : ''}
         <span class="article-date">${escapeHtml(formatDate(item.published_at))}</span>
-      </div>
+      </div>`}
       ${showBriefHistoryEntry ? '<div class="brief-history-card-entry"><button class="brief-history-btn">查看历史快讯</button></div>' : ''}
     </article>
   `;
