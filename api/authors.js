@@ -83,7 +83,11 @@ async function listAuthors(res, userId) {
         WHEN au.source_key IN ('manual', 'daily_brief') THEN 1
         ELSE 0
       END ASC,
-      au.created_at ASC,
+      CASE
+        WHEN COUNT(a.id) > 0 THEN 0
+        ELSE 1
+      END ASC,
+      COUNT(a.id) DESC,
       au.name ASC
   `;
 
@@ -105,4 +109,3 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'internal_error', message: err.message });
   }
 }
-

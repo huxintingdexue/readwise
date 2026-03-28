@@ -850,7 +850,19 @@ function getPeopleList() {
         count: Number.isFinite(countFromApi) && countFromApi >= 0 ? countFromApi : personArticleCount(normalized)
       };
     })
-    .filter((item) => Boolean(item.id));
+    .filter((item) => Boolean(item.id))
+    .sort((a, b) => {
+      const aIsSpecial = ['manual', 'daily_brief'].includes(String(a.source_key || ''));
+      const bIsSpecial = ['manual', 'daily_brief'].includes(String(b.source_key || ''));
+      if (aIsSpecial !== bIsSpecial) return aIsSpecial ? 1 : -1;
+      const aCount = Number(a.count || 0);
+      const bCount = Number(b.count || 0);
+      const aHas = aCount > 0 ? 0 : 1;
+      const bHas = bCount > 0 ? 0 : 1;
+      if (aHas !== bHas) return aHas - bHas;
+      if (bCount !== aCount) return bCount - aCount;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN');
+    });
 }
 
 function renderPeopleFilterSelection() {
