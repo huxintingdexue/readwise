@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-28 — 摘要行数显示一致性修复（v2.16.33）
+
+### 已完成
+- ✅ 移除文章卡片摘要“按字符长度阈值切换 3/4 行”的逻辑（`summaryText.length > 66`）
+- ✅ 改为统一最多显示 4 行，保证“全部 / 科技 / 商业 / 产品”标签下的摘要表现一致
+
+### 变更文件
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — Paul Graham 头像更新（v2.16.32）
 
 ### 已完成
