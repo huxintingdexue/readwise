@@ -20,6 +20,7 @@ const state = {
   ingestBusy: false,
   currentUser: null,
   articleDetailCache: new Map(),
+  selectedTagFilter: '全部',
   listScrollTop: {
     today: 0,
     notes: 0
@@ -30,6 +31,8 @@ const state = {
 
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
+const TAG_FILTER_STORAGE_KEY = 'rw:today-tag-filter:v1';
+const TAG_FILTER_OPTIONS = ['全部', '科技', '商业', '产品', '个人成长'];
 const UI_STATE_STORAGE_KEY = 'rw:ui-state:v1';
 const LAST_READER_STATE_KEY = 'rw:last-reader:v1';
 const LAST_READER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -177,6 +180,8 @@ const nodes = {
   statusFilter: document.querySelector('#statusFilter'),
   authorFilter: document.querySelector('#authorFilter'),
   sortFilter: document.querySelector('#sortFilter'),
+  todayTagFilterBar: document.querySelector('#todayTagFilterBar'),
+  todayTagFilterChips: [...document.querySelectorAll('#todayTagFilterBar .tag-filter-chip')],
   articlesState: document.querySelector('#articlesState'),
   articlesList: document.querySelector('#articlesList'),
   briefHistoryHeader: document.querySelector('#briefHistoryHeader'),
@@ -699,6 +704,39 @@ function sourceFallbackAvatar(sourceKey) {
   return SOURCE_AVATAR_URLS[sourceKey] || DEFAULT_AVATAR_URL;
 }
 
+function normalizeTagFilter(value) {
+  const text = String(value || '').trim();
+  if (TAG_FILTER_OPTIONS.includes(text)) return text;
+  return '全部';
+}
+
+function readTagFilter() {
+  try {
+    return normalizeTagFilter(localStorage.getItem(TAG_FILTER_STORAGE_KEY));
+  } catch (_) {
+    return '全部';
+  }
+}
+
+function writeTagFilter(value) {
+  try {
+    localStorage.setItem(TAG_FILTER_STORAGE_KEY, normalizeTagFilter(value));
+  } catch (_) {}
+}
+
+function renderTagFilterSelection() {
+  const selected = normalizeTagFilter(state.selectedTagFilter);
+  nodes.todayTagFilterChips.forEach((chip) => {
+    chip.classList.toggle('is-active', chip.dataset.tagFilter === selected);
+  });
+}
+
+function matchesTagFilter(item) {
+  const selected = normalizeTagFilter(state.selectedTagFilter);
+  if (selected === '全部') return true;
+  return String(item?.tag || '').trim() === selected;
+}
+
 function resolveAuthorAvatarUrl(item) {
   const dbAvatar = String(item?.author_avatar_url || '').trim();
   return dbAvatar || sourceFallbackAvatar(item?.source_key);
@@ -1130,10 +1168,11 @@ function closeBriefHistory() {
 
 function renderArticles() {
   nodes.articlesList.innerHTML = '';
+  const filteredArticles = state.articles.filter((item) => matchesTagFilter(item));
 
   if (state.briefHistoryOpen) {
     nodes.articlesState.textContent = '';
-    const briefs = state.articles
+    const briefs = filteredArticles
       .filter((a) => a.source_key === 'daily_brief')
       .slice()
       .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
@@ -1145,8 +1184,8 @@ function renderArticles() {
     return;
   }
 
-  if (state.articles.length === 0) {
-    nodes.articlesState.textContent = '暂无文章';
+  if (filteredArticles.length === 0) {
+    nodes.articlesState.textContent = state.selectedTagFilter === '全部' ? '暂无文章' : '该标签下暂无文章';
     return;
   }
 
@@ -1171,12 +1210,12 @@ function renderArticles() {
   };
   const todaySh = shDate(new Date().toISOString());
 
-  const briefs = state.articles
+  const briefs = filteredArticles
     .filter((a) => a.source_key === 'daily_brief')
     .slice()
     .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
 
-  const normal = state.articles
+  const normal = filteredArticles
     .filter((a) => a.source_key !== 'daily_brief')
     .slice()
     .sort((a, b) => {
@@ -1406,6 +1445,17 @@ function bindEvents() {
   nodes.sortFilter?.addEventListener('change', () => {
     state.filters.sort = nodes.sortFilter.value || 'date_desc';
     loadArticles();
+  });
+
+  nodes.todayTagFilterBar?.addEventListener('click', (event) => {
+    const chip = event.target.closest('.tag-filter-chip');
+    if (!chip) return;
+    const next = normalizeTagFilter(chip.dataset.tagFilter);
+    if (next === state.selectedTagFilter) return;
+    state.selectedTagFilter = next;
+    writeTagFilter(next);
+    renderTagFilterSelection();
+    renderArticles();
   });
 
   nodes.backBtn?.addEventListener('click', async () => {
@@ -2306,6 +2356,7 @@ function bindLoginEvents() {
 async function startApp() {
   if (state.appStarted) return;
   state.appStarted = true;
+  state.selectedTagFilter = readTagFilter();
   ensureHomeHistoryState();
   const uiState = readUiState();
   const lastReaderState = readLastReaderState();
@@ -2317,6 +2368,7 @@ async function startApp() {
   }
   trackEvent('open_app');
   bindEvents();
+  renderTagFilterSelection();
   bindAdminBlockAccordion();
   nodes.articleNotesBtn.addEventListener('click', async () => {
     await ensureReaderFeaturesInitialized();
