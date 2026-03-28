@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-28 — 生产库 schema 盘点与自检命令沉淀（v2.16.31）
+
+### 已完成
+- ✅ 连接生产库完成 `public` schema 盘点：表、字段、索引、外键
+- ✅ 明确人物模块关键事实：`authors.tag` 为 `text[]`，`articles` 无 `title` 列（使用 `title_en/title_zh`）
+- ✅ 在 `docs/CONTEXT.md` 新增“数据库结构快照（2026-03-28）”与可复用 SQL 自检命令（字段/表/索引/外键）
+
+### 变更文件
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 管理员统计口径改为中国时区（v2.16.30）
 
 ### 已完成

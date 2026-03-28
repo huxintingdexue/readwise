@@ -1,6 +1,7 @@
 ﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth, createGuestSession } from './api.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 import { DEFAULT_AVATAR_URL, SOURCE_AVATAR_URLS } from './avatar-config.js';
+import { getAuthors } from './api.js';
 
 const state = {
   tab: 'today',
@@ -20,13 +21,18 @@ const state = {
   ingestBusy: false,
   currentUser: null,
   articleDetailCache: new Map(),
+  authors: [],
   selectedTagFilter: '全部',
   listScrollTop: {
     today: 0,
+    people: 0,
     notes: 0
   },
   briefHistoryOpen: false,
-  readerExitInFlight: false
+  peopleFilter: 'all',
+  peopleDetailId: null,
+  followedAuthorIds: new Set(),
+  peopleShowZeroAuthors: false
 };
 
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v3';
@@ -43,13 +49,48 @@ const LAST_READER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
-const SPLASH_MIN_MS = 1500;
 const SW_REGISTER_DELAY_MS = 1200;
 const DESKTOP_TIP_KEY = 'rw_desktop_tip_dismissed';
 const INSTALL_CTA_DISMISS_KEY = 'rw_install_cta_dismiss_until';
 const INSTALL_CTA_DISMISS_MS = 24 * 60 * 60 * 1000;
 const ANDROID_APK_URL = 'https://gitee.com/byguang/apk-download/releases/download/v1.0.0/readwise.apk';
-let splashShownAt = Date.now();
+const PEOPLE_FOLLOW_STORAGE_KEY = 'rw:people-follow:v1';
+const PEOPLE_FILTER_OPTIONS = ['all', 'following'];
+
+const PEOPLE_PRESET = [
+  {
+    id: 'sam',
+    name: 'Sam Altman',
+    avatar_url: SOURCE_AVATAR_URLS.sam || DEFAULT_AVATAR_URL,
+    bio_one_line: 'OpenAI CEO · AI 研究者',
+    bio_full: 'Sam Altman 是 OpenAI CEO，长期关注通用人工智能的落地路径。他的公开内容常围绕 AI 能力边界、产品化节奏与产业影响。阅读他的文章，适合快速把握 AI 行业的重要变化与长期判断。',
+    tag: ['科技', '商业']
+  },
+  {
+    id: 'andrej',
+    name: 'Andrej Karpathy',
+    avatar_url: SOURCE_AVATAR_URLS.andrej || DEFAULT_AVATAR_URL,
+    bio_one_line: 'AI 工程专家 · 教育型创作者',
+    bio_full: 'Andrej Karpathy 擅长把复杂模型机制讲清楚，内容覆盖 LLM、训练范式和工程实现细节。他的文章对工程团队非常实用，既有方法论也有可执行的实践路径。',
+    tag: ['科技', '产品']
+  },
+  {
+    id: 'naval',
+    name: 'Naval Ravikant',
+    avatar_url: SOURCE_AVATAR_URLS.naval || DEFAULT_AVATAR_URL,
+    bio_one_line: '创业者与思想者 · AngelList 创始人',
+    bio_full: 'Naval 的内容兼具商业视角与人生哲学视角，常从第一性原理讨论财富、判断与长期主义。阅读他的文章有助于在技术趋势之外，建立更稳的认知框架与决策体系。',
+    tag: ['商业', '人生哲学']
+  },
+  {
+    id: 'peter',
+    name: 'Peter Steinberger',
+    avatar_url: SOURCE_AVATAR_URLS.peter || DEFAULT_AVATAR_URL,
+    bio_one_line: 'iOS 工程负责人 · 开发者工具专家',
+    bio_full: 'Peter 长期深耕 Apple 平台开发与工程效率，内容聚焦架构、性能和开发体验。他的文章适合希望提升工程质量与产品交付效率的开发者阅读。',
+    tag: ['科技', '产品']
+  }
+];
 let splashFallbackTimer = null;
 let swRegisterTimer = null;
 let readerFeaturesReady = false;
@@ -183,11 +224,25 @@ function isReadingMode() {
   return document.body.classList.contains('reading-mode');
 }
 
+function getListPanels() {
+  return [nodes.todayTab, nodes.peopleTab, nodes.notesTab].filter(Boolean);
+}
+
+function updateTopbarForTab(tab) {
+  const h1 = nodes.topbarTitle?.querySelector('h1');
+  const p = nodes.topbarTitle?.querySelector('p');
+  if (!h1 || !p) return;
+  void tab;
+  h1.textContent = '今日硅谷';
+  p.textContent = '全球一手信息 触手可及';
+}
+
 const nodes = {
   appShell: document.querySelector('.app-shell'),
   tabButtons: [...document.querySelectorAll('.tab-btn')],
   splashScreen: document.querySelector('#splashScreen'),
   todayTab: document.querySelector('#tab-today'),
+  peopleTab: document.querySelector('#tab-people'),
   notesTab: document.querySelector('#tab-notes'),
   statusFilter: document.querySelector('#statusFilter'),
   authorFilter: document.querySelector('#authorFilter'),
@@ -196,6 +251,21 @@ const nodes = {
   todayTagFilterChips: [...document.querySelectorAll('#todayTagFilterBar .tag-filter-chip')],
   articlesState: document.querySelector('#articlesState'),
   articlesList: document.querySelector('#articlesList'),
+  peopleListState: document.querySelector('#peopleListState'),
+  peopleList: document.querySelector('#peopleList'),
+  peopleExpandBtn: document.querySelector('#peopleExpandBtn'),
+  peopleFilterBar: document.querySelector('.people-filter-bar'),
+  peopleFilterChips: [...document.querySelectorAll('.people-filter-chip')],
+  personDetail: document.querySelector('#personDetail'),
+  personDetailBack: document.querySelector('#personDetailBack'),
+  personDetailAvatar: document.querySelector('#personDetailAvatar'),
+  personDetailName: document.querySelector('#personDetailName'),
+  personDetailOneLine: document.querySelector('#personDetailOneLine'),
+  personDetailTags: document.querySelector('#personDetailTags'),
+  personDetailFollowBtn: document.querySelector('#personDetailFollowBtn'),
+  personDetailBio: document.querySelector('#personDetailBio'),
+  personArticleCount: document.querySelector('#personArticleCount'),
+  personArticleList: document.querySelector('#personArticleList'),
   briefHistoryHeader: document.querySelector('#briefHistoryHeader'),
   briefHistoryBack: document.querySelector('#briefHistoryBack'),
   readerView: document.querySelector('#readerView'),
@@ -716,6 +786,280 @@ function sourceFallbackAvatar(sourceKey) {
   return SOURCE_AVATAR_URLS[sourceKey] || DEFAULT_AVATAR_URL;
 }
 
+function normalizePeopleFilter(value) {
+  const normalized = String(value || '').trim();
+  return PEOPLE_FILTER_OPTIONS.includes(normalized) ? normalized : 'all';
+}
+
+function readFollowedAuthorIds() {
+  try {
+    const raw = localStorage.getItem(PEOPLE_FOLLOW_STORAGE_KEY);
+    if (!raw) return new Set();
+    const ids = JSON.parse(raw);
+    if (!Array.isArray(ids)) return new Set();
+    return new Set(ids.map((id) => String(id || '').trim()).filter(Boolean));
+  } catch (_) {
+    return new Set();
+  }
+}
+
+function writeFollowedAuthorIds(nextSet) {
+  try {
+    localStorage.setItem(PEOPLE_FOLLOW_STORAGE_KEY, JSON.stringify([...nextSet]));
+  } catch (_) {}
+}
+
+function personTags(person) {
+  if (Array.isArray(person?.tag)) {
+    return person.tag.map((item) => String(item || '').trim()).filter(Boolean);
+  }
+  return String(person?.tag || '')
+    .split(/[,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function personArticleCount(person) {
+  if (!person?.id) return 0;
+  return state.articles.filter((article) => articleBelongsToPerson(article, person)).length;
+}
+
+function articleBelongsToPerson(article, person) {
+  if (!article || !person?.id) return false;
+  const authorKey = String(article.author_key || '').trim();
+  if (authorKey && authorKey === person.id) return true;
+  const sourceKey = String(article.source_key || '').trim();
+  if (sourceKey && sourceKey === person.id) return true;
+  const authorName = String(article.author || '').trim().toLowerCase();
+  const personName = String(person.name || '').trim().toLowerCase();
+  return Boolean(authorName && personName && authorName.includes(personName));
+}
+
+function getPeopleList() {
+  const source = Array.isArray(state.authors) && state.authors.length ? state.authors : PEOPLE_PRESET;
+  return source
+    .map((item) => {
+      const id = String(item.source_key || item.id || '').trim();
+      const sourceKey = String(item.source_key || id || '').trim();
+      const normalized = {
+        ...item,
+        id,
+        source_key: sourceKey,
+        name: String(item.name || item.name_zh || id || '').trim(),
+        avatar_url: String(item.avatar_url || '').trim() || sourceFallbackAvatar(sourceKey)
+      };
+      const countFromApi = Number(item?.article_count || 0);
+      const countFromLocal = personArticleCount(normalized);
+      return {
+        ...normalized,
+        count: Number.isFinite(countFromApi) && countFromApi >= 0
+          ? Math.max(countFromApi, countFromLocal)
+          : countFromLocal
+      };
+    })
+    .filter((item) => {
+      const key = String(item.source_key || '').trim();
+      return Boolean(item.id) && key !== 'daily_brief' && key !== 'unknown';
+    })
+    .sort((a, b) => {
+      const aIsSpecial = ['manual', 'daily_brief'].includes(String(a.source_key || ''));
+      const bIsSpecial = ['manual', 'daily_brief'].includes(String(b.source_key || ''));
+      if (aIsSpecial !== bIsSpecial) return aIsSpecial ? 1 : -1;
+      const aCount = Number(a.count || 0);
+      const bCount = Number(b.count || 0);
+      const aHas = aCount > 0 ? 0 : 1;
+      const bHas = bCount > 0 ? 0 : 1;
+      if (aHas !== bHas) return aHas - bHas;
+      if (bCount !== aCount) return bCount - aCount;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN');
+    });
+}
+
+function renderPeopleFilterSelection() {
+  const active = normalizePeopleFilter(state.peopleFilter);
+  nodes.peopleFilterChips.forEach((chip) => {
+    chip.classList.toggle('is-active', chip.dataset.peopleFilter === active);
+  });
+}
+
+function toggleFollowAuthor(authorId) {
+  const id = String(authorId || '').trim();
+  if (!id) return;
+  if (state.followedAuthorIds.has(id)) {
+    state.followedAuthorIds.delete(id);
+  } else {
+    state.followedAuthorIds.add(id);
+  }
+  writeFollowedAuthorIds(state.followedAuthorIds);
+}
+
+function resolvePersonZhName(person) {
+  const direct = String(person?.name_zh || '').trim();
+  if (direct) return direct;
+  const id = String(person?.id || person?.source_key || '').trim();
+  const name = String(person?.name || '').trim().toLowerCase();
+  const source = Array.isArray(state.authors) && state.authors.length ? state.authors : PEOPLE_PRESET;
+  const list = Array.isArray(source) ? source : [];
+  const byId = list.find((item) => {
+    const key = String(item?.source_key || item?.id || '').trim();
+    return Boolean(key) && key === id;
+  });
+  if (byId?.name_zh) return String(byId.name_zh).trim();
+  const byName = list.find((item) => String(item?.name || '').trim().toLowerCase() === name);
+  return byName?.name_zh ? String(byName.name_zh).trim() : '';
+}
+
+function buildPeopleCard(person) {
+  const li = document.createElement('li');
+  li.className = 'people-card';
+  const followed = state.followedAuthorIds.has(person.id);
+  const tags = personTags(person);
+  const tagText = tags.length ? tags.join(' / ') : '科技';
+  const countValue = Number(person.count || 0);
+  const countLabel = countValue > 0 ? `${countValue}篇文章` : '计划同步中';
+  const zhName = resolvePersonZhName(person);
+  li.innerHTML = `
+    <div class="people-card-main" data-person-open="${escapeHtml(person.id)}">
+      <img class="people-avatar" src="${escapeHtml(person.avatar_url || DEFAULT_AVATAR_URL)}" alt="${escapeHtml(person.name)}" />
+      <div class="people-body">
+        <div class="people-row">
+          <h3 class="people-name">${escapeHtml(person.name)}</h3>
+          <button class="people-follow-btn ${followed ? 'is-following' : ''}" type="button" data-person-follow="${escapeHtml(person.id)}">
+            ${followed ? '已关注' : '关注'}
+          </button>
+        </div>
+        ${zhName ? `<p class="people-name-zh">${escapeHtml(zhName)}</p>` : ''}
+        <p class="people-one-line">${escapeHtml(person.bio_one_line || '暂无简介')}</p>
+        <div class="people-meta">
+          <span class="people-tag">${escapeHtml(tagText)}</span>
+          <span class="people-dot"></span>
+          <span class="people-count">${escapeHtml(countLabel)}</span>
+        </div>
+      </div>
+    </div>
+  `;
+  const openBtn = li.querySelector('[data-person-open]');
+  const followBtn = li.querySelector('[data-person-follow]');
+  openBtn?.addEventListener('click', () => openPersonDetail(person.id));
+  followBtn?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleFollowAuthor(person.id);
+    renderPeople();
+  });
+  return li;
+}
+
+function renderPeople() {
+  if (!nodes.peopleList || !nodes.peopleListState) return;
+  const people = getPeopleList();
+  const filter = normalizePeopleFilter(state.peopleFilter);
+  const base = filter === 'following'
+    ? people.filter((person) => state.followedAuthorIds.has(person.id))
+    : people;
+  const nonZero = base.filter((person) => Number(person.count || 0) > 0);
+  const zero = base.filter((person) => Number(person.count || 0) <= 0);
+  const visible = state.peopleShowZeroAuthors ? base : nonZero;
+  const hasCollapsed = !state.peopleShowZeroAuthors && zero.length > 0;
+
+  nodes.peopleList.innerHTML = '';
+  nodes.peopleExpandBtn?.classList.add('hidden');
+  if (!visible.length) {
+    nodes.peopleListState.textContent = filter === 'following' ? '你还没有关注人物' : '暂无人物';
+    nodes.peopleListState.classList.remove('hidden');
+  } else {
+    nodes.peopleListState.classList.add('hidden');
+    visible.forEach((person) => nodes.peopleList.appendChild(buildPeopleCard(person)));
+  }
+
+  if (hasCollapsed) {
+    nodes.peopleExpandBtn?.classList.remove('hidden');
+    if (nodes.peopleExpandBtn) {
+      nodes.peopleExpandBtn.textContent = `查看更多（${zero.length}位）`;
+    }
+    if (!visible.length) {
+      nodes.peopleListState.classList.add('hidden');
+    }
+  }
+
+  if (state.peopleDetailId) {
+    const current = people.find((item) => item.id === state.peopleDetailId);
+    if (current) {
+      renderPersonDetail(current);
+    } else {
+      closePersonDetail();
+    }
+  }
+}
+
+function openPersonDetail(authorId) {
+  const person = getPeopleList().find((item) => item.id === authorId);
+  if (!person || !nodes.personDetail) return;
+  state.peopleDetailId = person.id;
+  if (!history.state || history.state.view !== 'people_detail' || history.state.authorId !== person.id) {
+    history.pushState({ view: 'people_detail', authorId: person.id }, '', location.href);
+  }
+  renderPersonDetail(person);
+}
+
+function closePersonDetail(options = {}) {
+  state.peopleDetailId = null;
+  if (nodes.personDetail) {
+    nodes.personDetail.classList.add('hidden');
+  }
+  if (nodes.peopleList) {
+    nodes.peopleList.classList.remove('hidden');
+  }
+  nodes.peopleExpandBtn?.classList.add('hidden');
+  if (nodes.peopleListState && !nodes.peopleList.children.length) {
+    nodes.peopleListState.classList.remove('hidden');
+  }
+  nodes.peopleFilterBar?.classList.remove('hidden');
+  if (!options.fromPopstate && history.state?.view === 'people_detail') {
+    history.back();
+  }
+}
+
+function renderPersonDetail(person) {
+  if (!nodes.personDetail || !nodes.personArticleList) return;
+  const tags = personTags(person);
+  const followed = state.followedAuthorIds.has(person.id);
+  nodes.personDetail.classList.remove('hidden');
+  nodes.peopleList.classList.add('hidden');
+  nodes.peopleExpandBtn?.classList.add('hidden');
+  nodes.peopleListState.classList.add('hidden');
+  nodes.peopleFilterBar?.classList.add('hidden');
+
+  if (nodes.personDetailAvatar) {
+    nodes.personDetailAvatar.src = person.avatar_url || DEFAULT_AVATAR_URL;
+    nodes.personDetailAvatar.alt = person.name;
+  }
+  if (nodes.personDetailName) nodes.personDetailName.textContent = person.name;
+  if (nodes.personDetailOneLine) nodes.personDetailOneLine.textContent = person.bio_one_line || '暂无简介';
+  if (nodes.personDetailBio) nodes.personDetailBio.textContent = person.bio_full || '';
+  if (nodes.personDetailFollowBtn) {
+    nodes.personDetailFollowBtn.textContent = followed ? '已关注' : '关注';
+    nodes.personDetailFollowBtn.classList.toggle('is-following', followed);
+    nodes.personDetailFollowBtn.onclick = () => {
+      toggleFollowAuthor(person.id);
+      renderPeople();
+    };
+  }
+  if (nodes.personDetailTags) {
+    nodes.personDetailTags.innerHTML = tags
+      .slice(0, 2)
+      .map((tag) => `<span class="person-tag-chip">${escapeHtml(tag)}</span>`)
+      .join('');
+  }
+
+  const articles = state.articles
+    .filter((article) => articleBelongsToPerson(article, person))
+    .slice()
+    .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
+  if (nodes.personArticleCount) nodes.personArticleCount.textContent = `共${articles.length}篇`;
+  nodes.personArticleList.innerHTML = '';
+  articles.forEach((item) => nodes.personArticleList.appendChild(buildArticleCard(item)));
+}
+
 function normalizeTagFilter(value) {
   const raw = String(value || '').trim();
   const text = LEGACY_TAG_MAP[raw] || raw;
@@ -809,127 +1153,6 @@ function maxScrollableDistance(scroller = window) {
   return Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
 }
 
-function readUiState() {
-  try {
-    const raw = localStorage.getItem(UI_STATE_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return null;
-    const tab = parsed.tab === 'notes' ? 'notes' : 'today';
-    const today = Math.max(0, Number(parsed?.listScrollTop?.today || 0));
-    const notes = Math.max(0, Number(parsed?.listScrollTop?.notes || 0));
-    return {
-      tab,
-      listScrollTop: { today, notes }
-    };
-  } catch (_) {
-    return null;
-  }
-}
-
-function writeUiState() {
-  try {
-    localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify({
-      tab: state.tab === 'notes' ? 'notes' : 'today',
-      listScrollTop: {
-        today: Math.max(0, Number(state.listScrollTop?.today || 0)),
-        notes: Math.max(0, Number(state.listScrollTop?.notes || 0))
-      },
-      savedAt: Date.now()
-    }));
-  } catch (_) {}
-}
-
-function readLastReaderState() {
-  try {
-    const raw = localStorage.getItem(LAST_READER_STATE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    const articleId = String(parsed?.articleId || '').trim();
-    if (!articleId) return null;
-    const savedAt = Number(parsed?.savedAt || 0);
-    if (!Number.isFinite(savedAt) || savedAt <= 0) {
-      clearLastReaderState();
-      return null;
-    }
-    if ((Date.now() - savedAt) > LAST_READER_MAX_AGE_MS) {
-      clearLastReaderState();
-      return null;
-    }
-    return { articleId };
-  } catch (_) {
-    return null;
-  }
-}
-
-function writeLastReaderState(articleId) {
-  const id = String(articleId || '').trim();
-  if (!id) return;
-  try {
-    localStorage.setItem(LAST_READER_STATE_KEY, JSON.stringify({
-      articleId: id,
-      savedAt: Date.now()
-    }));
-  } catch (_) {}
-}
-
-function clearLastReaderState() {
-  try {
-    localStorage.removeItem(LAST_READER_STATE_KEY);
-  } catch (_) {}
-}
-
-function getCleanHomeUrl() {
-  const baseUrl = new URL(window.location.href);
-  baseUrl.searchParams.delete('article');
-  if (baseUrl.searchParams.get('view') === 'admin') {
-    baseUrl.searchParams.delete('view');
-  }
-  return `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`;
-}
-
-function ensureHomeHistoryState() {
-  const view = String(history.state?.view || '').trim();
-  if (view === 'home' || view === 'admin' || view === 'brief_history') return;
-  history.replaceState({ view: 'home' }, '', getCleanHomeUrl());
-}
-
-function pushHomeHistoryAnchor() {
-  const view = String(history.state?.view || '').trim();
-  if (view !== 'home') return;
-  const url = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  history.pushState({ view: 'home_restore_anchor' }, '', url);
-}
-
-function ensureAutoRestoreHistoryStack() {
-  const cleanUrl = getCleanHomeUrl();
-  const currentView = String(history.state?.view || '').trim();
-
-  if (currentView !== 'home') {
-    history.replaceState({ view: 'home' }, '', cleanUrl);
-  } else if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== cleanUrl) {
-    history.replaceState({ view: 'home' }, '', cleanUrl);
-  }
-
-  pushHomeHistoryAnchor();
-}
-
-function pushReaderHistoryState(articleId, options = {}) {
-  const id = String(articleId || '').trim();
-  if (!id) return;
-  const withBackGuard = options.withBackGuard === true;
-  const readerUrl = `?article=${encodeURIComponent(id)}`;
-  const currentView = String(history.state?.view || '').trim();
-  const currentArticleId = String(history.state?.articleId || '').trim();
-
-  if (currentView !== 'reader' || currentArticleId !== id) {
-    history.pushState({ view: 'reader', articleId: id }, '', readerUrl);
-  }
-  if (withBackGuard) {
-    history.pushState({ view: 'reader_back_guard', articleId: id }, '', readerUrl);
-  }
-}
-
 function calcScrollPositionByBaseLength(baseLength, scroller = window) {
   if (!baseLength || baseLength <= 0) return 0;
   const ratio = Math.min(1, Math.max(0, currentScrollTop(scroller) / maxScrollableDistance(scroller)));
@@ -939,7 +1162,6 @@ function calcScrollPositionByBaseLength(baseLength, scroller = window) {
 function captureListScroll() {
   const tab = state.tab || 'today';
   state.listScrollTop[tab] = currentScrollTop(getListScroller());
-  writeUiState();
 }
 
 function restoreListScroll() {
@@ -1057,41 +1279,33 @@ function updateListProgress(articleId, percent) {
 }
 
 async function exitReaderView(shouldReload = false) {
-  if (state.readerExitInFlight) return;
-  state.readerExitInFlight = true;
-  let progressResult = null;
+  const progressResult = await persistReadingProgressNow();
+  state.currentArticle = null;
+  document.body.classList.add('restoring-list-scroll');
+  setReadingMode(false);
+  document.body.classList.remove('reader-bar-hidden');
+  closeReader({
+    readerView: nodes.readerView,
+    listPanels: getListPanels(),
+    readerContent: nodes.readerContent,
+    originSnippet: nodes.originSnippet,
+    originSnippetText: nodes.originSnippetText
+  });
+  setReaderAdminActionsVisible(false);
+  closeHideArticleModal();
+  nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
+  nodes.peopleTab.classList.toggle('hidden', state.tab !== 'people');
+  nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
+  if (state.tab === 'today' && progressResult?.articleId) {
+    updateListProgress(progressResult.articleId, progressResult.percent);
+  }
   try {
-    progressResult = await persistReadingProgressNow();
-    clearLastReaderState();
-    state.currentArticle = null;
-    document.body.classList.add('restoring-list-scroll');
-    setReadingMode(false);
-    document.body.classList.remove('reader-bar-hidden');
-    closeReader({
-      readerView: nodes.readerView,
-      listPanels: [nodes.todayTab, nodes.notesTab],
-      readerContent: nodes.readerContent,
-      originSnippet: nodes.originSnippet,
-      originSnippetText: nodes.originSnippetText
-    });
-    setReaderAdminActionsVisible(false);
-    closeHideArticleModal();
-    nodes.todayTab.classList.toggle('hidden', state.tab !== 'today');
-    nodes.notesTab.classList.toggle('hidden', state.tab !== 'notes');
-    if (state.tab === 'today' && progressResult?.articleId) {
-      updateListProgress(progressResult.articleId, progressResult.percent);
-    }
     if (shouldReload && state.tab === 'today') {
       await loadArticles();
     }
     await restoreListScroll();
-    const view = String(history.state?.view || '').trim();
-    if (view === 'reader' || view === 'reader_back_guard') {
-      history.replaceState({ view: 'home' }, '', getCleanHomeUrl());
-    }
   } finally {
     document.body.classList.remove('restoring-list-scroll');
-    state.readerExitInFlight = false;
   }
 }
 
@@ -1129,8 +1343,10 @@ function buildArticleCard(item, showBriefHistoryEntry = false) {
         <div class="article-author">
           <img class="article-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(sourceName(item.source_key, item.author))}"/>
           <div class="article-author-text">
-            <span class="article-author-name">${escapeHtml(sourceName(item.source_key, item.author))}</span>
-            <span class="article-reading-time">· ${escapeHtml(formatDate(item.published_at))}</span>
+            <div class="article-author-row">
+              <span class="article-author-name">${escapeHtml(sourceName(item.source_key, item.author))}</span>
+              <span class="article-reading-time">· ${escapeHtml(formatDate(item.published_at))}</span>
+            </div>
           </div>
         </div>
         <div class="article-card-status">
@@ -1206,23 +1422,6 @@ function renderArticles() {
   nodes.articlesState.textContent = '';
 
   const toTs = (value) => Date.parse(value || '') || 0;
-  const shDate = (value) => {
-    if (!value) return '';
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return '';
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Shanghai',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).formatToParts(d);
-    const y = parts.find((p) => p.type === 'year')?.value || '';
-    const m = parts.find((p) => p.type === 'month')?.value || '';
-    const day = parts.find((p) => p.type === 'day')?.value || '';
-    return `${y}-${m}-${day}`;
-  };
-  const todaySh = shDate(new Date().toISOString());
-
   const briefs = filteredArticles
     .filter((a) => a.source_key === 'daily_brief')
     .slice()
@@ -1234,8 +1433,7 @@ function renderArticles() {
     .sort((a, b) => toTs(b.published_at) - toTs(a.published_at));
 
   if (briefs.length > 0) {
-    const todayBrief = briefs.find((item) => shDate(item.published_at) === todaySh) || briefs[0];
-    nodes.articlesList.appendChild(buildArticleCard(todayBrief, true));
+    nodes.articlesList.appendChild(buildArticleCard(briefs[0], true));
   }
 
   normal.forEach((item) => nodes.articlesList.appendChild(buildArticleCard(item)));
@@ -1251,6 +1449,7 @@ async function loadArticles(options = {}) {
       if (cached && cached.length) {
         state.articles = cached;
         renderArticles();
+        renderPeople();
         renderedFromCache = true;
       }
     }
@@ -1263,6 +1462,7 @@ async function loadArticles(options = {}) {
     state.articles = await getArticles(state.filters);
     writeListCache(state.articles);
     renderArticles();
+    renderPeople();
     ensureIngestPolling();
   } catch (err) {
     if (!renderedFromCache) {
@@ -1286,13 +1486,25 @@ async function loadArticles(options = {}) {
     }
   }
 }
-async function openArticle(id, jumpTo = null, options = {}) {
+
+async function loadAuthors() {
+  try {
+    const rows = await getAuthors();
+    state.authors = Array.isArray(rows) ? rows : [];
+    renderPeople();
+  } catch (_) {
+    state.authors = [];
+    renderPeople();
+  }
+}
+
+async function openArticle(id, jumpTo = null) {
   try {
     const readerFeaturesPromise = ensureReaderFeaturesInitialized();
-    if (options.preserveSavedListScroll !== true) {
-      captureListScroll();
+    captureListScroll();
+    if (!history.state || history.state.view !== 'reader' || history.state.articleId !== id) {
+      history.pushState({ view: 'reader', articleId: id }, '', `?article=${id}`);
     }
-    pushReaderHistoryState(id, options);
     setReaderAdminActionsVisible(false);
     const cachedDetail = readDetailCache(id);
     const progressPromise = getReadingProgress(id);
@@ -1310,7 +1522,7 @@ async function openArticle(id, jumpTo = null, options = {}) {
         readerTitle: nodes.readerTitle,
         readerMeta: nodes.readerMeta,
         readerContent: nodes.readerContent,
-        listPanels: [nodes.todayTab, nodes.notesTab],
+        listPanels: getListPanels(),
         originSnippet: nodes.originSnippet,
         originSnippetText: nodes.originSnippetText,
         articleNotesPanel: nodes.articleNotesPanel
@@ -1319,7 +1531,6 @@ async function openArticle(id, jumpTo = null, options = {}) {
         const baseLength = getReadingBaseLength(cachedDetail, nodes.readerContent);
         scrollToPlainPosition(baseLength, jumpTo);
       }
-      writeLastReaderState(cachedDetail.id);
       detailPromise
         .then((freshDetail) => {
           writeDetailCache(freshDetail);
@@ -1337,7 +1548,7 @@ async function openArticle(id, jumpTo = null, options = {}) {
         readerTitle: nodes.readerTitle,
         readerMeta: nodes.readerMeta,
         readerContent: nodes.readerContent,
-        listPanels: [nodes.todayTab, nodes.notesTab],
+        listPanels: getListPanels(),
         originSnippet: nodes.originSnippet,
         originSnippetText: nodes.originSnippetText
       });
@@ -1356,7 +1567,7 @@ async function openArticle(id, jumpTo = null, options = {}) {
       readerTitle: nodes.readerTitle,
       readerMeta: nodes.readerMeta,
       readerContent: nodes.readerContent,
-      listPanels: [nodes.todayTab, nodes.notesTab],
+      listPanels: getListPanels(),
       originSnippet: nodes.originSnippet,
       originSnippetText: nodes.originSnippetText,
       articleNotesPanel: nodes.articleNotesPanel
@@ -1365,16 +1576,14 @@ async function openArticle(id, jumpTo = null, options = {}) {
       const baseLength = getReadingBaseLength(detail, nodes.readerContent);
       scrollToPlainPosition(baseLength, jumpTo);
     }
-    writeLastReaderState(detail.id);
   } catch (err) {
-    clearLastReaderState();
     showToast(`打开文章失败：${err.message}`);
     setReadingMode(false);
     document.body.classList.remove('reader-bar-hidden');
     setReaderAdminActionsVisible(false);
     closeReader({
       readerView: nodes.readerView,
-      listPanels: [nodes.todayTab, nodes.notesTab],
+      listPanels: getListPanels(),
       readerContent: nodes.readerContent,
       originSnippet: nodes.originSnippet,
       originSnippetText: nodes.originSnippetText
@@ -1382,12 +1591,9 @@ async function openArticle(id, jumpTo = null, options = {}) {
   }
 }
 
-function switchTab(nextTab, options = {}) {
-  if (options.captureScroll !== false) {
-    captureListScroll();
-  }
+function switchTab(nextTab) {
   state.tab = nextTab;
-  writeUiState();
+  updateTopbarForTab(nextTab);
   nodes.tabButtons.forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.tab === nextTab);
   });
@@ -1399,12 +1605,13 @@ function switchTab(nextTab, options = {}) {
   document.body.classList.remove('reader-bar-hidden');
   closeReader({
     readerView: nodes.readerView,
-    listPanels: [nodes.todayTab, nodes.notesTab],
+    listPanels: getListPanels(),
     readerContent: nodes.readerContent,
     originSnippet: nodes.originSnippet,
     originSnippetText: nodes.originSnippetText
   });
   nodes.todayTab.classList.toggle('hidden', nextTab !== 'today');
+  nodes.peopleTab.classList.toggle('hidden', nextTab !== 'people');
   nodes.notesTab.classList.toggle('hidden', nextTab !== 'notes');
   if (nodes.ingestToggle) {
     nodes.ingestToggle.classList.toggle('hidden', nextTab !== 'today');
@@ -1417,24 +1624,16 @@ function switchTab(nextTab, options = {}) {
   if (nextTab === 'notes') {
     refreshMeTab();
   }
+  if (nextTab === 'people') {
+    renderPeopleFilterSelection();
+    renderPeople();
+  }
 }
 
 function bindEvents() {
-  let listScrollRaf = null;
   nodes.tabButtons.forEach((btn) => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
-
-  nodes.appShell?.addEventListener('scroll', () => {
-    if (isReadingMode() || document.body.classList.contains('admin-mode')) return;
-    if (listScrollRaf) return;
-    listScrollRaf = requestAnimationFrame(() => {
-      listScrollRaf = null;
-      const tab = state.tab || 'today';
-      state.listScrollTop[tab] = currentScrollTop(getListScroller());
-      writeUiState();
-    });
-  }, { passive: true });
 
   nodes.filterToggle?.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -1473,17 +1672,32 @@ function bindEvents() {
     renderArticles();
   });
 
+  nodes.peopleFilterBar?.addEventListener('click', (event) => {
+    const chip = event.target.closest('.people-filter-chip');
+    if (!chip) return;
+    const next = normalizePeopleFilter(chip.dataset.peopleFilter);
+    if (next === state.peopleFilter) return;
+    state.peopleFilter = next;
+    state.peopleShowZeroAuthors = false;
+    renderPeopleFilterSelection();
+    renderPeople();
+  });
+
+  nodes.peopleExpandBtn?.addEventListener('click', () => {
+    state.peopleShowZeroAuthors = true;
+    renderPeople();
+  });
+
   nodes.backBtn?.addEventListener('click', async () => {
-    const view = String(history.state?.view || '').trim();
-    if (view === 'reader' || view === 'reader_back_guard') {
-      history.back();
-      return;
-    }
     await exitReaderView(false);
   });
 
   nodes.briefHistoryBack?.addEventListener('click', () => {
     history.back();
+  });
+
+  nodes.personDetailBack?.addEventListener('click', () => {
+    closePersonDetail();
   });
 
   nodes.closeOriginSnippet?.addEventListener('click', () => {
@@ -1733,7 +1947,6 @@ function bindEvents() {
 
   if (!state.historyBound) {
     window.addEventListener('popstate', () => {
-      if (state.readerExitInFlight) return;
       if (document.body.classList.contains('admin-mode')) {
         closeAdminConsole({ fromPopstate: true });
         return;
@@ -1744,6 +1957,10 @@ function bindEvents() {
       }
       if (state.briefHistoryOpen) {
         closeBriefHistory();
+        return;
+      }
+      if (state.peopleDetailId) {
+        closePersonDetail({ fromPopstate: true });
       }
     });
     state.historyBound = true;
@@ -1870,6 +2087,7 @@ async function openAdminConsole() {
   }
   document.body.classList.add('admin-mode');
   nodes.todayTab.classList.add('hidden');
+  nodes.peopleTab.classList.add('hidden');
   nodes.notesTab.classList.add('hidden');
   resetAdminBlocksCollapsed();
   nodes.adminConsole.classList.remove('hidden');
@@ -2372,18 +2590,13 @@ async function startApp() {
   if (state.appStarted) return;
   state.appStarted = true;
   state.selectedTagFilter = readTagFilter();
-  ensureHomeHistoryState();
-  const uiState = readUiState();
-  const lastReaderState = readLastReaderState();
-  if (uiState?.listScrollTop) {
-    state.listScrollTop = {
-      today: Math.max(0, Number(uiState.listScrollTop.today || 0)),
-      notes: Math.max(0, Number(uiState.listScrollTop.notes || 0))
-    };
-  }
+  state.peopleFilter = 'all';
+  state.followedAuthorIds = readFollowedAuthorIds();
   trackEvent('open_app');
   bindEvents();
   renderTagFilterSelection();
+  renderPeopleFilterSelection();
+  renderPeople();
   bindAdminBlockAccordion();
   nodes.articleNotesBtn.addEventListener('click', async () => {
     await ensureReaderFeaturesInitialized();
@@ -2394,18 +2607,12 @@ async function startApp() {
   nodes.readerAppearanceBtn?.addEventListener('click', () => {
     openAppearanceModal();
   });
-  const initialTab = uiState?.tab === 'notes' ? 'notes' : 'today';
-  switchTab(initialTab, { captureScroll: false });
+  switchTab('today');
+  loadAuthors().catch(() => {});
   const loadPromise = loadArticles();
-  const minSplashPromise = new Promise(r => setTimeout(r, Math.max(0, SPLASH_MIN_MS - (Date.now() - splashShownAt))));
-  loadPromise
-    .then(async () => {
-      await restoreListScroll();
-    })
-    .catch(() => {});
-  Promise.all([loadPromise, minSplashPromise])
-    .then(() => { hideSplashScreen(); })
-    .catch(() => { hideSplashScreen(); });
+  requestAnimationFrame(() => {
+    hideSplashScreen();
+  });
   loadPromise.catch(() => {});
   scheduleServiceWorkerRegistration();
 }

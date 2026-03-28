@@ -538,11 +538,113 @@ async function resolveAuthor(poolClient, rawAuthor) {
   }
 }
 
-async function resolveAuthorAvatarUrl(poolClient, author, inputAvatarUrl) {
-  const directAvatar = String(inputAvatarUrl || '').trim();
-  if (directAvatar) {
-    return directAvatar;
+async function resolveAuthorKey(poolClient, sourceKey, rawAuthor) {
+  const normalizedSourceKey = String(sourceKey || '').trim();
+  const normalizedAuthor = String(rawAuthor || '').trim();
+  const authorsTable = await hasAuthorsTable(poolClient);
+
+  if (!authorsTable) {
+    return normalizedSourceKey === 'daily_brief' ? 'daily_brief' : null;
   }
+
+  if (normalizedSourceKey === 'daily_brief') {
+    return 'daily_brief';
+  }
+
+  if (normalizedSourceKey && normalizedSourceKey !== 'manual') {
+    try {
+      const { rows } = await poolClient.query(
+        'SELECT source_key FROM authors WHERE source_key = $1 LIMIT 1',
+        [normalizedSourceKey]
+      );
+      if (rows[0]?.source_key) {
+        return rows[0].source_key;
+      }
+    } catch (_) {}
+  }
+
+  if (normalizedAuthor) {
+    try {
+      const { rows } = await poolClient.query(
+        `
+          SELECT source_key
+          FROM authors
+          WHERE LOWER(name) = LOWER($1)
+             OR LOWER(COALESCE(name_zh, '')) = LOWER($1)
+          LIMIT 1
+        `,
+        [normalizedAuthor]
+      );
+      if (rows[0]?.source_key) {
+        return rows[0].source_key;
+      }
+    } catch (_) {}
+
+    try {
+      const { rows } = await poolClient.query(
+        `
+          SELECT source_key
+          FROM authors
+          WHERE POSITION(LOWER(name) IN LOWER($1)) > 0
+          ORDER BY LENGTH(name) DESC
+          LIMIT 1
+        `,
+        [normalizedAuthor]
+      );
+      if (rows[0]?.source_key) {
+        return rows[0].source_key;
+      }
+    } catch (_) {}
+  }
+
+  if (normalizedSourceKey === 'manual') {
+    return 'unknown';
+  }
+  return null;
+}
+
+async function resolveAuthorAvatarUrl(poolClient, authorKey, sourceKey, author) {
+  const normalizedAuthorKey = String(authorKey || '').trim();
+  const authorsTable = await hasAuthorsTable(poolClient);
+  if (authorsTable && normalizedAuthorKey) {
+    try {
+      const { rows } = await poolClient.query(
+        `
+          SELECT avatar_url
+          FROM authors
+          WHERE source_key = $1
+            AND avatar_url IS NOT NULL
+            AND avatar_url <> ''
+          LIMIT 1
+        `,
+        [normalizedAuthorKey]
+      );
+      if (rows[0]?.avatar_url) {
+        return rows[0].avatar_url;
+      }
+    } catch (_) {}
+  }
+
+  const normalizedSourceKey = String(sourceKey || '').trim();
+  if (authorsTable && normalizedSourceKey) {
+    try {
+      const { rows } = await poolClient.query(
+        `
+          SELECT avatar_url
+          FROM authors
+          WHERE source_key = $1
+            AND avatar_url IS NOT NULL
+            AND avatar_url <> ''
+          LIMIT 1
+        `,
+        [normalizedSourceKey]
+      );
+      if (rows[0]?.avatar_url) {
+        return rows[0].avatar_url;
+      }
+    } catch (_) {}
+  }
+
   const normalizedAuthor = String(author || '').trim();
   if (!normalizedAuthor) {
     return null;
@@ -580,7 +682,6 @@ async function handleIngestFullText(req, res, userId) {
   const contentZh = cleanupWhitespace(payload.content_zh || '');
   const contentEnRaw = String(payload.content_en || '').trim();
   const authorRaw = String(payload.author || '').trim();
-  const authorAvatarUrl = String(payload.author_avatar_url || '').trim() || null;
   const sourceUrl = String(payload.source_url || payload.url || '').trim();
   const publishedAtRaw = String(payload.published_at || '').trim();
   const publishStatus = normalizePublishStatus(payload.publish_status);
@@ -679,7 +780,8 @@ async function handleIngestFullText(req, res, userId) {
   }
 
   const author = await resolveAuthor(poolClient, authorRaw);
-  const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, author, authorAvatarUrl);
+  const authorKey = await resolveAuthorKey(poolClient, sourceKey, author);
+  const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, authorKey, sourceKey, author);
   const contentEn = contentEnRaw ? normalizeHtmlForStorage(contentEnRaw) : null;
   const contentPlain = contentEn ? htmlToPlain(contentEn, titleEn) : sanitizeToPlain(contentZh);
   const translatedChars = contentPlain.length;
@@ -701,6 +803,7 @@ async function handleIngestFullText(req, res, userId) {
       summary_en,
       summary_zh,
       author,
+      author_key,
       author_avatar_url,
       content_en,
       content_plain,
@@ -718,7 +821,7 @@ async function handleIngestFullText(req, res, userId) {
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'full', $11, 'unread', $12, $13, $14, 'ready', 'ready', $15, $16, $17, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'full', $12, 'unread', $13, $14, $15, 'ready', 'ready', $16, $17, $18, NULL
     )
     RETURNING id
   `;
@@ -730,6 +833,7 @@ async function handleIngestFullText(req, res, userId) {
     summaryEn || null,
     summaryZh,
     author || null,
+    authorKey || null,
     finalAuthorAvatarUrl,
     contentEn,
     contentPlain || null,
@@ -762,7 +866,6 @@ async function handleIngestSubmit(req, res, userId) {
   }
   const publishStatus = normalizePublishStatus(body.publish_status);
   const sourceKey = normalizeSourceKey(body.source_key);
-  const authorAvatarUrl = String(body.author_avatar_url || '').trim() || null;
   if (!publishStatus) {
     badRequest(
       res,
@@ -825,7 +928,8 @@ async function handleIngestSubmit(req, res, userId) {
   const publishedAt = extractPublishedAt(rawHtml);
   const rawAuthor = cleaned.author || extractAuthor(rawHtml);
   const author = await resolveAuthor(poolClient, rawAuthor);
-  const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, author, authorAvatarUrl);
+  const authorKey = await resolveAuthorKey(poolClient, sourceKey, author);
+  const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, authorKey, sourceKey, author);
   const summaryEn = summarizeText(cleaned.contentPlain);
 
   const translationStatus = cleaned.summaryOnly ? 'summary_only' : 'partial';
@@ -838,6 +942,7 @@ async function handleIngestSubmit(req, res, userId) {
       summary_en,
       summary_zh,
       author,
+      author_key,
       author_avatar_url,
       content_en,
       content_plain,
@@ -854,7 +959,7 @@ async function handleIngestSubmit(req, res, userId) {
       submitted_by,
       user_id
     ) VALUES (
-      $1, $2, NULL, $3, NULL, $4, $5, $6, $7, '', $8, 0, 'unread', $9, $10, $11, 'translating', 'translating', $12, $13, NULL
+      $1, $2, NULL, $3, NULL, $4, $5, $6, $7, $8, '', $9, 0, 'unread', $10, $11, $12, 'translating', 'translating', $13, $14, NULL
     )
     RETURNING id
   `;
@@ -873,6 +978,7 @@ async function handleIngestSubmit(req, res, userId) {
     title,
     summaryEn || null,
     author || null,
+    authorKey || null,
     finalAuthorAvatarUrl,
     cleaned.contentEn || null,
     cleaned.contentPlain || null,
