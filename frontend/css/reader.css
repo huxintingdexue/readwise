@@ -1087,14 +1087,6 @@ body.theme-dark .topbar p {
   text-overflow: ellipsis;
 }
 
-.article-author-name-zh {
-  font-size: 12px;
-  color: rgba(105, 114, 118, 0.9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .article-reading-time {
   color: rgba(90, 96, 98, 0.75);
   font-size: 12px;

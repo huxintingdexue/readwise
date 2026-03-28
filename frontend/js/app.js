@@ -773,30 +773,6 @@ function sourceName(sourceKey, author) {
   return sourceKey || '未知来源';
 }
 
-function resolveArticleAuthorZhName(article) {
-  const direct = String(article?.name_zh || '').trim();
-  if (direct) return direct;
-
-  const authorKey = String(article?.author_key || '').trim();
-  const sourceKey = String(article?.source_key || '').trim();
-  const author = String(article?.author || '').trim().toLowerCase();
-  const source = Array.isArray(state.authors) && state.authors.length ? state.authors : PEOPLE_PRESET;
-  const list = Array.isArray(source) ? source : [];
-
-  const byKey = list.find((item) => {
-    const id = String(item?.source_key || item?.id || '').trim();
-    return Boolean(id) && (id === authorKey || id === sourceKey);
-  });
-  if (byKey?.name_zh) return String(byKey.name_zh).trim();
-
-  if (!author) return '';
-  const byName = list.find((item) => {
-    const en = String(item?.name || '').trim().toLowerCase();
-    return Boolean(en) && (author === en || author.includes(en));
-  });
-  return byName?.name_zh ? String(byName.name_zh).trim() : '';
-}
-
 function topicLabel(sourceKey) {
   if (sourceKey === 'daily_brief') return '快讯';
   if (sourceKey === 'sam') return 'Sam';
@@ -1359,7 +1335,6 @@ function buildArticleCard(item, showBriefHistoryEntry = false) {
   const isManualTranslating = isManual && isTranslating;
   const progress = progressMeta(item);
   const avatarUrl = resolveAuthorAvatarUrl(item);
-  const authorZhName = resolveArticleAuthorZhName(item);
   const summaryText = String(item.summary_zh || item.summary_en || '暂无摘要');
   const summaryClass = summaryText.length > 66 ? 'article-summary summary-long' : 'article-summary';
   li.innerHTML = `
@@ -1372,7 +1347,6 @@ function buildArticleCard(item, showBriefHistoryEntry = false) {
               <span class="article-author-name">${escapeHtml(sourceName(item.source_key, item.author))}</span>
               <span class="article-reading-time">· ${escapeHtml(formatDate(item.published_at))}</span>
             </div>
-            ${authorZhName ? `<span class="article-author-name-zh">${escapeHtml(authorZhName)}</span>` : ''}
           </div>
         </div>
         <div class="article-card-status">
