@@ -207,6 +207,7 @@ export function ensureOpenClawPermission(req, res, userId) {
     && ['pending', 'hidden'].includes(queryStatus);
   const allowed = (
     (method === 'POST' && pathname === '/api/ingest') ||
+    (method === 'GET' && pathname === '/api/authors') ||
     (method === 'GET' && pathname === '/api/articles/urls') ||
     (method === 'GET' && pathname === '/api/articles') ||
     (method === 'GET' && /^\/api\/articles\/[^/]+\/?$/.test(pathname)) ||
