@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-03-28 — Schema 文档同步线上结构（v2.16.34）
+
+### 已完成
+- ✅ 在协作约定新增规则：数据库结构变更后必须同步更新 `docs/schema.sql`
+- ✅ `docs/schema.sql` 对齐当前线上结构：补充 `users` 表定义
+- ✅ `docs/schema.sql` 对齐 `events` 现状：`article_id` 改为 `TEXT`，新增 `client_ip`
+- ✅ 补充 `users` 相关索引：`idx_users_created_at`、`idx_users_invite_code`、`idx_users_legacy`
+- ✅ `docs/schema.sql` 对齐 `articles` 约束现状：`status` 去默认值，`translation_job_status/publish_status` 标记为 `NOT NULL`
+
+### 变更文件
+- docs/schema.sql
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 摘要行数显示一致性修复（v2.16.33）
 
 ### 已完成

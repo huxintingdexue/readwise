@@ -29,9 +29,9 @@ CREATE TABLE IF NOT EXISTS articles (
   fetched_at          TIMESTAMP DEFAULT NOW(),
   user_id             TEXT NULL,                            -- 预留多用户，MVP 阶段由后端映射默认用户
   submitted_by        TEXT,                                 -- 手动投喂者 user_id
-  status              VARCHAR(20) DEFAULT 'ready',           -- 兼容旧字段（待下线）
-  translation_job_status VARCHAR(20) DEFAULT 'ready',        -- 翻译流程：'translating' | 'ready'
-  publish_status      VARCHAR(20) DEFAULT 'published',       -- 'published' | 'pending_review' | 'hidden'
+  status              VARCHAR(20),                           -- 兼容旧字段（待下线，线上当前无默认值）
+  translation_job_status VARCHAR(20) NOT NULL DEFAULT 'ready', -- 翻译流程：'translating' | 'ready'
+  publish_status      VARCHAR(20) NOT NULL DEFAULT 'published', -- 'published' | 'pending_review' | 'hidden'
   hidden_reason       TEXT,                                 -- 隐藏原因（管理员）
   hidden_at           TIMESTAMP                             -- 隐藏时间
 );
@@ -108,8 +108,9 @@ CREATE TABLE IF NOT EXISTS events (
   id SERIAL PRIMARY KEY,
   user_id VARCHAR(50),
   event VARCHAR(50),
-  article_id UUID,
-  created_at TIMESTAMP DEFAULT NOW()
+  article_id TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  client_ip TEXT
 );
 
 -- 邀请码管理
@@ -118,6 +119,19 @@ CREATE TABLE IF NOT EXISTS invite_codes (
   code VARCHAR(50) UNIQUE NOT NULL,
   user_id VARCHAR(50) UNIQUE NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 用户表（UID 主鉴权）
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  nickname TEXT,
+  contact TEXT,
+  invite_code TEXT UNIQUE,
+  source TEXT NOT NULL DEFAULT 'self_register',
+  legacy_user_id TEXT,
+  register_ip TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen_at TIMESTAMPTZ
 );
 
 -- 索引（提升常用查询性能）
@@ -131,3 +145,6 @@ CREATE INDEX IF NOT EXISTS idx_qa_records_article_id ON qa_records(article_id);
 CREATE INDEX IF NOT EXISTS idx_reading_list_status ON reading_list(status);
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_reading_progress_article_user
   ON reading_progress(article_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_invite_code ON users(invite_code);
+CREATE INDEX IF NOT EXISTS idx_users_legacy ON users(legacy_user_id);
