@@ -330,6 +330,7 @@ const nodes = {
   authQuickForm: document.querySelector('#authQuickForm'),
   authQuickAccount: document.querySelector('#authQuickAccount'),
   authQuickSubmit: document.querySelector('#authQuickSubmit'),
+  forgotPasswordText: document.querySelector('#forgotPasswordText'),
   bindPromptBox: document.querySelector('#bindPromptBox'),
   bindNowBtn: document.querySelector('#bindNowBtn'),
   bindLaterBtn: document.querySelector('#bindLaterBtn'),
@@ -2668,6 +2669,17 @@ function bindLoginEvents() {
   });
   nodes.bindLaterBtn?.addEventListener('click', () => {
     hideLoginOverlay();
+  });
+
+  const onForgotPassword = () => {
+    showToast('请添加微信 huxinting0725 联系我们重置密码');
+  };
+  nodes.forgotPasswordText?.addEventListener('click', onForgotPassword);
+  nodes.forgotPasswordText?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onForgotPassword();
+    }
   });
 
   nodes.loginOverlay?.addEventListener('click', (event) => {
