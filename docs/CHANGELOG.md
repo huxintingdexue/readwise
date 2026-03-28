@@ -4,6 +4,54 @@
 
 ---
 
+## 2026-03-28 — 协作约定补充：数据库迁移先于代码发布（v2.16.25）
+
+### 已完成
+- ✅ 在协作约定中新增生产发布原则：数据库兼容迁移必须先于依赖该变更的代码发布
+- ✅ 明确 AI 执行要求：即使用户要求“直接推 main”，若迁移未完成也必须先提醒风险并给出执行顺序后再推进
+
+### 变更文件
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-28 — 修复前端残留未读优先排序（v2.16.24）
+
+### 已完成
+- ✅ 修复前端 `renderArticles()` 残留未读优先二次排序（该逻辑会覆盖后端排序）
+- ✅ 非快讯文章列表改为纯发布时间倒序（`published_at DESC`）
+- ✅ Service Worker 缓存版本升级到 `v5`，加速线上用户拿到新排序逻辑
+
+### 变更文件
+- frontend/js/app.js
+- frontend/sw.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-28 — 一次性强制缓存刷新（v2.16.23）
+
+### 已完成
+- ✅ Service Worker 缓存版本升级到 `v4`，触发旧静态/API 缓存清理
+- ✅ 文章列表本地缓存 key 升级到 `rw:article-list-cache:v3`
+- ✅ 启动时新增一次性缓存迁移清理：移除旧 `v2` 列表缓存并写入执行标记
+- ✅ 本次仅执行一次，执行后不再重复清理
+
+### 变更文件
+- frontend/sw.js
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-03-28 — 文章列表排序回退为纯时间倒序（v2.16.22）
+
+### 已完成
+- ✅ 移除 `/api/articles` 中“未读优先”排序逻辑（`CASE WHEN rp.scroll_position > 0 ...`）
+- ✅ 列表排序恢复为纯 `published_at` 倒序
+
+### 变更文件
+- api/articles.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 卡片时间改为相对时间（v2.16.21）
 
 ### 已完成

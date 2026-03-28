@@ -32,13 +32,17 @@ const state = {
   followedAuthorIds: new Set()
 };
 
-const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
+const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v3';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
+const ONE_TIME_CACHE_RESET_KEY = 'rw:cache-reset:v1:2026-03-28';
 const TAG_FILTER_STORAGE_KEY = 'rw:today-tag-filter:v1';
 const TAG_FILTER_OPTIONS = ['全部', '科技', '商业', '产品', '人生哲学'];
 const LEGACY_TAG_MAP = {
   个人成长: '人生哲学'
 };
+const UI_STATE_STORAGE_KEY = 'rw:ui-state:v1';
+const LAST_READER_STATE_KEY = 'rw:last-reader:v1';
+const LAST_READER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
@@ -98,6 +102,14 @@ const PERF_FLAGS = {
   noLayerPromote: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_no_layer_promote') || '').toLowerCase()),
   overlay: ['1', 'true', 'yes'].includes(String(searchParams.get('perf_overlay') || '').toLowerCase())
 };
+
+function runOneTimeCacheReset() {
+  try {
+    if (localStorage.getItem(ONE_TIME_CACHE_RESET_KEY) === '1') return;
+    sessionStorage.removeItem('rw:article-list-cache:v2');
+    localStorage.setItem(ONE_TIME_CACHE_RESET_KEY, '1');
+  } catch (_) {}
+}
 
 function applyPerfFlags() {
   if (PERF_FLAGS.noGlass) {
@@ -1329,6 +1341,7 @@ function renderArticles() {
 
   nodes.articlesState.textContent = '';
 
+  const toTs = (value) => Date.parse(value || '') || 0;
   const briefs = filteredArticles
     .filter((a) => a.source_key === 'daily_brief')
     .slice()
@@ -1337,7 +1350,7 @@ function renderArticles() {
   const normal = filteredArticles
     .filter((a) => a.source_key !== 'daily_brief')
     .slice()
-    .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
+    .sort((a, b) => toTs(b.published_at) - toTs(a.published_at));
 
   if (briefs.length > 0) {
     nodes.articlesList.appendChild(buildArticleCard(briefs[0], true));
@@ -2500,6 +2513,7 @@ async function startApp() {
 }
 
 async function init() {
+  runOneTimeCacheReset();
   if (isStandalonePwa()) {
     requestAnimationFrame(() => {
       hideSplashScreen();
