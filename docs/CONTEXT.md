@@ -7,7 +7,7 @@
 
 ## 当前状态（每次任务后必须更新）
 
-- 最近变更：今日页标签筛选埋点已接入（`filter_tag`，属性含 `tag/prev_tag/page`），可用于按标签分析 UV/PV ✅
+- 最近变更：今日页标签筛选埋点已接入（`filter_tag`，属性含 `tag/prev_tag/page`）；`open_article` 新增 `current_tag_filter` 可用于按标签分析文章 UV/PV ✅
 - 最近变更：修复前端残留未读优先二次排序，列表最终按纯发布时间倒序；SW 升级 `v5` 触发缓存更新 ✅
 - 最近变更：触发一次性强制缓存刷新（SW 升级 `v4` + 列表缓存 key 升级 `v3` + 启动迁移清理旧 `v2`）✅
 - 最近变更：`/api/articles` 移除“未读优先”排序并回退为纯时间倒序（`published_at DESC`）✅

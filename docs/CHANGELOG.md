@@ -10,9 +10,11 @@
 - ✅ 新增标签筛选事件 `filter_tag`
 - ✅ 今日页点击标签筛选时上报事件，并透传属性：`tag`、`prev_tag`、`page=today`
 - ✅ `/api/events` 放行并转发 `filter_tag` 到 PostHog
+- ✅ `open_article` 事件新增 `current_tag_filter` 属性，支持按当前标签筛选维度做文章 UV/PV 分析
 
 ### 变更文件
 - frontend/js/app.js
+- frontend/js/reader.js
 - api/events.js
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
