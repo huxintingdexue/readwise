@@ -60,6 +60,27 @@ function normalizeId(value) {
   return String(value || '').trim();
 }
 
+async function findNicknameByLegacyUserId(legacyUserId) {
+  const key = normalizeId(legacyUserId);
+  if (!key) return '';
+  const { rows } = await getPool().query(
+    `
+      SELECT nickname
+      FROM users
+      WHERE (id = $1 OR legacy_user_id = $1)
+        AND nickname IS NOT NULL
+        AND TRIM(nickname) <> ''
+      ORDER BY
+        CASE WHEN id = $1 THEN 0 ELSE 1 END ASC,
+        last_seen_at DESC NULLS LAST,
+        created_at DESC NULLS LAST
+      LIMIT 1
+    `,
+    [key]
+  );
+  return String(rows[0]?.nickname || '').trim();
+}
+
 async function resolveLegacyUserIdByInvite(inviteCode) {
   const code = normalizeInviteCode(inviteCode);
   if (!code) return { legacyUserId: '', inviteFound: false };
@@ -190,14 +211,24 @@ export default async function handler(req, res) {
       res.status(400).json({ error: 'bad_request', message: '邀请码无效' });
       return;
     }
+    const nicknameFromIpHistory = bindTarget.source === 'ip'
+      ? await findNicknameByLegacyUserId(bindTarget.legacyUserId)
+      : '';
 
     if (existed) {
       await migrateReadingProgressToAccount(userIdRaw, existed.id);
       const shouldBindLegacy = !normalizeId(existed.legacy_user_id) && normalizeId(bindTarget.legacyUserId);
+      const shouldFillNicknameFromIp = !normalizeId(existed.nickname) && normalizeId(nicknameFromIpHistory);
       if (shouldBindLegacy) {
         await getPool().query(
           'UPDATE users SET legacy_user_id = $1, source = CASE WHEN source = $2 THEN $3 ELSE source END WHERE id = $4',
           [bindTarget.legacyUserId, 'account_register', 'account_bind', existed.id]
+        );
+      }
+      if (shouldFillNicknameFromIp) {
+        await getPool().query(
+          'UPDATE users SET nickname = $1 WHERE id = $2',
+          [nicknameFromIpHistory, existed.id]
         );
       }
       await getPool().query('UPDATE users SET last_seen_at = NOW() WHERE id = $1', [existed.id]);
@@ -207,7 +238,7 @@ export default async function handler(req, res) {
         data: {
           mode: 'login',
           user_id: existed.id,
-          nickname: existed.nickname || defaultNicknameFromAccount(account),
+          nickname: existed.nickname || nicknameFromIpHistory || defaultNicknameFromAccount(account),
           token
         }
       });
@@ -217,7 +248,12 @@ export default async function handler(req, res) {
     const uid = userIdRaw || generateUid();
     const existingByUid = await getUserByUid(uid);
     const resolvedLegacyUserId = normalizeId(bindTarget.legacyUserId || uid);
-    const finalNickname = (existingByUid?.nickname || nickname || defaultNicknameFromAccount(account)).trim();
+    const finalNickname = (
+      existingByUid?.nickname
+      || nickname
+      || nicknameFromIpHistory
+      || defaultNicknameFromAccount(account)
+    ).trim();
 
     if (existingByUid) {
       await getPool().query(
