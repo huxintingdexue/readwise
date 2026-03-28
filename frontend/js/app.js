@@ -214,16 +214,7 @@ function updateTopbarForTab(tab) {
   const h1 = nodes.topbarTitle?.querySelector('h1');
   const p = nodes.topbarTitle?.querySelector('p');
   if (!h1 || !p) return;
-  if (tab === 'people') {
-    h1.textContent = '人物';
-    p.textContent = '关注你关心的作者';
-    return;
-  }
-  if (tab === 'notes') {
-    h1.textContent = '我的';
-    p.textContent = '个人信息与阅读设置';
-    return;
-  }
+  void tab;
   h1.textContent = '今日硅谷';
   p.textContent = '全球一手信息 触手可及';
 }
