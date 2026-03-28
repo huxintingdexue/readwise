@@ -10,6 +10,7 @@
     "build:tailwind": "tailwindcss -c tailwind.config.cjs -i ./frontend/css/tailwind.input.css -o ./frontend/css/tailwind.css --minify",
     "fetch:articles": "node scripts/fetch-articles.js",
     "tag:articles": "node scripts/tag-articles.js",
+    "seed:authors": "node scripts/seed-authors.js",
     "backfill:posthog:7d": "node scripts/backfill-posthog-events.js",
     "migrate:author-avatar-url": "node scripts/migrate-author-avatar-url.js",
     "migrate:publish-status": "node scripts/migrate-publish-status.js",

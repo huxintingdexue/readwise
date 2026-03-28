@@ -538,11 +538,28 @@ async function resolveAuthor(poolClient, rawAuthor) {
   }
 }
 
-async function resolveAuthorAvatarUrl(poolClient, author, inputAvatarUrl) {
-  const directAvatar = String(inputAvatarUrl || '').trim();
-  if (directAvatar) {
-    return directAvatar;
+async function resolveAuthorAvatarUrl(poolClient, sourceKey, author) {
+  const normalizedSourceKey = String(sourceKey || '').trim();
+  const authorsTable = await hasAuthorsTable(poolClient);
+  if (authorsTable && normalizedSourceKey) {
+    try {
+      const { rows } = await poolClient.query(
+        `
+          SELECT avatar_url
+          FROM authors
+          WHERE source_key = $1
+            AND avatar_url IS NOT NULL
+            AND avatar_url <> ''
+          LIMIT 1
+        `,
+        [normalizedSourceKey]
+      );
+      if (rows[0]?.avatar_url) {
+        return rows[0].avatar_url;
+      }
+    } catch (_) {}
   }
+
   const normalizedAuthor = String(author || '').trim();
   if (!normalizedAuthor) {
     return null;
@@ -580,7 +597,6 @@ async function handleIngestFullText(req, res, userId) {
   const contentZh = cleanupWhitespace(payload.content_zh || '');
   const contentEnRaw = String(payload.content_en || '').trim();
   const authorRaw = String(payload.author || '').trim();
-  const authorAvatarUrl = String(payload.author_avatar_url || '').trim() || null;
   const sourceUrl = String(payload.source_url || payload.url || '').trim();
   const publishedAtRaw = String(payload.published_at || '').trim();
   const publishStatus = normalizePublishStatus(payload.publish_status);
@@ -679,7 +695,7 @@ async function handleIngestFullText(req, res, userId) {
   }
 
   const author = await resolveAuthor(poolClient, authorRaw);
-  const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, author, authorAvatarUrl);
+  const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, sourceKey, author);
   const contentEn = contentEnRaw ? normalizeHtmlForStorage(contentEnRaw) : null;
   const contentPlain = contentEn ? htmlToPlain(contentEn, titleEn) : sanitizeToPlain(contentZh);
   const translatedChars = contentPlain.length;
@@ -762,7 +778,6 @@ async function handleIngestSubmit(req, res, userId) {
   }
   const publishStatus = normalizePublishStatus(body.publish_status);
   const sourceKey = normalizeSourceKey(body.source_key);
-  const authorAvatarUrl = String(body.author_avatar_url || '').trim() || null;
   if (!publishStatus) {
     badRequest(
       res,
@@ -825,7 +840,7 @@ async function handleIngestSubmit(req, res, userId) {
   const publishedAt = extractPublishedAt(rawHtml);
   const rawAuthor = cleaned.author || extractAuthor(rawHtml);
   const author = await resolveAuthor(poolClient, rawAuthor);
-  const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, author, authorAvatarUrl);
+  const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, sourceKey, author);
   const summaryEn = summarizeText(cleaned.contentPlain);
 
   const translationStatus = cleaned.summaryOnly ? 'summary_only' : 'partial';

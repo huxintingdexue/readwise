@@ -10,6 +10,7 @@ const VALID_SORT = new Set(['date_desc', 'date_asc']);
 
 let pool;
 let cachedAuthorAvatarColumnExists = null;
+let cachedAuthorsTableExists = null;
 
 function getPool() {
   if (!pool) {
@@ -38,6 +39,23 @@ async function hasAuthorAvatarColumn() {
   );
   cachedAuthorAvatarColumnExists = rows.length > 0;
   return cachedAuthorAvatarColumnExists;
+}
+
+async function hasAuthorsTable() {
+  if (typeof cachedAuthorsTableExists === 'boolean') {
+    return cachedAuthorsTableExists;
+  }
+  const { rows } = await getPool().query(
+    `
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+        AND table_name = 'authors'
+      LIMIT 1
+    `
+  );
+  cachedAuthorsTableExists = rows.length > 0;
+  return cachedAuthorsTableExists;
 }
 
 function readQuery(req) {
@@ -95,9 +113,15 @@ async function listArticles(res, query, userId) {
   }
 
   const orderClause = 'a.published_at DESC';
+  const authorsTableExists = await hasAuthorsTable();
   const avatarSelect = (await hasAuthorAvatarColumn())
-    ? 'a.author_avatar_url'
+    ? (authorsTableExists
+      ? 'COALESCE(au.avatar_url, a.author_avatar_url) AS author_avatar_url'
+      : 'a.author_avatar_url')
     : 'NULL::text AS author_avatar_url';
+  const authorsJoin = authorsTableExists ? 'LEFT JOIN authors au ON au.source_key = a.source_key' : '';
+  const nameZhSelect = authorsTableExists ? 'au.name_zh' : 'NULL::text AS name_zh';
+  const bioOneLineSelect = authorsTableExists ? 'au.bio_one_line' : 'NULL::text AS bio_one_line';
 
   const sql = `
     SELECT
@@ -109,6 +133,8 @@ async function listArticles(res, query, userId) {
       a.summary_zh,
       a.tag,
       a.author,
+      ${nameZhSelect},
+      ${bioOneLineSelect},
       ${avatarSelect},
       a.url,
       a.published_at,
@@ -154,6 +180,7 @@ async function listArticles(res, query, userId) {
         )
       ) AS estimated_read_minutes
     FROM articles a
+    ${authorsJoin}
     LEFT JOIN reading_progress rp
       ON rp.article_id = a.id
       AND rp.user_id = $1
@@ -198,9 +225,15 @@ async function listArticleUrls(res, userId) {
 
 async function getArticleById(res, id, userId) {
   const isAdminUser = userId === 'admin';
+  const authorsTableExists = await hasAuthorsTable();
   const avatarSelect = (await hasAuthorAvatarColumn())
-    ? 'a.author_avatar_url'
+    ? (authorsTableExists
+      ? 'COALESCE(au.avatar_url, a.author_avatar_url) AS author_avatar_url'
+      : 'a.author_avatar_url')
     : 'NULL::text AS author_avatar_url';
+  const authorsJoin = authorsTableExists ? 'LEFT JOIN authors au ON au.source_key = a.source_key' : '';
+  const nameZhSelect = authorsTableExists ? 'au.name_zh' : 'NULL::text AS name_zh';
+  const bioOneLineSelect = authorsTableExists ? 'au.bio_one_line' : 'NULL::text AS bio_one_line';
   const sql = `
     SELECT
       a.id,
@@ -211,6 +244,8 @@ async function getArticleById(res, id, userId) {
       a.summary_zh,
       a.tag,
       a.author,
+      ${nameZhSelect},
+      ${bioOneLineSelect},
       ${avatarSelect},
       a.content_en,
       a.content_plain,
@@ -225,6 +260,7 @@ async function getArticleById(res, id, userId) {
       a.publish_status,
       a.submitted_by
     FROM articles a
+    ${authorsJoin}
     WHERE a.id = $1
       AND (
         COALESCE(a.translation_job_status, a.status, 'ready') = 'ready'
