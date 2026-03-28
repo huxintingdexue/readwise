@@ -8,6 +8,7 @@
 ## 当前状态（每次任务后必须更新）
 
 - 最近变更：管理员后台“今日/本周”用户统计口径切换为中国时区（`Asia/Shanghai`）✅
+- 最近变更：已完成生产库结构盘点并沉淀“数据库自检命令”（含表/字段/索引/外键），用于后续 AI 快速对齐真实 schema ✅
 - 最近变更：今日页标签筛选埋点已接入（`filter_tag`，属性含 `tag/prev_tag/page`）；`open_article` 新增 `current_tag_filter` 可用于按标签分析文章 UV/PV ✅
 - 最近变更：修复前端残留未读优先二次排序，列表最终按纯发布时间倒序；SW 升级 `v5` 触发缓存更新 ✅
 - 最近变更：触发一次性强制缓存刷新（SW 升级 `v4` + 列表缓存 key 升级 `v3` + 启动迁移清理旧 `v2`）✅
@@ -199,6 +200,59 @@
 - 可直接上生产的低风险例外：纯文案错别字、仅注释/日志且不影响功能、管理员内部不可见的小修复（仍需说明影响范围）
 - 提交后需在 `docs/CHANGELOG.md` 追加本步骤记录，并同步更新本文件的“当前状态”与“待开发功能”勾选状态
 - 每步完成后对用户固定汇报三项：①完成了什么 ②影响范围与风险 ③回滚方式（或回退提交）
+
+## 数据库结构快照（2026-03-28 / production）
+
+- `public` 当前表：`articles`、`authors`、`events`、`feedback`、`highlights`、`invite_codes`、`qa_records`、`reading_list`、`reading_progress`、`users`
+- 与“人物模块”直接相关字段：
+- `authors`: `id(uuid)`、`source_key(text)`、`name(text)`、`name_zh(text)`、`bio_one_line(text)`、`bio_full(text)`、`tag(text[])`、`avatar_url(text)`、`twitter_handle(text)`、`created_at(timestamp)`
+- `articles`: `author(text)`、`author_key(text)`、`source_key(text)`、`published_at(timestamp)`（以及 `title_en/title_zh`，无 `title` 列）
+- 关键约束/索引（节选）：
+- `authors.source_key` 唯一索引存在（`authors_source_key_key` / `idx_authors_source_key`）
+- `articles` 存在 `idx_articles_author_key`、`idx_articles_source_key`、`idx_articles_published_at`
+- `reading_progress` 唯一键：`(article_id, user_id)`
+- 外键（节选）：`highlights.article_id -> articles.id`，`qa_records.article_id -> articles.id`，`reading_progress.article_id -> articles.id`
+
+### 数据库自检命令（每次开工前可直接跑）
+
+```bash
+# 1) 全量字段字典（两张核心表）
+SELECT table_name, column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name IN ('authors', 'articles')
+ORDER BY table_name, ordinal_position;
+
+# 2) 所有业务表
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+
+# 3) 索引
+SELECT tablename, indexname, indexdef
+FROM pg_indexes
+WHERE schemaname = 'public'
+ORDER BY tablename, indexname;
+
+# 4) 外键
+SELECT
+  tc.table_name,
+  kcu.column_name,
+  ccu.table_name AS foreign_table_name,
+  ccu.column_name AS foreign_column_name,
+  tc.constraint_name
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+  ON tc.constraint_name = kcu.constraint_name
+ AND tc.table_schema = kcu.table_schema
+JOIN information_schema.constraint_column_usage ccu
+  ON ccu.constraint_name = tc.constraint_name
+ AND ccu.table_schema = tc.table_schema
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_schema = 'public'
+ORDER BY tc.table_name, kcu.column_name;
+```
 
 ## 项目概述
 
