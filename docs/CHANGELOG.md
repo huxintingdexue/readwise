@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-03-28 — 修复前端残留未读优先排序（v2.16.24）
+
+### 已完成
+- ✅ 修复前端 `renderArticles()` 残留未读优先二次排序（该逻辑会覆盖后端排序）
+- ✅ 非快讯文章列表改为纯发布时间倒序（`published_at DESC`）
+- ✅ Service Worker 缓存版本升级到 `v5`，加速线上用户拿到新排序逻辑
+
+### 变更文件
+- frontend/js/app.js
+- frontend/sw.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 一次性强制缓存刷新（v2.16.23）
 
 ### 已完成

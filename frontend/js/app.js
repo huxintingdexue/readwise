@@ -1206,7 +1206,6 @@ function renderArticles() {
   nodes.articlesState.textContent = '';
 
   const toTs = (value) => Date.parse(value || '') || 0;
-  const isRead = (item) => Number(item?.read_progress || 0) > 0;
   const shDate = (value) => {
     if (!value) return '';
     const d = new Date(value);
@@ -1232,11 +1231,7 @@ function renderArticles() {
   const normal = filteredArticles
     .filter((a) => a.source_key !== 'daily_brief')
     .slice()
-    .sort((a, b) => {
-      const readCmp = Number(isRead(a)) - Number(isRead(b));
-      if (readCmp !== 0) return readCmp;
-      return toTs(b.published_at) - toTs(a.published_at);
-    });
+    .sort((a, b) => toTs(b.published_at) - toTs(a.published_at));
 
   if (briefs.length > 0) {
     const todayBrief = briefs.find((item) => shDate(item.published_at) === todaySh) || briefs[0];

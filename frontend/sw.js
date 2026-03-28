@@ -1,4 +1,4 @@
-const SW_VERSION = 'v4';
+const SW_VERSION = 'v5';
 const STATIC_CACHE = `readwise-static-${SW_VERSION}`;
 const LIST_CACHE = `readwise-list-${SW_VERSION}`;
 const ARTICLE_CACHE = `readwise-article-${SW_VERSION}`;
