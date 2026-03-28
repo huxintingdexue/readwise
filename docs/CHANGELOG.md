@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-28 — 文章列表排序回退为纯时间倒序（v2.16.22）
+
+### 已完成
+- ✅ 移除 `/api/articles` 中“未读优先”排序逻辑（`CASE WHEN rp.scroll_position > 0 ...`）
+- ✅ 列表排序恢复为纯 `published_at` 倒序
+
+### 变更文件
+- api/articles.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 卡片时间改为相对时间（v2.16.21）
 
 ### 已完成

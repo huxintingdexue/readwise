@@ -94,21 +94,7 @@ async function listArticles(res, query, userId) {
     return;
   }
 
-  const orderClause = `
-    CASE
-      WHEN a.source_key = 'daily_brief'
-        AND a.published_at IS NOT NULL
-        AND ((a.published_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Shanghai')::date = (NOW() AT TIME ZONE 'Asia/Shanghai')::date
-      THEN 0
-      ELSE 1
-    END ASC,
-    CASE
-      WHEN COALESCE(rp.scroll_position, 0) > 0 THEN 1
-      ELSE 0
-    END ASC,
-    a.published_at DESC NULLS LAST,
-    a.fetched_at DESC
-  `;
+  const orderClause = 'a.published_at DESC';
   const avatarSelect = (await hasAuthorAvatarColumn())
     ? 'a.author_avatar_url'
     : 'NULL::text AS author_avatar_url';
