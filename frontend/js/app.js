@@ -1183,6 +1183,7 @@ function restoreListScroll() {
   const tab = state.tab || 'today';
   const target = Number(state.listScrollTop[tab] || 0);
   const scroller = getListScroller();
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const applyTarget = () => {
     if (scroller && scroller !== window) {
       scroller.scrollTop = Math.max(0, target);
@@ -1191,13 +1192,15 @@ function restoreListScroll() {
     }
   };
   return new Promise((resolve) => {
-    requestAnimationFrame(() => {
+    requestAnimationFrame(async () => {
       applyTarget();
-      requestAnimationFrame(() => {
+      requestAnimationFrame(async () => {
         applyTarget();
-        // iOS Safari may re-apply native scroll restoration after frame commit.
-        setTimeout(applyTarget, 60);
-        setTimeout(applyTarget, 180);
+        // Keep the list hidden until delayed iOS stabilization passes.
+        await wait(60);
+        applyTarget();
+        await wait(140);
+        applyTarget();
         resolve();
       });
     });
