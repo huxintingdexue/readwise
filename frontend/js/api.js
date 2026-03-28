@@ -1,19 +1,32 @@
 const INVITE_CODE_KEY = 'inviteCode';
-const USER_ID_KEY = 'userId';
+const USER_ID_KEY = 'user_id';
+const LEGACY_USER_ID_KEY = 'userId';
 const UID_KEY = 'uid';
+const JWT_TOKEN_KEY = 'jwt_token';
+const NICKNAME_KEY = 'nickname';
 
 function getInviteCode() {
   return localStorage.getItem(INVITE_CODE_KEY) || '';
 }
 
 function getUid() {
-  return localStorage.getItem(UID_KEY) || '';
+  return localStorage.getItem(UID_KEY) || localStorage.getItem(USER_ID_KEY) || '';
+}
+
+function getJwtToken() {
+  return localStorage.getItem(JWT_TOKEN_KEY) || '';
 }
 
 function buildHeaders() {
   const headers = {
     'Content-Type': 'application/json'
   };
+
+  const token = getJwtToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+    return headers;
+  }
 
   const uid = getUid();
   if (uid) {
@@ -63,7 +76,15 @@ export function getStoredInviteCode() {
 }
 
 export function getStoredUserId() {
-  return localStorage.getItem(USER_ID_KEY) || '';
+  return localStorage.getItem(USER_ID_KEY) || localStorage.getItem(LEGACY_USER_ID_KEY) || '';
+}
+
+export function getStoredJwtToken() {
+  return getJwtToken();
+}
+
+export function getStoredNickname() {
+  return localStorage.getItem(NICKNAME_KEY) || '';
 }
 
 export function setUid(uid) {
@@ -80,16 +101,37 @@ export function setLegacyAuth(inviteCode, userId) {
   }
   if (legacyUserId) {
     localStorage.setItem(USER_ID_KEY, legacyUserId);
+    localStorage.setItem(LEGACY_USER_ID_KEY, legacyUserId);
   }
 }
 
 export function clearLegacyAuth() {
   localStorage.removeItem(INVITE_CODE_KEY);
   localStorage.removeItem(USER_ID_KEY);
+  localStorage.removeItem(LEGACY_USER_ID_KEY);
 }
 
 export function isLoggedIn() {
-  return Boolean(getUid() || (getInviteCode() && localStorage.getItem(USER_ID_KEY)));
+  return Boolean(getJwtToken() || getUid() || (getInviteCode() && getStoredUserId()));
+}
+
+export function setAccountSession({ token, userId, nickname }) {
+  const normalizedToken = String(token || '').trim();
+  const normalizedUserId = String(userId || '').trim();
+  const normalizedNickname = String(nickname || '').trim();
+  if (normalizedToken) {
+    localStorage.setItem(JWT_TOKEN_KEY, normalizedToken);
+  }
+  if (normalizedUserId) {
+    localStorage.setItem(USER_ID_KEY, normalizedUserId);
+    localStorage.setItem(LEGACY_USER_ID_KEY, normalizedUserId);
+    localStorage.setItem(UID_KEY, normalizedUserId);
+  }
+  if (normalizedNickname) {
+    localStorage.setItem(NICKNAME_KEY, normalizedNickname);
+  } else {
+    localStorage.removeItem(NICKNAME_KEY);
+  }
 }
 
 export async function registerUser(nickname, inviteCode = '', contact = '') {
@@ -114,6 +156,8 @@ export async function createGuestSession() {
     throw new Error(data?.message || 'guest session failed');
   }
   setUid(uid);
+  localStorage.setItem(USER_ID_KEY, uid);
+  localStorage.setItem(LEGACY_USER_ID_KEY, uid);
   return uid;
 }
 
@@ -163,9 +207,37 @@ export async function login(inviteCode) {
 
 export function logout() {
   localStorage.removeItem(UID_KEY);
+  localStorage.removeItem(USER_ID_KEY);
+  localStorage.removeItem(LEGACY_USER_ID_KEY);
+  localStorage.removeItem(JWT_TOKEN_KEY);
+  localStorage.removeItem(NICKNAME_KEY);
   clearLegacyAuth();
   clearSessionStorageCache();
   window.location.reload();
+}
+
+export async function accountRegister(payload) {
+  const data = await requestJson('/api/auth/register', {
+    method: 'POST',
+    body: payload
+  });
+  return data?.data || null;
+}
+
+export async function accountLogin(payload) {
+  const data = await requestJson('/api/auth/login', {
+    method: 'POST',
+    body: payload
+  });
+  return data?.data || null;
+}
+
+export async function bindAccount(payload) {
+  const data = await requestJson('/api/auth/bind-account', {
+    method: 'POST',
+    body: payload
+  });
+  return data?.data || null;
 }
 
 function toQuery(params) {
@@ -290,7 +362,7 @@ export async function getReadingList(status) {
 }
 
 export async function postFeedback(content) {
-  const userId = localStorage.getItem(USER_ID_KEY) || '';
+  const userId = getStoredUserId();
   return requestJson('/api/feedback', {
     method: 'POST',
     body: { content, userId }

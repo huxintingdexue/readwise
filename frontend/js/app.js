@@ -1,4 +1,4 @@
-﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, registerUser, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth, createGuestSession } from './api.js';
+﻿import { getArticles, getArticleById, getReadingProgress, saveReadingProgress, logout, postFeedback, getFeedback, getAdminStats, getInviteCodes, addInviteCode, getHiddenArticles, getPendingArticles, updateAdminArticleStatus, updatePendingPublishStatus, ingestUrl, translateIngestStep, trackEvent, migrateLegacyUser, getCurrentUser, updateUserProfile, getStoredUid, getStoredInviteCode, getStoredUserId, clearLegacyAuth, createGuestSession, accountRegister, accountLogin, bindAccount, setAccountSession, getStoredJwtToken, getStoredNickname } from './api.js';
 import { closeOriginSnippetPanel, closeReader, openOriginSnippetPanel, renderReader, renderReaderLoading, scrollToPlainPosition, getReadingBaseLength } from './reader.js';
 import { DEFAULT_AVATAR_URL, SOURCE_AVATAR_URLS } from './avatar-config.js';
 import { getAuthors } from './api.js';
@@ -32,7 +32,8 @@ const state = {
   peopleFilter: 'all',
   peopleDetailId: null,
   followedAuthorIds: new Set(),
-  peopleShowZeroAuthors: false
+  peopleShowZeroAuthors: false,
+  authSheetMode: 'login'
 };
 
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v3';
@@ -279,8 +280,10 @@ const nodes = {
   articleNotesBody: document.querySelector('#articleNotesBody'),
   closeArticleNotes: document.querySelector('#closeArticleNotes'),
   inviteCodeDisplay: document.querySelector('#inviteCodeDisplay'),
+  accountDisplay: document.querySelector('#accountDisplay'),
   nicknameDisplay: document.querySelector('#nicknameDisplay'),
   profileAvatarText: document.querySelector('#profileAvatarText'),
+  authEntryBtn: document.querySelector('#authEntryBtn'),
   nicknameHintRow: document.querySelector('#nicknameHintRow'),
   nicknameHintBtn: document.querySelector('#nicknameHintBtn'),
   exportEntry: document.querySelector('#exportEntry'),
@@ -324,9 +327,29 @@ const nodes = {
   closeOriginSnippet: document.querySelector('#closeOriginSnippet'),
   topbarTitle: document.querySelector('#topbarTitle'),
   loginOverlay: document.querySelector('#loginOverlay'),
-  nicknameInput: document.querySelector('#nicknameInput'),
-  loginInput: document.querySelector('#loginInput'),
-  loginButton: document.querySelector('#loginButton'),
+  authSheetTitle: document.querySelector('#authSheetTitle'),
+  authTabs: document.querySelector('#authTabs'),
+  authTabLogin: document.querySelector('#authTabLogin'),
+  authTabRegister: document.querySelector('#authTabRegister'),
+  authTabBind: document.querySelector('#authTabBind'),
+  authLoginForm: document.querySelector('#authLoginForm'),
+  authRegisterForm: document.querySelector('#authRegisterForm'),
+  authBindForm: document.querySelector('#authBindForm'),
+  authLoginAccount: document.querySelector('#authLoginAccount'),
+  authLoginPassword: document.querySelector('#authLoginPassword'),
+  authLoginSubmit: document.querySelector('#authLoginSubmit'),
+  authRegisterNickname: document.querySelector('#authRegisterNickname'),
+  authRegisterAccount: document.querySelector('#authRegisterAccount'),
+  authRegisterPassword: document.querySelector('#authRegisterPassword'),
+  authRegisterSubmit: document.querySelector('#authRegisterSubmit'),
+  authBindAccount: document.querySelector('#authBindAccount'),
+  authBindPassword: document.querySelector('#authBindPassword'),
+  authBindSubmit: document.querySelector('#authBindSubmit'),
+  forgotPasswordBtn: document.querySelector('#forgotPasswordBtn'),
+  forgotPasswordPanel: document.querySelector('#forgotPasswordPanel'),
+  bindPromptBox: document.querySelector('#bindPromptBox'),
+  bindNowBtn: document.querySelector('#bindNowBtn'),
+  bindLaterBtn: document.querySelector('#bindLaterBtn'),
   loginError: document.querySelector('#loginError'),
   logoutBtn: document.querySelector('#logoutBtn'),
   hideArticleBtn: document.querySelector('#hideArticleBtn'),
@@ -885,6 +908,14 @@ function renderPeopleFilterSelection() {
 function toggleFollowAuthor(authorId) {
   const id = String(authorId || '').trim();
   if (!id) return;
+  if (!isAccountLoggedIn()) {
+    if (isInviteUserWithoutAccount()) {
+      showBindPromptOverlay();
+    } else {
+      showLoginOverlay('登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。', 'login');
+    }
+    return;
+  }
   if (state.followedAuthorIds.has(id)) {
     state.followedAuthorIds.delete(id);
   } else {
@@ -1719,13 +1750,13 @@ function bindEvents() {
   });
 
   nodes.logoutBtn?.addEventListener('click', () => {
-    if (isGuestUser()) {
-      showLoginOverlay();
-      return;
-    }
     const confirmed = window.confirm('确定退出登录吗？');
     if (!confirmed) return;
     logout();
+  });
+
+  nodes.authEntryBtn?.addEventListener('click', () => {
+    showLoginOverlay('登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。', 'login');
   });
 
   nodes.exportEntry?.addEventListener('click', () => {
@@ -1969,6 +2000,24 @@ function getInviteCodeLabel() {
   return String(state.currentUser?.inviteCode || '').trim() || getStoredInviteCode() || '-';
 }
 
+function getAccountValue() {
+  return String(state.currentUser?.account || '').trim();
+}
+
+function maskAccount(account) {
+  const text = String(account || '').trim();
+  if (!text) return '-';
+  if (/^\d{11}$/.test(text)) {
+    return `${text.slice(0, 3)}****${text.slice(-4)}`;
+  }
+  if (text.includes('@')) {
+    const [name, domain] = text.split('@');
+    const safeName = name.length <= 1 ? '*' : `${name.slice(0, 1)}***`;
+    return `${safeName}@${domain || ''}`;
+  }
+  return text;
+}
+
 function getUserId() {
   if (state.currentUser?.userId) return state.currentUser.userId;
   return getStoredUserId();
@@ -1985,7 +2034,7 @@ function getAuthIdentity() {
 
 function getNicknameLabel() {
   const nickname = String(state.currentUser?.nickname || '').trim();
-  return nickname || '-';
+  return nickname || getStoredNickname() || '-';
 }
 
 function getAvatarDisplayText() {
@@ -2000,13 +2049,31 @@ function isAdminUser() {
   return getUserId() === 'admin';
 }
 
-function isGuestUser() {
-  return state.currentUser?.source === 'guest_auto';
+function isAccountLoggedIn() {
+  return Boolean(getStoredJwtToken() && getAccountValue());
+}
+
+function isInviteUserWithoutAccount() {
+  return Boolean(getStoredInviteCode() && !isAccountLoggedIn());
+}
+
+function normalizeAuthAccountInput(value) {
+  return String(value || '').trim();
+}
+
+function isValidAccountFormat(account) {
+  if (!account) return false;
+  if (/^\d{11}$/.test(account)) return true;
+  if (account.includes('@')) return true;
+  return false;
 }
 
 function refreshMeTab() {
   if (nodes.inviteCodeDisplay) {
     nodes.inviteCodeDisplay.textContent = getInviteCodeLabel();
+  }
+  if (nodes.accountDisplay) {
+    nodes.accountDisplay.textContent = maskAccount(getAccountValue());
   }
   if (nodes.nicknameDisplay) {
     nodes.nicknameDisplay.textContent = getNicknameLabel();
@@ -2015,11 +2082,14 @@ function refreshMeTab() {
     nodes.profileAvatarText.textContent = getAvatarDisplayText();
   }
   if (nodes.nicknameHintRow) {
-    const shouldShow = !isGuestUser() && !String(state.currentUser?.nickname || '').trim();
+    const shouldShow = isAccountLoggedIn() && !String(state.currentUser?.nickname || '').trim();
     nodes.nicknameHintRow.classList.toggle('hidden', !shouldShow);
   }
+  if (nodes.authEntryBtn) {
+    nodes.authEntryBtn.classList.toggle('hidden', isAccountLoggedIn());
+  }
   if (nodes.logoutBtn) {
-    nodes.logoutBtn.textContent = isGuestUser() ? '登录' : '退出登录';
+    nodes.logoutBtn.classList.toggle('hidden', !isAccountLoggedIn());
   }
   const userId = getUserId();
   if (nodes.adminSection) {
@@ -2439,17 +2509,59 @@ function formatAdminUserLabel(item) {
   return nickname || userId || '未知用户';
 }
 
-function showLoginOverlay(message = '') {
+function setAuthError(message = '') {
+  if (!nodes.loginError) return;
+  nodes.loginError.textContent = String(message || '').trim();
+}
+
+function switchAuthSheetMode(mode = 'login') {
+  state.authSheetMode = mode;
+  const target = mode === 'register' ? 'register' : mode === 'bind' ? 'bind' : 'login';
+  nodes.authTabLogin?.classList.toggle('is-active', target === 'login');
+  nodes.authTabRegister?.classList.toggle('is-active', target === 'register');
+  nodes.authTabBind?.classList.toggle('is-active', target === 'bind');
+  nodes.authTabBind?.classList.toggle('hidden', target !== 'bind');
+  nodes.authLoginForm?.classList.toggle('hidden', target !== 'login');
+  nodes.authRegisterForm?.classList.toggle('hidden', target !== 'register');
+  nodes.authBindForm?.classList.toggle('hidden', target !== 'bind');
+  nodes.bindPromptBox?.classList.add('hidden');
+  nodes.authTabs?.classList.toggle('hidden', false);
+  if (nodes.forgotPasswordPanel) {
+    nodes.forgotPasswordPanel.classList.add('hidden');
+  }
+}
+
+function showLoginOverlay(message = '', mode = 'login') {
   if (!nodes.loginOverlay) return;
   nodes.loginOverlay.classList.remove('hidden');
-  if (nodes.loginError) {
-    nodes.loginError.textContent = message;
+  if (nodes.authSheetTitle) {
+    nodes.authSheetTitle.textContent = '登录后可以保存你关注的博主，同步阅读进度，换设备也不会丢失。';
   }
+  switchAuthSheetMode(mode);
+  setAuthError(message);
+}
+
+function showBindPromptOverlay() {
+  if (!nodes.loginOverlay) return;
+  nodes.loginOverlay.classList.remove('hidden');
+  if (nodes.authSheetTitle) {
+    nodes.authSheetTitle.textContent = '绑定账号后，换设备也能找回你的阅读记录和关注列表。';
+  }
+  nodes.bindPromptBox?.classList.remove('hidden');
+  nodes.authTabs?.classList.add('hidden');
+  nodes.authLoginForm?.classList.add('hidden');
+  nodes.authRegisterForm?.classList.add('hidden');
+  nodes.authBindForm?.classList.add('hidden');
+  if (nodes.forgotPasswordPanel) {
+    nodes.forgotPasswordPanel.classList.add('hidden');
+  }
+  setAuthError('');
 }
 
 function hideLoginOverlay() {
   nodes.loginOverlay?.classList.add('hidden');
-  if (nodes.loginError) nodes.loginError.textContent = '';
+  setAuthError('');
+  switchAuthSheetMode('login');
 }
 
 async function loadCurrentUserProfile() {
@@ -2489,7 +2601,11 @@ async function bootstrapAuth() {
   const uid = getStoredUid();
   if (uid) {
     await loadCurrentUserProfile();
-    return true;
+    if (state.currentUser) return true;
+    if (getStoredJwtToken()) {
+      localStorage.removeItem('jwt_token');
+      localStorage.removeItem('nickname');
+    }
   }
 
   const legacyInviteCode = getStoredInviteCode();
@@ -2515,67 +2631,119 @@ async function bootstrapAuth() {
 }
 
 function bindLoginEvents() {
-  if (!nodes.loginButton || !nodes.loginInput || !nodes.nicknameInput) return;
-  let loginSubmitting = false;
+  if (!nodes.loginOverlay) return;
 
-  const attemptRegister = async () => {
-    if (loginSubmitting) return;
-    const nickname = nodes.nicknameInput.value.trim();
-    const inviteCode = nodes.loginInput.value.trim();
-    if (!nickname) {
-      showLoginOverlay('请输入昵称');
-      return;
-    }
-
-    loginSubmitting = true;
-    nodes.loginButton.disabled = true;
-    const originText = nodes.loginButton.textContent;
-    nodes.loginButton.textContent = '处理中...';
-
+  const runWithButton = async (button, fn) => {
+    if (!button) return;
+    if (button.disabled) return;
+    button.disabled = true;
+    const text = button.textContent;
+    button.textContent = '处理中...';
     try {
-      if (isGuestUser() && !inviteCode) {
-        await updateUserProfile({ nickname });
-      } else {
-        if (isGuestUser() && inviteCode) {
-          // Ensure virtual keyboard is dismissed before showing confirm on mobile.
-          nodes.nicknameInput.blur();
-          nodes.loginInput.blur();
-          if (document.activeElement && typeof document.activeElement.blur === 'function') {
-            document.activeElement.blur();
-          }
-          await new Promise((resolve) => setTimeout(resolve, 160));
-          const confirmed = window.confirm('使用邀请码会切换到新账号，当前游客数据不会自动合并。是否继续？');
-          if (!confirmed) return;
-        }
-        await registerUser(nickname, inviteCode);
-      }
-      await loadCurrentUserProfile();
-      hideLoginOverlay();
-      refreshMeTab();
-      await startApp();
-    } catch (err) {
-      const message = String(err.message || '娉ㄥ唽澶辫触');
-      if (message.includes('invite') || message.toLowerCase().includes('invite')) {
-        nodes.loginInput.value = '';
-      }
-      showLoginOverlay(message);
+      await fn();
     } finally {
-      loginSubmitting = false;
-      nodes.loginButton.disabled = false;
-      nodes.loginButton.textContent = originText || '进入';
+      button.disabled = false;
+      button.textContent = text || '提交';
     }
   };
 
-  nodes.loginButton.addEventListener('click', attemptRegister);
-  nodes.nicknameInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      attemptRegister();
+  const validateAccount = (account) => {
+    if (!account) return '请输入账号';
+    if (!isValidAccountFormat(account)) return '请输入邮箱或11位手机号';
+    return '';
+  };
+
+  const afterAuthSuccess = async (payload) => {
+    const token = String(payload?.token || '').trim();
+    const userId = String(payload?.user_id || '').trim();
+    const nickname = String(payload?.nickname || '').trim();
+    if (!token || !userId) {
+      throw new Error('登录结果异常');
     }
+    setAccountSession({ token, userId, nickname });
+    await loadCurrentUserProfile();
+    refreshMeTab();
+    renderPeople();
+    hideLoginOverlay();
+  };
+
+  nodes.authTabLogin?.addEventListener('click', () => switchAuthSheetMode('login'));
+  nodes.authTabRegister?.addEventListener('click', () => switchAuthSheetMode('register'));
+  nodes.authTabBind?.addEventListener('click', () => switchAuthSheetMode('bind'));
+
+  nodes.authLoginSubmit?.addEventListener('click', () => runWithButton(nodes.authLoginSubmit, async () => {
+    const account = normalizeAuthAccountInput(nodes.authLoginAccount?.value);
+    const password = String(nodes.authLoginPassword?.value || '').trim();
+    const formatErr = validateAccount(account);
+    if (formatErr) {
+      setAuthError(formatErr);
+      return;
+    }
+    if (!password) {
+      setAuthError('请输入密码');
+      return;
+    }
+    const data = await accountLogin({ account, password });
+    await afterAuthSuccess(data);
+  }).catch((err) => {
+    setAuthError(err.message || '登录失败');
+  }));
+
+  nodes.authRegisterSubmit?.addEventListener('click', () => runWithButton(nodes.authRegisterSubmit, async () => {
+    const nickname = String(nodes.authRegisterNickname?.value || '').trim();
+    const account = normalizeAuthAccountInput(nodes.authRegisterAccount?.value);
+    const password = String(nodes.authRegisterPassword?.value || '').trim();
+    const formatErr = validateAccount(account);
+    if (formatErr) {
+      setAuthError(formatErr);
+      return;
+    }
+    if (password.length < 6) {
+      setAuthError('密码至少6位');
+      return;
+    }
+    const data = await accountRegister({
+      account,
+      password,
+      nickname: nickname || null,
+      user_id: getUid() || getStoredUserId()
+    });
+    await afterAuthSuccess(data);
+  }).catch((err) => {
+    setAuthError(err.message || '注册失败');
+  }));
+
+  nodes.authBindSubmit?.addEventListener('click', () => runWithButton(nodes.authBindSubmit, async () => {
+    const account = normalizeAuthAccountInput(nodes.authBindAccount?.value);
+    const password = String(nodes.authBindPassword?.value || '').trim();
+    const formatErr = validateAccount(account);
+    if (formatErr) {
+      setAuthError(formatErr);
+      return;
+    }
+    if (password.length < 6) {
+      setAuthError('密码至少6位');
+      return;
+    }
+    const data = await bindAccount({
+      user_id: getUid() || getStoredUserId(),
+      account,
+      password
+    });
+    await afterAuthSuccess(data);
+  }).catch((err) => {
+    setAuthError(err.message || '绑定失败');
+  }));
+
+  nodes.bindNowBtn?.addEventListener('click', () => {
+    showLoginOverlay('', 'bind');
   });
-  nodes.loginInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      attemptRegister();
-    }
+  nodes.bindLaterBtn?.addEventListener('click', () => {
+    hideLoginOverlay();
+  });
+
+  nodes.forgotPasswordBtn?.addEventListener('click', () => {
+    nodes.forgotPasswordPanel?.classList.toggle('hidden');
   });
 
   nodes.loginOverlay?.addEventListener('click', (event) => {

@@ -29,6 +29,7 @@ export default async function handler(req, res) {
               userId: legacyUserId,
               nickname: null,
               contact: null,
+              account: null,
               source: 'manual_invite',
               inviteCode
             }
@@ -50,6 +51,7 @@ export default async function handler(req, res) {
         userId: ctx.userId,
         nickname: user.nickname || null,
         contact: user.contact || null,
+        account: user.account || null,
         source: user.source || 'self_register',
         inviteCode: user.invite_code || null
       }

@@ -81,15 +81,20 @@
 
         <section id="tab-notes" class="tab-panel hidden">
           <div class="me-profile-card">
-            <div class="me-profile-avatar-wrap">
+          <div class="me-profile-avatar-wrap">
               <div class="me-profile-avatar" id="profileAvatarText">-</div>
               <span class="me-profile-verified" aria-hidden="true">✓</span>
             </div>
             <h2 class="me-profile-name" id="nicknameDisplay">-</h2>
+            <div class="me-profile-account-row">
+              <span class="me-profile-invite-label">账号</span>
+              <code id="accountDisplay">-</code>
+            </div>
             <div class="me-profile-invite-row">
               <span class="me-profile-invite-label">邀请码</span>
               <code id="inviteCodeDisplay">-</code>
             </div>
+            <button id="authEntryBtn" class="me-profile-logout hidden" type="button">登录 / 注册</button>
             <button id="logoutBtn" class="me-profile-logout" type="button">退出登录</button>
             <div class="hidden" id="nicknameHintRow">
               <button id="nicknameHintBtn" class="me-ghost-btn" type="button">设置昵称</button>
@@ -291,11 +296,52 @@
     </div>
 
     <div id="loginOverlay" class="login-overlay hidden" role="dialog" aria-modal="true">
-      <div class="login-card">
-        <h2>开始阅读</h2>
-        <input id="nicknameInput" type="text" placeholder="请输入昵称（必填）" autocomplete="off" />
-        <input id="loginInput" type="text" placeholder="请输入邀请码（选填）" autocomplete="off" />
-        <button id="loginButton" type="button">进入</button>
+      <div class="login-sheet">
+        <div class="login-sheet-handle"></div>
+        <h2 id="authSheetTitle">登录后可同步阅读进度与关注</h2>
+
+        <div id="bindPromptBox" class="bind-prompt hidden">
+          <p>绑定账号后，换设备也能找回你的阅读记录和关注列表。</p>
+          <div class="bind-prompt-actions">
+            <button id="bindNowBtn" type="button">立即绑定</button>
+            <button id="bindLaterBtn" class="ghost" type="button">稍后再说</button>
+          </div>
+        </div>
+
+        <div id="authTabs" class="auth-tabs">
+          <button id="authTabLogin" class="auth-tab is-active" type="button">登录</button>
+          <button id="authTabRegister" class="auth-tab" type="button">注册</button>
+          <button id="authTabBind" class="auth-tab hidden" type="button">绑定账号</button>
+        </div>
+
+        <div id="authLoginForm" class="auth-form">
+          <input id="authLoginAccount" type="text" placeholder="邮箱或手机号" autocomplete="username" />
+          <input id="authLoginPassword" type="password" placeholder="密码" autocomplete="current-password" />
+          <button id="authLoginSubmit" type="button">登录</button>
+          <button id="forgotPasswordBtn" class="auth-link-btn" type="button">忘记密码？</button>
+        </div>
+
+        <div id="authRegisterForm" class="auth-form hidden">
+          <input id="authRegisterNickname" type="text" placeholder="可留空，默认用账号前缀" autocomplete="nickname" />
+          <input id="authRegisterAccount" type="text" placeholder="邮箱或手机号" autocomplete="username" />
+          <input id="authRegisterPassword" type="password" placeholder="至少6位" autocomplete="new-password" />
+          <button id="authRegisterSubmit" type="button">注册</button>
+        </div>
+
+        <div id="authBindForm" class="auth-form hidden">
+          <input id="authBindAccount" type="text" placeholder="邮箱或手机号" autocomplete="username" />
+          <input id="authBindPassword" type="password" placeholder="至少6位" autocomplete="new-password" />
+          <button id="authBindSubmit" type="button">确认绑定</button>
+        </div>
+
+        <div id="forgotPasswordPanel" class="forgot-password-panel hidden">
+          <p>请添加微信 <strong>huxinting0725</strong> 联系我们重置密码。</p>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=huxinting0725" alt="微信二维码" />
+        </div>
+
+        <div class="auth-help">
+          忘记密码？添加微信 <strong>huxinting0725</strong> 联系我们
+        </div>
         <div id="loginError" class="login-error"></div>
       </div>
     </div>

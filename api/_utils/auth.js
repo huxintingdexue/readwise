@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 dotenv.config({ path: '.env.local' });
 
@@ -47,6 +48,8 @@ export async function ensureUsersTable() {
       id TEXT PRIMARY KEY,
       nickname TEXT,
       contact TEXT,
+      account TEXT UNIQUE,
+      password_hash TEXT,
       invite_code TEXT UNIQUE,
       source TEXT NOT NULL DEFAULT 'self_register',
       legacy_user_id TEXT,
@@ -57,8 +60,29 @@ export async function ensureUsersTable() {
   `);
 
   await getPool().query('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_invite_code ON users(invite_code)');
+  await getPool().query('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_account_unique ON users(account)');
   await getPool().query('CREATE INDEX IF NOT EXISTS idx_users_legacy ON users(legacy_user_id)');
   await getPool().query('CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at)');
+}
+
+function getJwtSecret() {
+  return String(process.env.JWT_SECRET || '').trim();
+}
+
+export function signAuthToken(payload) {
+  const secret = getJwtSecret();
+  if (!secret) {
+    throw new Error('Missing JWT_SECRET');
+  }
+  return jwt.sign(payload, secret, { expiresIn: '30d' });
+}
+
+export function verifyAuthToken(token) {
+  const secret = getJwtSecret();
+  if (!secret) {
+    throw new Error('Missing JWT_SECRET');
+  }
+  return jwt.verify(token, secret);
 }
 
 export async function getUserIdFromInviteCode(inviteCode) {
@@ -146,7 +170,22 @@ export async function getUserByUid(uid) {
   if (!normalized) return null;
   await ensureUsersTable();
   const { rows } = await getPool().query(
-    'SELECT id, nickname, contact, invite_code, source, legacy_user_id, register_ip, created_at, last_seen_at FROM users WHERE id = $1 LIMIT 1',
+    `SELECT id, nickname, contact, account, password_hash, invite_code, source, legacy_user_id, register_ip, created_at, last_seen_at
+     FROM users WHERE id = $1 LIMIT 1`,
+    [normalized]
+  );
+  return rows[0] || null;
+}
+
+export async function getUserByAccount(account) {
+  const normalized = String(account || '').trim();
+  if (!normalized) return null;
+  await ensureUsersTable();
+  const { rows } = await getPool().query(
+    `SELECT id, nickname, contact, account, password_hash, invite_code, source, legacy_user_id, register_ip, created_at, last_seen_at
+     FROM users
+     WHERE LOWER(account) = LOWER($1)
+     LIMIT 1`,
     [normalized]
   );
   return rows[0] || null;
@@ -231,6 +270,41 @@ export function isAdmin(userId) {
 
 export async function resolveAuthContext(req, res, options = {}) {
   const enforceOpenClaw = options.enforceOpenClaw !== false;
+
+  const authHeader = String(req.headers['authorization'] || '').trim();
+  if (authHeader.toLowerCase().startsWith('bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (!token) {
+      res.status(401).json({ error: 'TOKEN_INVALID' });
+      return null;
+    }
+    try {
+      const decoded = verifyAuthToken(token);
+      const uidFromToken = normalizeUid(decoded?.uid || decoded?.user_id);
+      if (!uidFromToken) {
+        res.status(401).json({ error: 'TOKEN_INVALID' });
+        return null;
+      }
+      const user = await getUserByUid(uidFromToken);
+      if (!user) {
+        res.status(401).json({ error: 'TOKEN_INVALID' });
+        return null;
+      }
+      const userId = user.legacy_user_id || user.id;
+      if (enforceOpenClaw && !ensureOpenClawPermission(req, res, userId)) {
+        return null;
+      }
+      updateLastSeenAt(user.id);
+      return {
+        uid: user.id,
+        userId,
+        user
+      };
+    } catch (_) {
+      res.status(401).json({ error: 'TOKEN_INVALID' });
+      return null;
+    }
+  }
 
   const uid = normalizeUid(req.headers['x-uid']);
   if (uid) {
