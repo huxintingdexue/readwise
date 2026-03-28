@@ -4,6 +4,20 @@ import { hideArticleNotesPanel } from './notes.js';
 import { applyHighlightsToDOM } from './highlight.js';
 
 let readingSession = null;
+const TAG_FILTER_STORAGE_KEY = 'rw:today-tag-filter:v1';
+const LEGACY_TAG_MAP = {
+  个人成长: '人生哲学'
+};
+
+function currentTagFilter() {
+  try {
+    const raw = String(localStorage.getItem(TAG_FILTER_STORAGE_KEY) || '').trim();
+    if (!raw) return '全部';
+    return LEGACY_TAG_MAP[raw] || raw;
+  } catch (_) {
+    return '全部';
+  }
+}
 
 function formatDate(isoString) {
   if (!isoString) return '未知时间';
@@ -386,7 +400,8 @@ export function renderReader(detail, nodes, initialProgress = null) {
   if (detail.id) {
     trackEvent('open_article', detail.id, {
       article_title: detail.title_zh || detail.title_en || '',
-      source_key: detail.source_key || ''
+      source_key: detail.source_key || '',
+      current_tag_filter: currentTagFilter()
     });
   }
 
