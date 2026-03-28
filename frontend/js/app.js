@@ -219,6 +219,11 @@ function updateTopbarForTab(tab) {
     p.textContent = '关注你关心的作者';
     return;
   }
+  if (tab === 'notes') {
+    h1.textContent = '我的';
+    p.textContent = '个人信息与阅读设置';
+    return;
+  }
   h1.textContent = '今日硅谷';
   p.textContent = '全球一手信息 触手可及';
 }
@@ -848,7 +853,7 @@ function buildPeopleCard(person) {
   li.className = 'people-card';
   const followed = state.followedAuthorIds.has(person.id);
   const tags = personTags(person);
-  const primaryTag = tags[0] || '科技';
+  const tagText = tags.length ? tags.join(' / ') : '科技';
   li.innerHTML = `
     <div class="people-card-main" data-person-open="${escapeHtml(person.id)}">
       <img class="people-avatar" src="${escapeHtml(person.avatar_url || DEFAULT_AVATAR_URL)}" alt="${escapeHtml(person.name)}" />
@@ -861,7 +866,7 @@ function buildPeopleCard(person) {
         </div>
         <p class="people-one-line">${escapeHtml(person.bio_one_line || '暂无简介')}</p>
         <div class="people-meta">
-          <span class="people-tag">${escapeHtml(primaryTag)}</span>
+          <span class="people-tag">${escapeHtml(tagText)}</span>
           <span class="people-dot"></span>
           <span class="people-count">${escapeHtml(String(person.count || 0))}篇</span>
         </div>
