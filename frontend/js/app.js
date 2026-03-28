@@ -281,6 +281,8 @@ const nodes = {
   inviteCodeDisplay: document.querySelector('#inviteCodeDisplay'),
   accountDisplay: document.querySelector('#accountDisplay'),
   nicknameDisplay: document.querySelector('#nicknameDisplay'),
+  editNicknameBtn: document.querySelector('#editNicknameBtn'),
+  editAccountBtn: document.querySelector('#editAccountBtn'),
   profileAvatarText: document.querySelector('#profileAvatarText'),
   authEntryBtn: document.querySelector('#authEntryBtn'),
   nicknameHintRow: document.querySelector('#nicknameHintRow'),
@@ -345,6 +347,12 @@ const nodes = {
   feedbackInput: document.querySelector('#feedbackInput'),
   feedbackSubmitBtn: document.querySelector('#feedbackSubmitBtn'),
   feedbackCloseBtn: document.querySelector('#feedbackCloseBtn'),
+  profileEditModal: document.querySelector('#profileEditModal'),
+  profileEditTitle: document.querySelector('#profileEditTitle'),
+  profileEditInput: document.querySelector('#profileEditInput'),
+  profileEditError: document.querySelector('#profileEditError'),
+  profileEditSubmitBtn: document.querySelector('#profileEditSubmitBtn'),
+  profileEditCloseBtn: document.querySelector('#profileEditCloseBtn'),
   appearanceModal: document.querySelector('#appearanceModal'),
   appearanceCloseBtn: document.querySelector('#appearanceCloseBtn'),
   meAppearanceEntry: document.querySelector('#meAppearanceEntry'),
@@ -1780,11 +1788,62 @@ function bindEvents() {
   nodes.nicknameHintBtn?.addEventListener('click', () => {
     promptForNickname();
   });
-  nodes.nicknameDisplay?.addEventListener('click', () => {
+  nodes.editNicknameBtn?.addEventListener('click', () => {
     promptForNickname();
   });
-  nodes.accountDisplay?.addEventListener('click', () => {
+  nodes.editAccountBtn?.addEventListener('click', () => {
     promptForAccount();
+  });
+
+  const handleProfileEditSubmit = async () => {
+    const mode = String(nodes.profileEditModal?.dataset.mode || 'nickname');
+    const value = String(nodes.profileEditInput?.value || '').trim();
+    if (!value) {
+      setProfileEditError(mode === 'account' ? '请输入账号' : '请输入昵称');
+      return;
+    }
+    if (mode === 'account' && !isValidAccountFormat(value)) {
+      setProfileEditError('请输入邮箱或11位手机号');
+      return;
+    }
+    const payload = mode === 'account' ? { account: value } : { nickname: value };
+    const submitBtn = nodes.profileEditSubmitBtn;
+    if (!submitBtn || submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    const rawText = submitBtn.textContent;
+    submitBtn.textContent = '保存中...';
+    try {
+      const updated = await updateUserProfile(payload);
+      state.currentUser = {
+        ...(state.currentUser || {}),
+        nickname: updated?.nickname ?? state.currentUser?.nickname ?? null,
+        account: updated?.account ?? state.currentUser?.account ?? null
+      };
+      refreshMeTab();
+      closeProfileEditModal();
+      showToast(mode === 'account' ? '账号已更新' : '昵称已更新', 1500);
+    } catch (err) {
+      setProfileEditError(err.message || '更新失败');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = rawText || '保存';
+    }
+  };
+
+  nodes.profileEditSubmitBtn?.addEventListener('click', handleProfileEditSubmit);
+  nodes.profileEditCloseBtn?.addEventListener('click', () => {
+    closeProfileEditModal();
+  });
+  nodes.profileEditInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleProfileEditSubmit();
+    }
+  });
+  nodes.profileEditModal?.addEventListener('click', (event) => {
+    if (event.target === nodes.profileEditModal) {
+      closeProfileEditModal();
+    }
   });
 
   nodes.ingestToggle?.addEventListener('click', () => {
@@ -2092,6 +2151,12 @@ function refreshMeTab() {
   }
   if (nodes.logoutBtn) {
     nodes.logoutBtn.classList.toggle('hidden', !isAccountLoggedIn());
+  }
+  if (nodes.editNicknameBtn) {
+    nodes.editNicknameBtn.classList.toggle('hidden', !isAccountLoggedIn());
+  }
+  if (nodes.editAccountBtn) {
+    nodes.editAccountBtn.classList.toggle('hidden', !isAccountLoggedIn());
   }
   const userId = getUserId();
   if (nodes.adminSection) {
@@ -2516,6 +2581,41 @@ function setAuthError(message = '') {
   nodes.loginError.textContent = String(message || '').trim();
 }
 
+function setProfileEditError(message = '') {
+  if (!nodes.profileEditError) return;
+  nodes.profileEditError.textContent = String(message || '').trim();
+}
+
+function openProfileEditModal(mode) {
+  if (!nodes.profileEditModal || !nodes.profileEditInput || !nodes.profileEditTitle) return;
+  const targetMode = mode === 'account' ? 'account' : 'nickname';
+  nodes.profileEditModal.dataset.mode = targetMode;
+  setProfileEditError('');
+  if (targetMode === 'account') {
+    nodes.profileEditTitle.textContent = '修改账号';
+    nodes.profileEditInput.placeholder = '请输入邮箱或11位手机号';
+    nodes.profileEditInput.value = String(state.currentUser?.account || '').trim();
+    nodes.profileEditInput.inputMode = 'text';
+  } else {
+    nodes.profileEditTitle.textContent = '修改昵称';
+    nodes.profileEditInput.placeholder = '请输入昵称（1-20字）';
+    nodes.profileEditInput.value = String(state.currentUser?.nickname || '').trim();
+    nodes.profileEditInput.inputMode = 'text';
+  }
+  nodes.profileEditModal.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      nodes.profileEditInput?.focus();
+      nodes.profileEditInput?.select?.();
+    });
+  });
+}
+
+function closeProfileEditModal() {
+  nodes.profileEditModal?.classList.add('hidden');
+  setProfileEditError('');
+}
+
 function showLoginOverlay(message = '') {
   if (!nodes.loginOverlay) return;
   nodes.loginOverlay.classList.remove('hidden');
@@ -2571,27 +2671,7 @@ async function promptForNickname() {
     showToast('请先登录账号');
     return;
   }
-  const current = String(state.currentUser?.nickname || '').trim();
-  const input = window.prompt('设置昵称（1-20 字）', current);
-  if (input == null) return;
-  const nickname = String(input || '').trim();
-  if (!nickname) {
-    showToast('请输入昵称', 2000);
-    return;
-  }
-  try {
-    const updated = await updateUserProfile({ nickname });
-    if (updated) {
-      state.currentUser = {
-        ...(state.currentUser || {}),
-        nickname: updated.nickname || nickname
-      };
-      refreshMeTab();
-      showToast('昵称已更新', 1500);
-    }
-  } catch (err) {
-    showToast(err.message || '鏇存柊澶辫触', 2000);
-  }
+  openProfileEditModal('nickname');
 }
 
 async function promptForAccount() {
@@ -2599,31 +2679,7 @@ async function promptForAccount() {
     showToast('请先登录账号');
     return;
   }
-  const current = String(state.currentUser?.account || '').trim();
-  const input = window.prompt('设置账号（邮箱或11位手机号）', current);
-  if (input == null) return;
-  const account = String(input || '').trim();
-  if (!account) {
-    showToast('请输入账号', 2000);
-    return;
-  }
-  if (!isValidAccountFormat(account)) {
-    showToast('请输入邮箱或11位手机号', 2000);
-    return;
-  }
-  try {
-    const updated = await updateUserProfile({ account });
-    if (updated) {
-      state.currentUser = {
-        ...(state.currentUser || {}),
-        account: updated.account || account
-      };
-      refreshMeTab();
-      showToast('账号已更新', 1500);
-    }
-  } catch (err) {
-    showToast(err.message || '更新失败', 2000);
-  }
+  openProfileEditModal('account');
 }
 
 async function bootstrapAuth() {

@@ -388,7 +388,12 @@ body.reading-mode::-webkit-scrollbar-thumb {
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  cursor: pointer;
+}
+
+.me-profile-name-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .me-profile-invite-row {
@@ -421,6 +426,12 @@ body.reading-mode::-webkit-scrollbar-thumb {
   gap: 6px;
 }
 
+.me-profile-account-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .me-profile-account-row code {
   border-radius: 8px;
   background: #e5e9eb;
@@ -428,7 +439,35 @@ body.reading-mode::-webkit-scrollbar-thumb {
   font-weight: 700;
   font-size: 11px;
   padding: 3px 7px;
+}
+
+.profile-edit-icon {
+  border: 1px solid #d3d9dc;
+  background: #fff;
+  color: #6e7b80;
+  font-size: 11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   cursor: pointer;
+}
+
+.profile-edit-modal {
+  align-items: flex-start;
+  padding-top: 14vh;
+}
+
+.profile-edit-panel {
+  width: min(520px, calc(100vw - 24px));
+}
+
+.profile-edit-panel .login-error {
+  margin-top: 8px;
+  min-height: 18px;
 }
 
 .me-profile-logout {
