@@ -937,7 +937,7 @@ function buildPeopleCard(person) {
   const tags = personTags(person);
   const tagText = tags.length ? tags.join(' / ') : '科技';
   const countValue = Number(person.count || 0);
-  const countLabel = countValue > 0 ? `${countValue}篇` : '计划同步中';
+  const countLabel = countValue > 0 ? `${countValue}篇文章` : '计划同步中';
   const zhName = resolvePersonZhName(person);
   li.innerHTML = `
     <div class="people-card-main" data-person-open="${escapeHtml(person.id)}">

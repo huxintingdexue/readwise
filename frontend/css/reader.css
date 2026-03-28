@@ -1348,7 +1348,7 @@ body.theme-dark .topbar p {
 }
 
 .people-name-zh {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   font-size: 13px;
   color: #7a868a;
   line-height: 1.25;
@@ -1380,7 +1380,7 @@ body.theme-dark .topbar p {
 }
 
 .people-one-line {
-  margin: 6px 0 0;
+  margin: 10px 0 0;
   color: #7a868a;
   font-size: 12px;
   line-height: 1.4;
