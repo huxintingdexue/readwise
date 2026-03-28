@@ -852,6 +852,40 @@ body.theme-dark .topbar p {
   font-size: 13px;
 }
 
+.tag-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px 0 8px;
+  margin-bottom: 4px;
+}
+
+.tag-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.tag-filter-chip {
+  flex: 0 0 auto;
+  border: 1px solid rgba(148, 156, 159, 0.28);
+  background: #fff;
+  color: rgba(87, 95, 98, 0.9);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.tag-filter-chip.is-active {
+  background: #0b7f74;
+  border-color: #0b7f74;
+  color: #fff;
+}
+
 .articles-list {
   list-style: none;
   padding: 0;

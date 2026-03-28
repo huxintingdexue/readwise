@@ -20,15 +20,22 @@ const state = {
   ingestBusy: false,
   currentUser: null,
   articleDetailCache: new Map(),
+  selectedTagFilter: '全部',
   listScrollTop: {
     today: 0,
+    people: 0,
     notes: 0
   },
-  briefHistoryOpen: false
+  briefHistoryOpen: false,
+  peopleFilter: 'all',
+  peopleDetailId: null,
+  followedAuthorIds: new Set()
 };
 
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v2';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
+const TAG_FILTER_STORAGE_KEY = 'rw:today-tag-filter:v1';
+const TAG_FILTER_OPTIONS = ['全部', '科技', '商业', '产品', '个人成长'];
 const FONT_PRESET_STORAGE_KEY = 'rw_font_preset';
 const MAX_DETAIL_CACHE_ITEMS = 30;
 const SPLASH_FALLBACK_MS = 5000;
@@ -37,6 +44,43 @@ const DESKTOP_TIP_KEY = 'rw_desktop_tip_dismissed';
 const INSTALL_CTA_DISMISS_KEY = 'rw_install_cta_dismiss_until';
 const INSTALL_CTA_DISMISS_MS = 24 * 60 * 60 * 1000;
 const ANDROID_APK_URL = 'https://gitee.com/byguang/apk-download/releases/download/v1.0.0/readwise.apk';
+const PEOPLE_FOLLOW_STORAGE_KEY = 'rw:people-follow:v1';
+const PEOPLE_FILTER_OPTIONS = ['all', 'following'];
+
+const PEOPLE_PRESET = [
+  {
+    id: 'sam',
+    name: 'Sam Altman',
+    avatar_url: SOURCE_AVATAR_URLS.sam || DEFAULT_AVATAR_URL,
+    bio_one_line: 'OpenAI CEO · AI 研究者',
+    bio_full: 'Sam Altman 是 OpenAI CEO，长期关注通用人工智能的落地路径。他的公开内容常围绕 AI 能力边界、产品化节奏与产业影响。阅读他的文章，适合快速把握 AI 行业的重要变化与长期判断。',
+    tag: ['科技', '商业']
+  },
+  {
+    id: 'andrej',
+    name: 'Andrej Karpathy',
+    avatar_url: SOURCE_AVATAR_URLS.andrej || DEFAULT_AVATAR_URL,
+    bio_one_line: 'AI 工程专家 · 教育型创作者',
+    bio_full: 'Andrej Karpathy 擅长把复杂模型机制讲清楚，内容覆盖 LLM、训练范式和工程实现细节。他的文章对工程团队非常实用，既有方法论也有可执行的实践路径。',
+    tag: ['科技', '产品']
+  },
+  {
+    id: 'naval',
+    name: 'Naval Ravikant',
+    avatar_url: SOURCE_AVATAR_URLS.naval || DEFAULT_AVATAR_URL,
+    bio_one_line: '创业者与思想者 · AngelList 创始人',
+    bio_full: 'Naval 的内容兼具商业视角与个人成长视角，常从第一性原理讨论财富、判断与长期主义。阅读他的文章有助于在技术趋势之外，建立更稳的认知框架与决策体系。',
+    tag: ['商业', '个人成长']
+  },
+  {
+    id: 'peter',
+    name: 'Peter Steinberger',
+    avatar_url: SOURCE_AVATAR_URLS.peter || DEFAULT_AVATAR_URL,
+    bio_one_line: 'iOS 工程负责人 · 开发者工具专家',
+    bio_full: 'Peter 长期深耕 Apple 平台开发与工程效率，内容聚焦架构、性能和开发体验。他的文章适合希望提升工程质量与产品交付效率的开发者阅读。',
+    tag: ['科技', '产品']
+  }
+];
 let splashFallbackTimer = null;
 let swRegisterTimer = null;
 let readerFeaturesReady = false;
@@ -167,12 +211,29 @@ const nodes = {
   tabButtons: [...document.querySelectorAll('.tab-btn')],
   splashScreen: document.querySelector('#splashScreen'),
   todayTab: document.querySelector('#tab-today'),
+  peopleTab: document.querySelector('#tab-people'),
   notesTab: document.querySelector('#tab-notes'),
   statusFilter: document.querySelector('#statusFilter'),
   authorFilter: document.querySelector('#authorFilter'),
   sortFilter: document.querySelector('#sortFilter'),
+  todayTagFilterBar: document.querySelector('#todayTagFilterBar'),
+  todayTagFilterChips: [...document.querySelectorAll('#todayTagFilterBar .tag-filter-chip')],
   articlesState: document.querySelector('#articlesState'),
   articlesList: document.querySelector('#articlesList'),
+  peopleListState: document.querySelector('#peopleListState'),
+  peopleList: document.querySelector('#peopleList'),
+  peopleFilterBar: document.querySelector('.people-filter-bar'),
+  peopleFilterChips: [...document.querySelectorAll('.people-filter-chip')],
+  personDetail: document.querySelector('#personDetail'),
+  personDetailBack: document.querySelector('#personDetailBack'),
+  personDetailAvatar: document.querySelector('#personDetailAvatar'),
+  personDetailName: document.querySelector('#personDetailName'),
+  personDetailOneLine: document.querySelector('#personDetailOneLine'),
+  personDetailTags: document.querySelector('#personDetailTags'),
+  personDetailFollowBtn: document.querySelector('#personDetailFollowBtn'),
+  personDetailBio: document.querySelector('#personDetailBio'),
+  personArticleCount: document.querySelector('#personArticleCount'),
+  personArticleList: document.querySelector('#personArticleList'),
   briefHistoryHeader: document.querySelector('#briefHistoryHeader'),
   briefHistoryBack: document.querySelector('#briefHistoryBack'),
   readerView: document.querySelector('#readerView'),
@@ -693,6 +754,39 @@ function sourceFallbackAvatar(sourceKey) {
   return SOURCE_AVATAR_URLS[sourceKey] || DEFAULT_AVATAR_URL;
 }
 
+function normalizeTagFilter(value) {
+  const text = String(value || '').trim();
+  if (TAG_FILTER_OPTIONS.includes(text)) return text;
+  return '全部';
+}
+
+function readTagFilter() {
+  try {
+    return normalizeTagFilter(localStorage.getItem(TAG_FILTER_STORAGE_KEY));
+  } catch (_) {
+    return '全部';
+  }
+}
+
+function writeTagFilter(value) {
+  try {
+    localStorage.setItem(TAG_FILTER_STORAGE_KEY, normalizeTagFilter(value));
+  } catch (_) {}
+}
+
+function renderTagFilterSelection() {
+  const selected = normalizeTagFilter(state.selectedTagFilter);
+  nodes.todayTagFilterChips.forEach((chip) => {
+    chip.classList.toggle('is-active', chip.dataset.tagFilter === selected);
+  });
+}
+
+function matchesTagFilter(item) {
+  const selected = normalizeTagFilter(state.selectedTagFilter);
+  if (selected === '全部') return true;
+  return String(item?.tag || '').trim() === selected;
+}
+
 function resolveAuthorAvatarUrl(item) {
   const dbAvatar = String(item?.author_avatar_url || '').trim();
   return dbAvatar || sourceFallbackAvatar(item?.source_key);
@@ -993,10 +1087,11 @@ function closeBriefHistory() {
 
 function renderArticles() {
   nodes.articlesList.innerHTML = '';
+  const filteredArticles = state.articles.filter((item) => matchesTagFilter(item));
 
   if (state.briefHistoryOpen) {
     nodes.articlesState.textContent = '';
-    const briefs = state.articles
+    const briefs = filteredArticles
       .filter((a) => a.source_key === 'daily_brief')
       .slice()
       .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
@@ -1008,19 +1103,19 @@ function renderArticles() {
     return;
   }
 
-  if (state.articles.length === 0) {
-    nodes.articlesState.textContent = '暂无文章';
+  if (filteredArticles.length === 0) {
+    nodes.articlesState.textContent = state.selectedTagFilter === '全部' ? '暂无文章' : '该标签下暂无文章';
     return;
   }
 
   nodes.articlesState.textContent = '';
 
-  const briefs = state.articles
+  const briefs = filteredArticles
     .filter((a) => a.source_key === 'daily_brief')
     .slice()
     .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
 
-  const normal = state.articles
+  const normal = filteredArticles
     .filter((a) => a.source_key !== 'daily_brief')
     .slice()
     .sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0));
@@ -1226,6 +1321,17 @@ function bindEvents() {
   nodes.sortFilter?.addEventListener('change', () => {
     state.filters.sort = nodes.sortFilter.value || 'date_desc';
     loadArticles();
+  });
+
+  nodes.todayTagFilterBar?.addEventListener('click', (event) => {
+    const chip = event.target.closest('.tag-filter-chip');
+    if (!chip) return;
+    const next = normalizeTagFilter(chip.dataset.tagFilter);
+    if (next === state.selectedTagFilter) return;
+    state.selectedTagFilter = next;
+    writeTagFilter(next);
+    renderTagFilterSelection();
+    renderArticles();
   });
 
   nodes.backBtn?.addEventListener('click', async () => {
@@ -2120,8 +2226,10 @@ function bindLoginEvents() {
 async function startApp() {
   if (state.appStarted) return;
   state.appStarted = true;
+  state.selectedTagFilter = readTagFilter();
   trackEvent('open_app');
   bindEvents();
+  renderTagFilterSelection();
   bindAdminBlockAccordion();
   nodes.articleNotesBtn.addEventListener('click', async () => {
     await ensureReaderFeaturesInitialized();

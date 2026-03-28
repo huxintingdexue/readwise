@@ -62,6 +62,13 @@
 
       <main>
         <section id="tab-today" class="tab-panel">
+          <div id="todayTagFilterBar" class="tag-filter-bar" aria-label="标签筛选">
+            <button class="tag-filter-chip is-active" data-tag-filter="全部" type="button">全部</button>
+            <button class="tag-filter-chip" data-tag-filter="科技" type="button">科技</button>
+            <button class="tag-filter-chip" data-tag-filter="商业" type="button">商业</button>
+            <button class="tag-filter-chip" data-tag-filter="产品" type="button">产品</button>
+            <button class="tag-filter-chip" data-tag-filter="个人成长" type="button">个人成长</button>
+          </div>
           <div id="briefHistoryHeader" class="brief-history-header hidden">
             <button id="briefHistoryBack" class="brief-history-back">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -139,6 +146,34 @@
             </div>
           </div>
           <div class="app-version" id="appVersion">版本：v2.10.8</div>
+        </section>
+
+        <section id="tab-people" class="tab-panel hidden">
+          <div class="people-filter-bar" aria-label="人物筛选">
+            <button class="people-filter-chip is-active" data-people-filter="all" type="button">全部</button>
+            <button class="people-filter-chip" data-people-filter="following" type="button">关注中</button>
+          </div>
+          <div id="peopleListState" class="state-text hidden"></div>
+          <ul id="peopleList" class="people-list"></ul>
+          <section id="personDetail" class="person-detail hidden" aria-live="polite">
+            <button id="personDetailBack" class="person-detail-back" type="button">← 返回</button>
+            <div class="person-hero">
+              <img id="personDetailAvatar" class="person-hero-avatar" src="" alt="人物头像" />
+              <div class="person-hero-main">
+                <h2 id="personDetailName" class="person-hero-name">-</h2>
+                <p id="personDetailOneLine" class="person-hero-one-line">-</p>
+                <div id="personDetailTags" class="person-tags"></div>
+              </div>
+              <button id="personDetailFollowBtn" class="person-follow-btn" type="button">关注</button>
+            </div>
+            <p id="personDetailBio" class="person-detail-bio"></p>
+            <div class="person-detail-divider"></div>
+            <div class="person-article-head">
+              <h3>全部文章</h3>
+              <span id="personArticleCount">共0篇</span>
+            </div>
+            <ul id="personArticleList" class="articles-list"></ul>
+          </section>
         </section>
 
         <section id="adminConsole" class="admin-console hidden">
@@ -234,6 +269,14 @@
             </svg>
           </span>
           <span class="tab-label">今日</span>
+        </button>
+        <button class="tab-btn" data-tab="people" type="button">
+          <span class="tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M16 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.67 0-8 1.34-8 4v2h10v-2c0-1.07.42-2.02 1.1-2.78A12.8 12.8 0 0 0 8 13zm8 0c-.29 0-.62.02-.97.05A5.34 5.34 0 0 1 18 17v2h6v-2c0-2.66-5.33-4-8-4z" fill="currentColor"></path>
+            </svg>
+          </span>
+          <span class="tab-label">人物</span>
         </button>
         <button class="tab-btn" data-tab="notes" type="button">
           <span class="tab-icon" aria-hidden="true">
