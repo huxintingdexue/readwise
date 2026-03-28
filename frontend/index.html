@@ -319,6 +319,13 @@
             <span>账号</span>
             <input id="authQuickAccount" type="text" placeholder="建议使用邮箱或手机号，避免遗忘" autocomplete="username" />
           </label>
+          <label id="authInviteField" class="auth-field hidden">
+            <span>邀请码</span>
+            <input id="authQuickInvite" type="text" placeholder="选填，填写后将尝试绑定历史记录" autocomplete="off" />
+          </label>
+          <div class="auth-subline-row">
+            <button id="authInviteToggle" class="auth-subline-link" type="button">我有邀请码</button>
+          </div>
           <button id="authQuickSubmit" type="button">登录 / 注册</button>
           <div id="forgotPasswordText" class="auth-link-text" role="button" tabindex="0">账号忘了？</div>
         </div>

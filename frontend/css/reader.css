@@ -241,6 +241,28 @@ body.reading-mode::-webkit-scrollbar-thumb {
   cursor: pointer;
 }
 
+.auth-subline-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 20px;
+}
+
+.auth-subline-link {
+  border: 0;
+  background: transparent;
+  color: #8b9498;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 0;
+  cursor: pointer;
+}
+
+.auth-subline-link:hover,
+.auth-subline-link:focus-visible {
+  color: #0b7f74;
+}
+
 .auth-link-text {
   color: #0b7f74;
   font-size: 11px;
