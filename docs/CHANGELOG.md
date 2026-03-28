@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-03-28 — 卡片日期格式规则调整（v2.16.18）
+
+### 已完成
+- ✅ 卡片底部右侧日期改为：今年显示 `M/D`，往年显示 `YYYY/M/D`
+- ✅ 年份判断基于 `published_at` 与当前年份比较（Asia/Shanghai）
+
+### 变更文件
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 快讯卡片底部信息隐藏（v2.16.17）
 
 ### 已完成
