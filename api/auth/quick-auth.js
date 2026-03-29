@@ -214,15 +214,22 @@ export default async function handler(req, res) {
     const nicknameFromIpHistory = bindTarget.source === 'ip'
       ? await findNicknameByLegacyUserId(bindTarget.legacyUserId)
       : '';
+    const hasTargetLegacy = Boolean(normalizeId(bindTarget.legacyUserId));
+    const forceInviteLegacy = bindTarget.source === 'invite' && hasTargetLegacy;
 
     if (existed) {
       await migrateReadingProgressToAccount(userIdRaw, existed.id);
-      const shouldBindLegacy = !normalizeId(existed.legacy_user_id) && normalizeId(bindTarget.legacyUserId);
+      const shouldBindLegacy = hasTargetLegacy && (
+        forceInviteLegacy || !normalizeId(existed.legacy_user_id)
+      );
       const shouldFillNicknameFromIp = !normalizeId(existed.nickname) && normalizeId(nicknameFromIpHistory);
       if (shouldBindLegacy) {
         await getPool().query(
-          'UPDATE users SET legacy_user_id = $1, source = CASE WHEN source = $2 THEN $3 ELSE source END WHERE id = $4',
-          [bindTarget.legacyUserId, 'account_register', 'account_bind', existed.id]
+          `UPDATE users
+           SET legacy_user_id = $1,
+               source = CASE WHEN source IN ($2, $3) THEN $4 ELSE source END
+           WHERE id = $5`,
+          [bindTarget.legacyUserId, 'account_register', 'guest_auto', 'account_bind', existed.id]
         );
       }
       if (shouldFillNicknameFromIp) {
@@ -260,11 +267,11 @@ export default async function handler(req, res) {
         `UPDATE users
          SET account = $1,
              nickname = COALESCE(NULLIF(nickname, ''), $2),
-             legacy_user_id = COALESCE(NULLIF(legacy_user_id, ''), $3),
-             source = CASE WHEN source = 'guest_auto' THEN 'account_bind' ELSE source END,
+             legacy_user_id = CASE WHEN $4 THEN $3 ELSE COALESCE(NULLIF(legacy_user_id, ''), $3) END,
+             source = CASE WHEN source IN ('guest_auto', 'account_register') THEN 'account_bind' ELSE source END,
              last_seen_at = NOW()
-         WHERE id = $4`,
-        [account, finalNickname, resolvedLegacyUserId, uid]
+         WHERE id = $5`,
+        [account, finalNickname, resolvedLegacyUserId, forceInviteLegacy, uid]
       );
     } else {
       await getPool().query(
