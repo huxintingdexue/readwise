@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-03-29 — 我的页邀请码显示修复（v2.16.37）
+
+### 已完成
+- ✅ 修复“账号绑定 legacy 身份后，我的页邀请码不显示”问题
+- ✅ `/api/user/me` 在 `user.invite_code` 为空时，新增按 `legacy_user_id` 反查邀请码逻辑
+- ✅ 反查来源兼容：`users.invite_code`、`invite_codes.code`、`INVITE_CODES` 环境变量
+
+### 变更文件
+- api/_utils/auth.js
+- api/user/me.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-29 — 登录绑定策略与邀请码入口优化（v2.16.36）
 
 ### 已完成
