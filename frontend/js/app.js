@@ -40,7 +40,7 @@ const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v3';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
 const ONE_TIME_CACHE_RESET_KEY = 'rw:cache-reset:v1:2026-03-28';
 const TAG_FILTER_STORAGE_KEY = 'rw:today-tag-filter:v1';
-const TAG_FILTER_OPTIONS = ['全部', '科技', '商业', '产品', '人生哲学'];
+const TAG_FILTER_OPTIONS = ['全部', '产品', '科技', '商业', '人生哲学'];
 const LEGACY_TAG_MAP = {
   个人成长: '人生哲学'
 };
