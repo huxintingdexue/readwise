@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-29 — 管理员“今日概览”支持选日期（v2.16.38）
+
+### 已完成
+- ✅ `/api/admin/stats` 支持 `date` 查询参数（`YYYY-MM-DD`，按 `Asia/Shanghai` 口径）
+- ✅ 管理员后台“用户使用情况”新增日期选择器，可按选中日期重算“今日概览”模块
+- ✅ 保持其余统计模块（如本周排行）原有口径不变
+
+### 变更文件
+- api/admin/stats.js
+- frontend/js/api.js
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-29 — 我的页邀请码显示修复（v2.16.37）
 
 ### 已完成

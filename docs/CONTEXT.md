@@ -14,6 +14,7 @@
 - 最近变更：修复游客切账号后阅读进度丢失：`reading_progress` 兼容 `userId/uid/legacy_user_id` 读写与迁移 ✅
 - 最近变更：IP 自动绑定命中历史身份时，若历史有昵称且当前昵称为空，自动继承历史昵称 ✅
 - 最近变更：管理员后台“今日/本周”用户统计口径切换为中国时区（`Asia/Shanghai`）✅
+- 最近变更：管理员后台“用户使用情况-今日概览”支持按日期查询（日期选择器 + `/api/admin/stats?date=YYYY-MM-DD`）✅
 - 最近变更：埋点新增访问渠道与设备信息（`access_channel`、`device_model`），支持区分 Android APK / iOS 主屏幕 / 浏览器 ✅
 - 最近变更：`docs/schema.sql` 已对齐当前线上结构（补 `users` 表、`events.client_ip`、`events.article_id -> TEXT`）✅
 - 最近变更：生产库 `authors` 已将 `paul_graham` 头像更新为 `https://s.turbifycdn.com/aah/paulgraham/bio-20.gif` ✅

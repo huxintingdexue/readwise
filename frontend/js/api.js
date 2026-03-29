@@ -382,8 +382,12 @@ export async function getFeedback() {
   return data.items || [];
 }
 
-export async function getAdminStats() {
-  const data = await requestJson('/api/admin/stats');
+export async function getAdminStats(date = '') {
+  const normalizedDate = String(date || '').trim();
+  const url = normalizedDate
+    ? `/api/admin/stats?date=${encodeURIComponent(normalizedDate)}`
+    : '/api/admin/stats';
+  const data = await requestJson(url);
   return data || {};
 }
 
