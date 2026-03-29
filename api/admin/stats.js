@@ -39,9 +39,21 @@ async function ensureEventsTable() {
   `);
 }
 
-async function safeQuery(sql, fallbackRows = []) {
+function parseSelectedDate(req) {
   try {
-    return await getPool().query(sql);
+    const base = req.headers?.host ? `https://${req.headers.host}` : 'http://localhost';
+    const url = new URL(req.url, base);
+    const value = String(url.searchParams.get('date') || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    return value;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function safeQuery(sql, params = [], fallbackRows = []) {
+  try {
+    return await getPool().query(sql, params);
   } catch (err) {
     console.warn('[api/admin/stats] query degraded', err?.message || err);
     return { rows: fallbackRows };
@@ -64,6 +76,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    const selectedDate = parseSelectedDate(req);
+
     let eventsReady = true;
     try {
       await ensureEventsTable();
@@ -76,8 +90,9 @@ export default async function handler(req, res) {
           `SELECT COUNT(DISTINCT user_id)::int AS count
            FROM events
            WHERE ((created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
-                 = (now() AT TIME ZONE '${CN_TZ}')::date
+                 = COALESCE($1::date, (now() AT TIME ZONE '${CN_TZ}')::date)
              AND NULLIF(TRIM(user_id), '') IS NOT NULL`,
+          [selectedDate],
           [{ count: 0 }]
         )
       : { rows: [{ count: 0 }] };
@@ -88,7 +103,8 @@ export default async function handler(req, res) {
            FROM events
            WHERE event = 'open_article'
              AND ((created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
-                 = (now() AT TIME ZONE '${CN_TZ}')::date`,
+                 = COALESCE($1::date, (now() AT TIME ZONE '${CN_TZ}')::date)`,
+          [selectedDate],
           [{ count: 0 }]
         )
       : { rows: [{ count: 0 }] };
@@ -98,8 +114,9 @@ export default async function handler(req, res) {
           `SELECT COUNT(DISTINCT client_ip)::int AS count
            FROM events
            WHERE ((created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
-                 = (now() AT TIME ZONE '${CN_TZ}')::date
+                 = COALESCE($1::date, (now() AT TIME ZONE '${CN_TZ}')::date)
              AND NULLIF(TRIM(client_ip), '') IS NOT NULL`,
+          [selectedDate],
           [{ count: 0 }]
         )
       : { rows: [{ count: 0 }] };
@@ -113,10 +130,11 @@ export default async function handler(req, res) {
              FROM events e
              LEFT JOIN users u ON u.id = e.user_id
              WHERE ((e.created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
-                   = (now() AT TIME ZONE '${CN_TZ}')::date
+                   = COALESCE($1::date, (now() AT TIME ZONE '${CN_TZ}')::date)
                AND NULLIF(TRIM(e.user_id), '') IS NOT NULL
            ) t
            ORDER BY COALESCE(t.nickname, t.user_id) ASC`,
+          [selectedDate],
           []
         )
       : { rows: [] };
@@ -187,6 +205,7 @@ export default async function handler(req, res) {
     );
 
     res.status(200).json({
+      selected_date: selectedDate || null,
       today_active_users: todayActive.rows[0]?.count ?? 0,
       today_unique_visitors: todayUniqueIps.rows[0]?.count ?? 0,
       today_active_user_ids: todayActiveUsers.rows.map((row) => row.user_id).filter(Boolean),

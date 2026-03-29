@@ -32,14 +32,15 @@ const state = {
   peopleFilter: 'all',
   peopleDetailId: null,
   followedAuthorIds: new Set(),
-  peopleShowZeroAuthors: false
+  peopleShowZeroAuthors: false,
+  adminStatsDate: ''
 };
 
 const ARTICLE_LIST_CACHE_KEY = 'rw:article-list-cache:v3';
 const ARTICLE_DETAIL_CACHE_PREFIX = 'rw:article-detail:v1:';
 const ONE_TIME_CACHE_RESET_KEY = 'rw:cache-reset:v1:2026-03-28';
 const TAG_FILTER_STORAGE_KEY = 'rw:today-tag-filter:v1';
-const TAG_FILTER_OPTIONS = ['全部', '科技', '商业', '产品', '人生哲学'];
+const TAG_FILTER_OPTIONS = ['全部', '产品', '科技', '商业', '人生哲学'];
 const LEGACY_TAG_MAP = {
   个人成长: '人生哲学'
 };
@@ -2181,6 +2182,47 @@ function renderStatBlock(title, lines) {
   return block;
 }
 
+function getTodayDateInCN() {
+  try {
+    const text = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  } catch (_) {}
+  return new Date().toISOString().slice(0, 10);
+}
+
+function normalizeAdminStatsDate(value) {
+  const text = String(value || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return '';
+  return text;
+}
+
+function createAdminDateFilterRow(selectedDate) {
+  const row = document.createElement('div');
+  row.className = 'admin-stats-filter';
+  row.innerHTML = `
+    <label>
+      <span>统计日期</span>
+      <input type="date" value="${escapeHtml(selectedDate)}" />
+    </label>
+    <button type="button">查询</button>
+  `;
+  const input = row.querySelector('input[type="date"]');
+  const button = row.querySelector('button');
+  const triggerReload = () => {
+    const next = normalizeAdminStatsDate(input?.value);
+    if (!next) return;
+    loadAdminStats(next);
+  };
+  input?.addEventListener('change', triggerReload);
+  button?.addEventListener('click', triggerReload);
+  return row;
+}
+
 function setAdminBlockCollapsed(block, collapsed) {
   if (!block) return;
   block.classList.toggle('is-collapsed', collapsed);
@@ -2271,22 +2313,25 @@ async function loadAdminFeedback() {
   }
 }
 
-async function loadAdminStats() {
+async function loadAdminStats(dateOverride = '') {
   if (!nodes.adminStatsList) return;
+  const targetDate = normalizeAdminStatsDate(dateOverride || state.adminStatsDate) || getTodayDateInCN();
+  state.adminStatsDate = targetDate;
   nodes.adminStatsList.innerHTML = '';
+  nodes.adminStatsList.appendChild(createAdminDateFilterRow(targetDate));
   try {
-    const data = await getAdminStats();
+    const data = await getAdminStats(targetDate);
     const activeUsers = Array.isArray(data.today_active_users_detail) && data.today_active_users_detail.length
       ? data.today_active_users_detail.map((item) => formatAdminUserLabel(item)).filter(Boolean)
       : (Array.isArray(data.today_active_user_ids)
           ? data.today_active_user_ids.filter(Boolean)
           : []);
     nodes.adminStatsList.appendChild(
-      renderStatBlock('今日概览', [
-        { label: '今日活跃用户数', value: String(data.today_active_users ?? 0) },
+      renderStatBlock(`日期概览（${targetDate}）`, [
+        { label: '活跃用户数', value: String(data.today_active_users ?? 0) },
         { label: '独立访客数', value: String(data.today_unique_visitors ?? 0) },
-        { label: '今日活跃用户', value: activeUsers.length ? activeUsers.join(', ') : '-' },
-        { label: '今日文章打开次数', value: String(data.today_open_articles ?? 0) }
+        { label: '活跃用户', value: activeUsers.length ? activeUsers.join(', ') : '-' },
+        { label: '文章打开次数', value: String(data.today_open_articles ?? 0) }
       ])
     );
     nodes.adminStatsList.appendChild(
@@ -2327,7 +2372,12 @@ async function loadAdminStats() {
     );
   } catch (err) {
     const message = err?.message ? `加载失败：${escapeHtml(err.message)}` : '加载失败';
-    nodes.adminStatsList.innerHTML = `<div class="state-text">${message}</div>`;
+    nodes.adminStatsList.innerHTML = '';
+    nodes.adminStatsList.appendChild(createAdminDateFilterRow(targetDate));
+    const failed = document.createElement('div');
+    failed.className = 'state-text';
+    failed.textContent = message;
+    nodes.adminStatsList.appendChild(failed);
   }
 }
 

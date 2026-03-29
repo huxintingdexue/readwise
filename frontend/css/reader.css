@@ -754,6 +754,39 @@ body.reading-mode::-webkit-scrollbar-thumb {
   gap: 10px;
 }
 
+.admin-stats-filter {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.admin-stats-filter label {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-stats-filter input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: var(--panel);
+  color: var(--text);
+}
+
+.admin-stats-filter button {
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
 .admin-item {
   border: 1px solid var(--line);
   border-radius: 12px;
