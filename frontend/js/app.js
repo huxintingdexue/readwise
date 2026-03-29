@@ -2328,9 +2328,9 @@ async function loadAdminStats(dateOverride = '') {
           : []);
     nodes.adminStatsList.appendChild(
       renderStatBlock(`日期概览（${targetDate}）`, [
-        { label: '活跃用户数', value: String(data.today_active_users ?? 0) },
-        { label: '独立访客数', value: String(data.today_unique_visitors ?? 0) },
-        { label: '活跃用户', value: activeUsers.length ? activeUsers.join(', ') : '-' },
+        { label: '活跃用户数（open_app UV）', value: String(data.today_active_users ?? 0) },
+        { label: '独立访客数（distinct_id）', value: String(data.today_unique_visitors ?? 0) },
+        { label: '活跃用户（open_app）', value: activeUsers.length ? activeUsers.join(', ') : '-' },
         { label: '文章打开次数', value: String(data.today_open_articles ?? 0) }
       ])
     );

@@ -89,7 +89,8 @@ export default async function handler(req, res) {
       ? await safeQuery(
           `SELECT COUNT(DISTINCT user_id)::int AS count
            FROM events
-           WHERE ((created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
+           WHERE event = 'open_app'
+             AND ((created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
                  = COALESCE($1::date, (now() AT TIME ZONE '${CN_TZ}')::date)
              AND NULLIF(TRIM(user_id), '') IS NOT NULL`,
           [selectedDate],
@@ -111,11 +112,12 @@ export default async function handler(req, res) {
 
     const todayUniqueIps = eventsReady
       ? await safeQuery(
-          `SELECT COUNT(DISTINCT client_ip)::int AS count
+          `SELECT COUNT(DISTINCT COALESCE(NULLIF(TRIM(user_id), ''), NULLIF(TRIM(client_ip), '')))::int AS count
            FROM events
-           WHERE ((created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
+           WHERE event = 'open_app'
+             AND ((created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
                  = COALESCE($1::date, (now() AT TIME ZONE '${CN_TZ}')::date)
-             AND NULLIF(TRIM(client_ip), '') IS NOT NULL`,
+             AND COALESCE(NULLIF(TRIM(user_id), ''), NULLIF(TRIM(client_ip), '')) IS NOT NULL`,
           [selectedDate],
           [{ count: 0 }]
         )
@@ -129,7 +131,8 @@ export default async function handler(req, res) {
                     NULLIF(TRIM(u.nickname), '') AS nickname
              FROM events e
              LEFT JOIN users u ON u.id = e.user_id
-             WHERE ((e.created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
+             WHERE e.event = 'open_app'
+               AND ((e.created_at AT TIME ZONE 'UTC') AT TIME ZONE '${CN_TZ}')::date
                    = COALESCE($1::date, (now() AT TIME ZONE '${CN_TZ}')::date)
                AND NULLIF(TRIM(e.user_id), '') IS NOT NULL
            ) t

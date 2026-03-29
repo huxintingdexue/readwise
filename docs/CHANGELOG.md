@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-03-29 — 管理员“今日概览”口径对齐 PostHog（v2.16.40）
+
+### 已完成
+- ✅ 活跃用户数改为 `open_app` 事件下的 `distinct user_id`（UV）
+- ✅ 独立访客数改为 `open_app` 事件下的 `distinct COALESCE(user_id, client_ip)`（模拟 PostHog distinct_id 口径）
+- ✅ 今日活跃用户名单改为仅统计当日触发 `open_app` 的用户
+- ✅ 管理后台文案补充口径说明（`open_app UV` / `distinct_id`）
+
+### 变更文件
+- api/admin/stats.js
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-29 — 今日页标签顺序调整（v2.16.39）
 
 ### 已完成
