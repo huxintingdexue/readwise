@@ -7,6 +7,12 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：修复“我的页邀请码不显示”——`/api/user/me` 在账号绑定 legacy 身份场景下可按 `legacy_user_id` 反查并返回邀请码 ✅
+- 最近变更：登录弹窗支持邀请码选填，入口改为左下角小字“我有邀请码”，点击展开邀请码输入行 ✅
+- 最近变更：quick-auth 绑定策略升级：显式邀请码优先绑定；未填邀请码时按 IP 唯一命中自动绑定（多候选不自动绑定）✅
+- 最近变更：显式填写有效邀请码时强制覆盖 `legacy_user_id`（按邀请码身份为准，管理员邀请码可生效）✅
+- 最近变更：修复游客切账号后阅读进度丢失：`reading_progress` 兼容 `userId/uid/legacy_user_id` 读写与迁移 ✅
+- 最近变更：IP 自动绑定命中历史身份时，若历史有昵称且当前昵称为空，自动继承历史昵称 ✅
 - 最近变更：管理员后台“今日/本周”用户统计口径切换为中国时区（`Asia/Shanghai`）✅
 - 最近变更：埋点新增访问渠道与设备信息（`access_channel`、`device_model`），支持区分 Android APK / iOS 主屏幕 / 浏览器 ✅
 - 最近变更：`docs/schema.sql` 已对齐当前线上结构（补 `users` 表、`events.client_ip`、`events.article_id -> TEXT`）✅

@@ -107,6 +107,47 @@ export async function getUserIdFromInviteCode(inviteCode) {
   }
 }
 
+export async function getInviteCodeByUserId(userId) {
+  const normalized = String(userId || '').trim();
+  if (!normalized) return null;
+
+  const envInviteMap = getEnvInviteMap();
+  for (const [code, mappedUserId] of envInviteMap.entries()) {
+    if (String(mappedUserId || '').trim() === normalized) {
+      return String(code || '').trim() || null;
+    }
+  }
+
+  await ensureUsersTable();
+
+  const fromUsers = await getPool().query(
+    `
+      SELECT invite_code
+      FROM users
+      WHERE invite_code IS NOT NULL
+        AND TRIM(invite_code) <> ''
+        AND (legacy_user_id = $1 OR id = $1)
+      ORDER BY created_at DESC NULLS LAST
+      LIMIT 1
+    `,
+    [normalized]
+  );
+  const inviteCode = String(fromUsers.rows[0]?.invite_code || '').trim();
+  if (inviteCode) return inviteCode;
+
+  try {
+    const fromCodes = await getPool().query(
+      'SELECT code FROM invite_codes WHERE user_id = $1 ORDER BY created_at DESC NULLS LAST LIMIT 1',
+      [normalized]
+    );
+    const code = String(fromCodes.rows[0]?.code || '').trim();
+    return code || null;
+  } catch (err) {
+    console.error('[auth] invite_codes reverse lookup failed', err);
+    return null;
+  }
+}
+
 function normalizeUid(uid) {
   return String(uid || '').trim();
 }

@@ -1,4 +1,10 @@
-import { ensureUsersTable, getUserByUid, getUserIdFromInviteCode, resolveAuthContext } from '../_utils/auth.js';
+import {
+  ensureUsersTable,
+  getInviteCodeByUserId,
+  getUserByUid,
+  getUserIdFromInviteCode,
+  resolveAuthContext
+} from '../_utils/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -44,6 +50,14 @@ export default async function handler(req, res) {
       return;
     }
 
+    let inviteCode = String(user.invite_code || '').trim();
+    if (!inviteCode) {
+      const legacyOrCurrentUserId = String(user.legacy_user_id || ctx.userId || user.id || '').trim();
+      if (legacyOrCurrentUserId) {
+        inviteCode = String(await getInviteCodeByUserId(legacyOrCurrentUserId) || '').trim();
+      }
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -53,7 +67,7 @@ export default async function handler(req, res) {
         contact: user.contact || null,
         account: user.account || null,
         source: user.source || 'self_register',
-        inviteCode: user.invite_code || null
+        inviteCode: inviteCode || null
       }
     });
   } catch (err) {
