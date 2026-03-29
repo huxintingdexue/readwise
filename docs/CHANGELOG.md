@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-03-29 — 登录绑定策略与邀请码入口优化（v2.16.36）
+
+### 已完成
+- ✅ 修复“游客 -> 账号”切换后阅读进度丢失：`reading_progress` 读写兼容 `userId/uid/legacy_user_id`，并在 quick-auth 登录时执行进度合并
+- ✅ 登录弹窗新增邀请码选填能力：默认收起，左下角小字“我有邀请码”展开输入（与右下“账号忘了？”同层）
+- ✅ quick-auth 新增历史身份绑定策略：显式邀请码优先绑定；未填邀请码时按 IP 唯一命中自动绑定（多候选不自动绑定，避免串号）
+- ✅ IP 自动绑定命中历史身份时，如历史有昵称且当前账号昵称为空，自动继承历史昵称
+- ✅ 显式填写邀请码且有效时，按邀请码身份强制覆盖 `legacy_user_id` 绑定（管理员邀请码场景生效）
+- ✅ 文档同步：补充本次变更到 `docs/CHANGELOG.md` 与 `docs/CONTEXT.md`
+
+### 变更文件
+- api/auth/quick-auth.js
+- api/reading-progress.js
+- frontend/index.html
+- frontend/css/reader.css
+- frontend/js/app.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-28 — 埋点补充访问渠道与设备信息（v2.16.35）
 
 ### 已完成
