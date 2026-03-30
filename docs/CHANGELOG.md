@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-30 — 分享页图片宽度修复（v2.16.43）
+
+### 已完成
+- ✅ 修复桌面端分享页正文插图超出阅读区的问题
+- ✅ `share-content` 增加媒体约束：`figure/picture/img` 统一 `max-width: 100%`
+- ✅ 分享页正文容器增加 `overflow-x: hidden`，兜底避免横向溢出
+
+### 变更文件
+- frontend/css/share.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-30 — 图片宽度兜底修复与缓存强制刷新（v2.16.42）
 
 ### 已完成

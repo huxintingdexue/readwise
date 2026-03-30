@@ -72,6 +72,7 @@ body {
   line-height: 1.9;
   min-width: 0;
   max-width: 100%;
+  overflow-x: hidden;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -133,6 +134,33 @@ body {
   color: var(--accent);
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.share-content figure {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0.8em 0 1.25em;
+  box-sizing: border-box;
+}
+
+.share-content picture {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.share-content img,
+.share-content figure img,
+.share-content picture img {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
 .share-footer {

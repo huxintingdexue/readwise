@@ -9,6 +9,7 @@
 
 - 最近变更：修复桌面端阅读页插图超出正文宽度问题（`figure/img` 统一限制 `max-width: 100%`，与阅读区同宽）✅
 - 最近变更：为解决桌面端图片宽度未及时生效问题，阅读区媒体约束再次加固（含 `picture/figure`）并升级 SW 到 `v6` 强制刷新静态缓存 ✅
+- 最近变更：分享页正文图片样式补齐（`share-content` 下 `figure/picture/img` 统一限制不超过正文宽度）✅
 - 最近变更：管理员“今日概览”统计口径对齐 PostHog：改为基于 `open_app` 计算（活跃用户=distinct `user_id`，独立访客=distinct `COALESCE(user_id, client_ip)`）✅
 - 最近变更：今日页标签筛选顺序调整为“全部 / 产品 / 科技 / 商业 / 人生哲学”，并同步前端展示与逻辑顺序 ✅
 - 最近变更：修复“我的页邀请码不显示”——`/api/user/me` 在账号绑定 legacy 身份场景下可按 `legacy_user_id` 反查并返回邀请码 ✅
