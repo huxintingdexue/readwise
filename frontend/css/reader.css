@@ -1839,6 +1839,7 @@ body.theme-dark .topbar p {
   line-height: 2;
   font-size: 18px;
   word-break: break-word;
+  overflow-x: hidden;
   user-select: text;
   -webkit-user-select: text;
   -webkit-touch-callout: none;
@@ -1943,13 +1944,23 @@ body.theme-dark .topbar p {
 }
 
 .reader-content figure {
+  display: block;
+  width: 100% !important;
   max-width: 100%;
   margin: 0.8em 0 1.4em;
+  box-sizing: border-box;
+}
+
+.reader-content picture {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 .reader-content img,
 .reader-content .md-image,
-.reader-content figure img {
+.reader-content figure img,
+.reader-content picture img {
   display: block;
   width: 100% !important;
   max-width: 100% !important;

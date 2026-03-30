@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-03-30 — 图片宽度兜底修复与缓存强制刷新（v2.16.42）
+
+### 已完成
+- ✅ 阅读区媒体样式加固：`figure/picture/img` 统一限制到正文宽度内，防止桌面端溢出
+- ✅ `reader-content` 增加 `overflow-x: hidden`，兜底消除横向溢出
+- ✅ Service Worker 版本升级 `v6`，强制刷新静态资源缓存，确保样式立即生效
+
+### 变更文件
+- frontend/css/reader.css
+- frontend/sw.js
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-30 — 桌面端阅读图片宽度修复（v2.16.41）
 
 ### 已完成
