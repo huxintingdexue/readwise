@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-30 — 桌面端阅读图片宽度修复（v2.16.41）
+
+### 已完成
+- ✅ 修复桌面端阅读页插图超出正文阅读区的问题
+- ✅ 对 `reader-content` 下的 `figure`/`img` 增加强约束：`width/max-width: 100%`，并兼容带内联宽度的图片
+- ✅ 图片渲染与正文容器对齐，不再横向溢出
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-29 — 管理员“今日概览”口径对齐 PostHog（v2.16.40）
 
 ### 已完成

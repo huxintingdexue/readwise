@@ -1942,16 +1942,23 @@ body.theme-dark .topbar p {
   text-underline-offset: 3px;
 }
 
-.reader-content img,
-.reader-content .md-image {
-  display: block;
-  width: 100%;
+.reader-content figure {
   max-width: 100%;
-  height: auto;
+  margin: 0.8em 0 1.4em;
+}
+
+.reader-content img,
+.reader-content .md-image,
+.reader-content figure img {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
   margin: 0.8em 0 1.4em;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--panel-soft);
+  box-sizing: border-box;
 }
 
 .notes-section {
