@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-04-01 — 人物卡片右侧裁切兜底修复（v2.16.47）
+
+### 已完成
+- ✅ 移除 `people-list` 的横向裁切（`overflow-x: hidden`），避免卡片右侧边框/阴影被父容器截断
+- ✅ `people-card` 显式设为 `display: block`
+- ✅ `people-list` 增加 `1px` 右侧缓冲，降低移动端滚动条覆盖造成的视觉裁切
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-04-01 — 人物卡片右侧裁切修复（v2.16.46）
 
 ### 已完成
