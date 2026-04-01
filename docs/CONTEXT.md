@@ -7,6 +7,7 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：修复人物列表卡片右侧被裁切（`people-card-main` 增加 `box-sizing:border-box` 与 `max-width:100%`）✅
 - 最近变更：修复桌面端阅读页插图超出正文宽度问题（`figure/img` 统一限制 `max-width: 100%`，与阅读区同宽）✅
 - 最近变更：为解决桌面端图片宽度未及时生效问题，阅读区媒体约束再次加固（含 `picture/figure`）并升级 SW 到 `v6` 强制刷新静态缓存 ✅
 - 最近变更：分享页正文图片样式补齐（`share-content` 下 `figure/picture/img` 统一限制不超过正文宽度）✅

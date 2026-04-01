@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-04-01 — 人物卡片右侧裁切修复（v2.16.46）
+
+### 已完成
+- ✅ 修复 main 预览中人物列表卡片右侧显示不全的问题
+- ✅ `people-card-main` 增加 `box-sizing: border-box` 与 `max-width: 100%`，避免边框导致宽度溢出
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-04-01 — 人物卡片阴影对齐文章卡片（v2.16.45）
 
 ### 已完成

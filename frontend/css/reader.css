@@ -1479,6 +1479,8 @@ body.theme-dark .topbar p {
 
 .people-card-main {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid rgba(222, 227, 230, 0.75);
   background: #fff;
   border-radius: 14px;
