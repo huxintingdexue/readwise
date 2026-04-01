@@ -1475,15 +1475,15 @@ body.theme-dark .topbar p {
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .people-card-main {
   width: 100%;
-  border: 0;
+  border: 1px solid rgba(222, 227, 230, 0.75);
   background: #fff;
   border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(25, 28, 29, 0.06);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.03);
   padding: 14px;
   display: flex;
   align-items: flex-start;
