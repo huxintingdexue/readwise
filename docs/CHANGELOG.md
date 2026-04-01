@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-04-01 — 人物卡片阴影对齐文章卡片（v2.16.45）
+
+### 已完成
+- ✅ 人物列表卡片阴影改为与文章列表一致的轻阴影（`0 1px 6px rgba(0,0,0,0.03)`）
+- ✅ 人物卡片补齐与文章卡片一致的浅边框（`1px rgba(222,227,230,0.75)`）
+- ✅ 人物列表卡片间距调整为 `10px`，与文章列表节奏对齐
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
+## 2026-04-01 — 人物列表卡片去双层（v2.16.44）
+
+### 已完成
+- ✅ 修复人物列表页“卡片套卡片”视觉问题
+- ✅ `people-card` 改为透明外层容器，移除边框/阴影/背景，仅保留 `people-card-main` 作为唯一卡片层
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-03-30 — 分享页图片宽度修复（v2.16.43）
 
 ### 已完成
@@ -26,18 +49,6 @@
 ### 变更文件
 - frontend/css/reader.css
 - frontend/sw.js
-- docs/CONTEXT.md
-- docs/CHANGELOG.md
-
-## 2026-03-30 — 桌面端阅读图片宽度修复（v2.16.41）
-
-### 已完成
-- ✅ 修复桌面端阅读页插图超出正文阅读区的问题
-- ✅ 对 `reader-content` 下的 `figure`/`img` 增加强约束：`width/max-width: 100%`，并兼容带内联宽度的图片
-- ✅ 图片渲染与正文容器对齐，不再横向溢出
-
-### 变更文件
-- frontend/css/reader.css
 - docs/CONTEXT.md
 - docs/CHANGELOG.md
 
