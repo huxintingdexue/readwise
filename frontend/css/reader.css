@@ -1479,19 +1479,11 @@ body.theme-dark .topbar p {
 }
 
 .people-card-main {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  border: 1px solid rgba(222, 227, 230, 0.75);
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.03);
-  padding: 14px;
+  width: auto;
   display: flex;
   align-items: flex-start;
   gap: 12px;
   text-align: left;
-  cursor: pointer;
 }
 
 .people-avatar {
