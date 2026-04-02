@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-04-02 — 人物卡片样式回归修复（v2.16.51）
+
+### 已完成
+- ✅ 修复“人物列表卡片样式消失”回归问题
+- ✅ 恢复 `people-card-main` 的边框/圆角/阴影/内边距
+- ✅ 保持人物列表与文章列表一致的宽度与间距，不复用 `article-card` 行为类名
+
+### 变更文件
+- frontend/index.html
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-04-02 — 人物列表与文章列表边距同构（安全版）（v2.16.50）
 
 ### 已完成
