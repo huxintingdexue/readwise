@@ -946,7 +946,7 @@ function buildPeopleCard(person) {
   const countLabel = countValue > 0 ? `${countValue}篇文章` : '计划同步中';
   const zhName = resolvePersonZhName(person);
   li.innerHTML = `
-    <article class="people-card-main article-card" data-person-open="${escapeHtml(person.id)}">
+    <article class="people-card-main" data-person-open="${escapeHtml(person.id)}">
       <img class="people-avatar" src="${escapeHtml(person.avatar_url || DEFAULT_AVATAR_URL)}" alt="${escapeHtml(person.name)}" />
       <div class="people-body">
         <div class="people-row">

@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-04-02 — 人物列表与文章列表边距同构（安全版）（v2.16.50）
+
+### 已完成
+- ✅ 人物列表容器改为复用 `articles-list`，确保左右边距与文章列表一致
+- ✅ 移除 `people-card-main` 上的 `article-card` 类，避免与文章卡片 JS 交互选择器耦合
+- ✅ 人物列表保留独立卡片类，仅复用布局几何，不复用行为类名
+
+### 变更文件
+- frontend/index.html
+- frontend/js/app.js
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-04-02 — 人物列表与文章列表容器完全对齐（v2.16.49）
 
 ### 已完成

@@ -7,6 +7,7 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：人物列表改为复用 `articles-list` 容器几何（保证左右边距一致），同时移除 `people-card-main` 上的 `article-card` 类，避免交互逻辑耦合 ✅
 - 最近变更：人物列表容器参数与文章列表完全对齐（`people-list` 去右侧补偿，`people-card-main` 固定 `width/max-width:100%`）✅
 - 最近变更：人物列表卡片容器改为直接复用 `article-card` 样式（宽度/边框/阴影与文章卡片完全一致）✅
 - 最近变更：修复人物列表卡片右侧裁切残留问题（移除 `people-list` 的横向裁切，外层改 `display:block` 并加 1px 右侧缓冲）✅

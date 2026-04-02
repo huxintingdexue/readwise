@@ -1091,9 +1091,6 @@ body.theme-dark .topbar p {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  gap: 10px;
-  max-width: 100%;
   overflow: visible;
 }
 
@@ -1474,8 +1471,6 @@ body.theme-dark .topbar p {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  gap: 10px;
   max-width: 100%;
 }
 
