@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-04-02 — 人物列表与文章列表容器完全对齐（v2.16.49）
+
+### 已完成
+- ✅ `people-list` 去除右侧补偿，容器参数与 `articles-list` 保持一致
+- ✅ `people-card-main` 固定 `width/max-width: 100%`，避免移动端出现“左对齐但右侧更靠外”的偏移
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CONTEXT.md
+- docs/CHANGELOG.md
+
 ## 2026-04-01 — 人物卡片容器复用文章卡片样式（v2.16.48）
 
 ### 已完成
