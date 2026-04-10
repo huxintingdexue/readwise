@@ -3409,3 +3409,14 @@
 - api/events.js
 - docs/CHANGELOG.md
 - docs/CONTEXT.md
+
+## 2026-04-10 — 修复文章列表卡片移动端横向溢出
+
+### 已完成
+- ✅ 为 `articles-list`、列表项和 `article-card` 增加强制宽度约束（`width/min-width/max-width`）
+- ✅ `article-card` 增加 `box-sizing:border-box` 与 `overflow:hidden`，防止内容撑宽导致超出屏幕
+
+### 变更文件
+- frontend/css/reader.css
+- docs/CHANGELOG.md
+- docs/CONTEXT.md

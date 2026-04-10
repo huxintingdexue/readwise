@@ -1084,6 +1084,14 @@ body.theme-dark .topbar p {
   margin: 0;
   display: grid;
   gap: 10px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.articles-list > li {
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
 }
 
@@ -1226,7 +1234,11 @@ body.theme-dark .topbar p {
   padding: 14px;
   cursor: pointer;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.03);
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;

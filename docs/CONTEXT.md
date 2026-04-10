@@ -591,3 +591,9 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 
 - `open_article` 埋点新增 `article_title` 属性，PostHog 可直接按标题 breakdown。
 - 服务端 events 接口支持接收并透传自定义 `properties`（用于标题/来源等业务字段）。
+
+## 2026-04-10（文章列表卡片宽度修复）
+
+- 修复移动端文章列表卡片偶发“超出屏幕右侧”的问题。
+- 在 `articles-list`、`articles-list > li`、`.article-card` 上统一增加 `width:100%` / `min-width:0` / `max-width:100%`。
+- `.article-card` 追加 `box-sizing:border-box` 与 `overflow:hidden`，避免内容或布局抖动时撑宽容器。
