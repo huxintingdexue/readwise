@@ -33,7 +33,9 @@ CREATE TABLE IF NOT EXISTS articles (
   translation_job_status VARCHAR(20) NOT NULL DEFAULT 'ready', -- 翻译流程：'translating' | 'ready'
   publish_status      VARCHAR(20) NOT NULL DEFAULT 'published', -- 'published' | 'pending_review' | 'hidden'
   hidden_reason       TEXT,                                 -- 隐藏原因（管理员）
-  hidden_at           TIMESTAMP                             -- 隐藏时间
+  hidden_at           TIMESTAMP,                            -- 隐藏时间
+  review_tier         VARCHAR(1) CHECK (review_tier IN ('A', 'B', 'C')), -- 编辑室分级：A 直接发布 / B 4 小时自动发布 / C 不确认不发布
+  review_note         TEXT                                  -- 定档原因（质量警告等）
 );
 
 -- 作者表（统一作者主数据）

@@ -1,0 +1,36 @@
+name: DB Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Which maintenance script to run'
+        required: true
+        type: choice
+        options:
+          - migrate-review-tier
+          - rotate-editor-code
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run task
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          EDITOR_INVITE_CODE: ${{ secrets.EDITOR_INVITE_CODE }}
+        run: node scripts/${{ inputs.task }}.js
