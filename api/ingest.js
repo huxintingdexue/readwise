@@ -2,6 +2,12 @@ import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import { resolveUserId, isAdmin } from './_utils/auth.js';
 import { inferArticleTag } from './_utils/article-tag.js';
+import {
+  checkTranslatedArticle,
+  formatReviewNote,
+  maxTier,
+  normalizeReviewTier
+} from './_utils/content-quality.js';
 
 dotenv.config({ path: '.env.local' });
 
@@ -538,6 +544,17 @@ async function resolveAuthor(poolClient, rawAuthor) {
   }
 }
 
+async function resolveExplicitAuthorKey(poolClient, rawAuthorKey) {
+  const authorKey = String(rawAuthorKey || '').trim();
+  if (!authorKey || !(await hasAuthorsTable(poolClient))) return null;
+  try {
+    const { rows } = await poolClient.query('SELECT source_key FROM authors WHERE source_key = $1 LIMIT 1', [authorKey]);
+    return rows[0]?.source_key || null;
+  } catch (_) {
+    return null;
+  }
+}
+
 async function resolveAuthorKey(poolClient, sourceKey, rawAuthor) {
   const normalizedSourceKey = String(sourceKey || '').trim();
   const normalizedAuthor = String(rawAuthor || '').trim();
@@ -705,33 +722,39 @@ async function handleIngestFullText(req, res, userId) {
     return;
   }
 
-  const zhLength = contentZh.length;
-  if (zhLength <= 0) {
-    badRequest(res, 'CONTENT_ZH_MISSING', '中文译文为空，请完成全文翻译后再提交。', {
+  // review_tier：A 直接发布；B 待确认，4 小时无人处理自动发布；C 待确认，不自动发布。
+  // 不传 review_tier 时保持旧行为（按 publish_status）。
+  const hasReviewTier = payload.review_tier !== undefined && payload.review_tier !== null && payload.review_tier !== '';
+  const requestedTier = normalizeReviewTier(payload.review_tier);
+  if (hasReviewTier && !requestedTier) {
+    badRequest(res, 'REVIEW_TIER_INVALID', "review_tier 仅支持 'A'、'B' 或 'C'");
+    return;
+  }
+
+  const quality = checkTranslatedArticle({
+    contentZh,
+    contentEnPlain: sanitizeToPlain(contentEnRaw || ''),
+    contentEnHtml: contentEnRaw
+  });
+  if (quality.errors.length > 0) {
+    const [first] = quality.errors;
+    badRequest(res, first.code, `${first.message}，请检查后重新提交。`, {
       details: {
-        actual_zh_length: zhLength
+        ratio: quality.ratio,
+        errors: quality.errors,
+        warnings: quality.warnings
       }
     });
     return;
   }
 
-  const normalizedEnForCheck = sanitizeToPlain(contentEnRaw || '');
-  const enLength = normalizedEnForCheck.length;
-  if (enLength > 500 && zhLength / enLength < 0.3) {
-    badRequest(
-      res,
-      'CONTENT_RATIO_INVALID',
-      `中文译文字符数（${zhLength}）低于英文原文字符数（${enLength}）的30%，疑似翻译不完整或被精简，请检查后重新提交。禁止精简原文内容。`,
-      {
-        details: {
-          actual_zh_length: zhLength,
-          actual_en_length: enLength,
-          ratio: Number((zhLength / enLength).toFixed(4))
-        }
-      }
-    );
-    return;
-  }
+  const reviewTier = requestedTier ? maxTier(requestedTier, quality.impliedTier) : null;
+  const reviewNote = reviewTier
+    ? formatReviewNote(quality.warnings, String(payload.review_note || '').trim())
+    : null;
+  const finalPublishStatus = reviewTier
+    ? (reviewTier === 'A' ? 'published' : 'pending_review')
+    : publishStatus;
 
   const missingFields = [];
   if (!titleZh) missingFields.push('title_zh');
@@ -780,7 +803,8 @@ async function handleIngestFullText(req, res, userId) {
   }
 
   const author = await resolveAuthor(poolClient, authorRaw);
-  const authorKey = await resolveAuthorKey(poolClient, sourceKey, author);
+  const authorKey = (await resolveExplicitAuthorKey(poolClient, payload.author_key))
+    || (await resolveAuthorKey(poolClient, sourceKey, author));
   const finalAuthorAvatarUrl = await resolveAuthorAvatarUrl(poolClient, authorKey, sourceKey, author);
   const contentEn = contentEnRaw ? normalizeHtmlForStorage(contentEnRaw) : null;
   const contentPlain = contentEn ? htmlToPlain(contentEn, titleEn) : sanitizeToPlain(contentZh);
@@ -819,9 +843,11 @@ async function handleIngestFullText(req, res, userId) {
       publish_status,
       tag,
       submitted_by,
+      review_tier,
+      review_note,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'full', $12, 'unread', $13, $14, $15, 'ready', 'ready', $16, $17, $18, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'full', $12, 'unread', $13, $14, $15, 'ready', 'ready', $16, $17, $18, $19, $20, NULL
     )
     RETURNING id
   `;
@@ -842,12 +868,22 @@ async function handleIngestFullText(req, res, userId) {
     sourceUrl,
     sourceUrl,
     publishedAt,
-    publishStatus,
+    finalPublishStatus,
     inferredTag,
-    userId
+    userId,
+    reviewTier,
+    reviewNote
   ]);
 
-  res.status(200).json({ success: true, articleId: rows[0].id, status: 'ready' });
+  res.status(200).json({
+    success: true,
+    articleId: rows[0].id,
+    status: 'ready',
+    publish_status: finalPublishStatus,
+    review_tier: reviewTier,
+    review_note: reviewNote,
+    ratio: quality.ratio
+  });
 }
 
 async function handleIngestSubmit(req, res, userId) {

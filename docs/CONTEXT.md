@@ -7,6 +7,7 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：AI 编辑室重建（v2.17.0）：编辑 Agent 改为 Codex 定时任务（快讯 08:00 / 人物巡检 21:00），规则见 `docs/EDITOR.md`；A/B/C 分级入库（`review_tier`），C 档不自动发布；共用质量校验与去广告；RSS 扩到 9 人；定时任务保活 ✅
 - 最近变更：修复人物列表“卡片样式丢失”回归（恢复 `people-card-main` 边框/阴影/内边距，列表仍与文章页同宽）✅
 - 最近变更：人物列表改为复用 `articles-list` 容器几何（保证左右边距一致），同时移除 `people-card-main` 上的 `article-card` 类，避免交互逻辑耦合 ✅
 - 最近变更：人物列表容器参数与文章列表完全对齐（`people-list` 去右侧补偿，`people-card-main` 固定 `width/max-width:100%`）✅
@@ -289,11 +290,11 @@ ReadWise 是一个个人沉浸式阅读器，聚合 AI 领域大佬博客（Sam 
 ```
 GitHub Actions（每天北京时间 22:00）
     ↓ 抓取RSS + 爬全文 + 生成content_plain + 全量分段翻译
-小龙虾（OpenClaw）
-    ↓ 主动搜索/主编投喂链接
-    ↓ 抓取+AI清洗+翻译
-    ↓ 飞书确认（B/C类）
-    ↓ POST /api/ingest（传全文）
+AI 编辑室（Codex 定时任务，规则 docs/EDITOR.md；2026-10 起替代小龙虾 OpenClaw）
+    ↓ 每日 08:00 快讯（素材：zarazhangrui/follow-builders）/ 每日 21:00 人物巡检
+    ↓ extract 去广告 + 全文翻译 + 质量自查
+    ↓ POST /api/ingest（全文 + review_tier：A 发布 / B 4 小时自动发布 / C 不确认不发布）
+    ↓ B/C 档飞书私信主编确认
 Neon PostgreSQL（核心表 + users 身份表）
     ↓ REST API（UID 鉴权优先，兼容邀请码）
 Vercel Serverless Functions（/api/*）
@@ -359,7 +360,11 @@ Vercel Serverless Functions（/api/*）
 | scripts/migrate-users.js | 邀请码老用户 -> users 迁移脚本（手动执行、幂等） | ✅ 已完成 |
 | scripts/migrate-publish-status.js | 发布状态轴数据库迁移脚本（一次性） | ✅ 已完成 |
 | scripts/migrate-translation-job-status.js | 翻译流程状态字段迁移脚本（status -> translation_job_status） | ✅ 已完成 |
-| scripts/publish-pending.js | 将超 4 小时的 `pending_review` 自动发布 | ✅ 已完成 |
+| scripts/publish-pending.js | 将超 4 小时的 `pending_review` 自动发布（跳过 `review_tier='C'`） | ✅ 已完成 |
+| api/_utils/content-quality.js | 质量校验与分级（入库接口、RSS 脚本、编辑室共用） | ✅ 已完成 |
+| scripts/lib/extract-article.js | 正文提取 + 去广告（Readability） | ✅ 已完成 |
+| scripts/editor/editor.mjs | AI 编辑室命令行工具（快讯素材/去重/提取/自查/提交/飞书提醒） | ✅ 已完成 |
+| .github/workflows/db-maintenance.yml | 手动执行数据库迁移、轮换编辑室邀请码 | ✅ 已完成 |
 | .github/workflows/publish-pending.yml | 每 10 分钟执行一次 pending 自动发布 | ✅ 已完成 |
 
 ## 已完成功能
@@ -452,13 +457,13 @@ INITIAL_FETCH        # 仅首次手动触发时设为3
 - [ ] 文章列表增强：显示作者头像、点赞和分享按钮
 - [ ] 文章列表卡片长按交互（操作暂隐藏，后续再开放）
 - [ ] 气泡"原文"功能：选中中文翻译后点"原文"，展示对应 content_plain 英文片段，帮助核对原文；之前已有实现但被移除，待重新加回气泡菜单
-- [ ] AI 内容编辑室：小龙虾每日巡检+主动搜索+分级入库工作流
-- [ ] 抓取时引入 AI 清洗层：识别标题/作者/正文范围，清除广告噪音
+- [x] AI 内容编辑室：每日巡检+主动搜索+分级入库工作流（2026-10 改由 Codex 定时任务执行，见 docs/EDITOR.md）
+- [x] 抓取时引入清洗层：Readability 识别正文范围，清除广告噪音（scripts/lib/extract-article.js）
 - [ ] 抓取保留结构性 HTML 标签，修复排版问题
 - [ ] 管理员隐藏文章+备注原因，作为 AI 编辑室质量校准数据源
 - [ ] 存量博客全量抓取：Sam/Andrej/Naval/Peter 历史文章
-- [ ] /api/ingest 支持传全文直接入库（小龙虾专用）
-- [ ] 小龙虾专属邀请码 openclaw:openclaw，editor 权限
+- [x] /api/ingest 支持传全文直接入库（编辑室专用）
+- [x] 编辑室专属邀请码（user_id 仍为 openclaw，码改为随机串，存 GitHub Secret `EDITOR_INVITE_CODE` 与本机 ~/.readwise-editor/.env）
 - [ ] QA 接入 Brave Search API：用户提问时先搜索相关内容，将搜索结果拼入上下文，使 AI 具备获取最新信息的能力
 - [ ] 安全机制全面梳理：
   - 确认 openclaw 邀请码实际权限范围（auth.js + ingest.js）

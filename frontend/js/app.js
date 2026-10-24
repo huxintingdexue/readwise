@@ -2448,6 +2448,12 @@ async function loadHiddenArticles() {
   }
 }
 
+function formatReviewTier(tier) {
+  if (tier === 'C') return 'C 档：不确认不发布';
+  if (tier === 'B') return 'B 档：4 小时后自动发布';
+  return '待确认：4 小时后自动发布';
+}
+
 async function loadPendingArticles() {
   if (!nodes.adminPendingList) return;
   nodes.adminPendingList.innerHTML = '';
@@ -2465,7 +2471,9 @@ async function loadPendingArticles() {
           <span>${escapeHtml(item.title_zh || item.title_en || '未命名文章')}</span>
           <span>${escapeHtml(formatAdminTime(item.fetched_at || item.published_at))}</span>
         </div>
-        <div>提交者：${escapeHtml(item.submitted_by || '-')}</div>
+        <div>提交者：${escapeHtml(item.submitted_by || '-')}${item.author ? ` · 作者：${escapeHtml(item.author)}` : ''}</div>
+        <div>${escapeHtml(formatReviewTier(item.review_tier))}</div>
+        ${item.review_note ? `<div>原因：${escapeHtml(item.review_note)}</div>` : ''}
         <div class="admin-item-actions">
           <button class="ok" type="button" data-action="publish">发布</button>
           <button class="danger" type="button" data-action="hide">隐藏</button>

@@ -4,6 +4,42 @@
 
 ---
 
+## 2026-10-25 — AI 编辑室重建：分级入库、质量校验、去广告、扩源（v2.17.0）
+
+### 已完成
+- ✅ 新增 `docs/EDITOR.md`（编辑室规则）与 `docs/editor-sources.json`（31 人来源清单），编辑 Agent 改由 Codex 定时任务执行（快讯每天 08:00、人物巡检每天 21:00）
+- ✅ 分级入库：`articles` 新增 `review_tier`（A/B/C）与 `review_note`；`/api/ingest` 全文模式支持 `review_tier`，A 直接发布、B/C 进待确认；C 档不参与 4 小时自动发布
+- ✅ 新增共用质量校验 `api/_utils/content-quality.js`：中英字数比（拒收 <0.28 或 >1.5，0.28–0.30 / 0.9–1.5 降 C）、段落数比、`\uXXXX` 转义、汉字占比、原文字段误填中文、广告/付费墙残留；阈值经线上 202 篇回测
+- ✅ 新增正文提取 `scripts/lib/extract-article.js`（Readability + 去导航/订阅/赞助/相关文章），RSS 抓取与编辑室共用
+- ✅ RSS 源从 3 个扩到 9 人：新增 Simon Willison、Peter Steinberger、Nathan Lambert、Hamel Husain、Marc Andreessen、Reid Hoffman，Karpathy 改用新博客；只收 180 天内文章，入库同步写作者与标签
+- ✅ `fetch.yml` 每日重新启用三个定时任务，防止 60 天无提交被 GitHub 自动停用（2026-06 曾因此停更）
+- ✅ 新增 `scripts/editor/editor.mjs`（拉 Zara follow-builders 素材、去重、提取、自查、提交、飞书提醒）
+- ✅ 新增 `DB Maintenance` 手动工作流：执行 `migrate-review-tier`、`rotate-editor-code`（编辑室邀请码改为随机码，存 GitHub Secret）
+- ✅ 管理台待确认列表显示档位、作者与定档原因；SW 升级到 v7
+
+### 变更文件
+- api/_utils/content-quality.js
+- api/ingest.js
+- api/admin/articles.js
+- scripts/fetch-articles.js
+- scripts/lib/extract-article.js
+- scripts/editor/editor.mjs
+- scripts/publish-pending.js
+- scripts/migrate-review-tier.js
+- scripts/rotate-editor-code.js
+- .github/workflows/fetch.yml
+- .github/workflows/db-maintenance.yml
+- frontend/js/app.js
+- frontend/sw.js
+- package.json / package-lock.json
+- docs/EDITOR.md / docs/editor-sources.json / docs/schema.sql / docs/API.md / docs/CONTEXT.md / docs/CHANGELOG.md
+
+### 发布顺序
+1. 先跑 `DB Maintenance → migrate-review-tier`（只加可空列，兼容旧代码）
+2. 再发布本版本代码
+
+---
+
 ## 2026-04-02 — 人物卡片样式回归修复（v2.16.51）
 
 ### 已完成

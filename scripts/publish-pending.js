@@ -23,6 +23,7 @@ async function main() {
         hidden_reason = NULL,
         hidden_at = NULL
     WHERE publish_status = 'pending_review'
+      AND COALESCE(review_tier, 'B') <> 'C'
       AND fetched_at <= NOW() - interval '4 hours'
     RETURNING id
   `;

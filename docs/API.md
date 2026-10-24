@@ -280,9 +280,16 @@ Query: `?article_id=uuid`（可选）
 }
 ```
 
+可选字段（编辑室）：
+- `review_tier`：`A` 直接发布；`B` 待确认，4 小时无人处理自动发布；`C` 待确认，不确认不发布。传了 `review_tier` 时忽略 `publish_status`
+- `review_note`：定档理由
+- `author_key`：人物库 key（`authors.source_key`），优先于按 `author` 名字匹配
+
+质量校验（规则见 `docs/EDITOR.md` 第 4 节）：硬错误返回 400（`CONTENT_RATIO_INVALID`、`CONTENT_RATIO_TOO_HIGH`、`CONTENT_PARAGRAPHS_MISSING`、`CONTENT_ZH_ESCAPED`、`CONTENT_ZH_NOT_CHINESE`、`CONTENT_EN_IS_CHINESE`，`details` 附 ratio/errors/warnings）；警告会把档位降到 C 并写入 `review_note`。
+
 **Response（成功）**
 ```json
-{ "success": true, "articleId": "uuid", "status": "ready" }
+{ "success": true, "articleId": "uuid", "status": "ready", "publish_status": "pending_review", "review_tier": "C", "review_note": "中英字数比 0.29 偏低", "ratio": 0.29 }
 ```
 
 **Response（已存在）**

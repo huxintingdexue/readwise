@@ -1,0 +1,39 @@
+{
+  "_doc": "AI 编辑室人物来源清单。key 对应 authors.source_key，name 必须与 authors.name 完全一致（入库时据此关联人物页）。channel: rss=GitHub Actions 脚本每日抓取；daily=编辑室每日巡检；weekly=编辑室每周巡检一次；classic=只做存量回填。规则见 docs/EDITOR.md。",
+  "people": [
+    { "key": "sam", "name": "Sam Altman", "channel": "rss", "sources": ["https://blog.samaltman.com/posts.atom"], "also": ["OpenAI 官方博客中本人署名文章", "长访谈/播客"] },
+    { "key": "andrej", "name": "Andrej Karpathy", "channel": "rss", "sources": ["https://karpathy.bearblog.dev/feed/", "https://karpathy.github.io/feed.xml"], "also": ["YouTube 讲座/访谈文字稿"] },
+    { "key": "naval", "name": "Naval Ravikant", "channel": "rss", "sources": ["https://nav.al/feed"], "also": ["播客/访谈"] },
+    { "key": "simon_willison", "name": "Simon Willison", "channel": "rss", "sources": ["https://simonwillison.net/atom/entries/"], "also": [] },
+    { "key": "peter_steinberger", "name": "Peter Steinberger", "channel": "rss", "sources": ["https://steipete.me/rss.xml"], "also": ["OpenClaw 相关长文", "播客/访谈"] },
+    { "key": "nathan_lambert", "name": "Nathan Lambert", "channel": "rss", "sources": ["https://www.interconnects.ai/feed"], "also": [] },
+    { "key": "hamel_husain", "name": "Hamel Husain", "channel": "rss", "sources": ["https://hamel.dev/index.xml"], "also": [] },
+    { "key": "marc_andreessen", "name": "Marc Andreessen", "channel": "rss", "sources": ["https://pmarca.substack.com/feed"], "also": ["a16z 官网文章", "播客/访谈"] },
+    { "key": "reid_hoffman", "name": "Reid Hoffman", "channel": "rss", "sources": ["https://reidhoffman.substack.com/feed"], "also": ["播客 Possible / Masters of Scale"] },
+
+    { "key": "dario", "name": "Dario Amodei", "channel": "daily", "sources": ["https://www.darioamodei.com/", "https://www.anthropic.com/news"], "match": "本人署名文章或本人公开信" },
+    { "key": "alex_albert", "name": "Alex Albert", "channel": "daily", "sources": ["https://claude.com/blog", "https://www.anthropic.com/news"], "match": "本人署名或本人主讲" },
+    { "key": "cat_wu", "name": "Cat Wu", "channel": "daily", "sources": ["https://claude.com/blog", "https://www.anthropic.com/engineering"], "match": "本人署名或本人主讲（Claude Code 相关）" },
+    { "key": "kevin_weil", "name": "Kevin Weil", "channel": "daily", "sources": ["https://openai.com/news/rss.xml"], "match": "本人署名或本人主讲" },
+    { "key": "krrish_dholakia", "name": "Krrish Dholakia", "channel": "daily", "sources": ["https://docs.litellm.ai/blog/rss.xml"], "match": "本人署名的技术长文，跳过版本发布说明" },
+    { "key": "demis", "name": "Demis Hassabis", "channel": "daily", "sources": ["https://deepmind.google/blog/rss.xml"], "match": "本人署名文章；访谈归 B 档" },
+    { "key": "fei_fei_li", "name": "Fei-Fei Li", "channel": "daily", "sources": ["https://www.worldlabs.ai/blog"], "match": "本人署名文章；访谈归 B 档" },
+    { "key": "satya_nadella", "name": "Satya Nadella", "channel": "daily", "sources": ["https://blogs.microsoft.com/feed/"], "match": "仅本人署名（By Satya Nadella）" },
+    { "key": "paul_graham", "name": "Paul Graham", "channel": "daily", "sources": ["https://www.paulgraham.com/articles.html"], "match": "列表顶部的新文章" },
+    { "key": "dan_shipper", "name": "Dan Shipper", "channel": "daily", "sources": ["https://every.to/chain-of-thought"], "match": "本人署名长文；AI & I 播客归 B 档" },
+
+    { "key": "jensen_huang", "name": "Jensen Huang", "channel": "weekly", "sources": [], "match": "长访谈、主题演讲文字稿（GTC/Computex 等）" },
+    { "key": "elon_musk", "name": "Elon Musk", "channel": "weekly", "sources": [], "match": "长访谈文字稿；不收单条推文" },
+    { "key": "ilya", "name": "Ilya Sutskever", "channel": "weekly", "sources": ["https://ssi.inc/"], "match": "访谈、演讲文字稿" },
+    { "key": "geoffrey_hinton", "name": "Geoffrey Hinton", "channel": "weekly", "sources": [], "match": "访谈、演讲文字稿" },
+    { "key": "yann", "name": "Yann LeCun", "channel": "weekly", "sources": [], "match": "访谈、演讲、长文" },
+    { "key": "adam_mosseri", "name": "Adam Mosseri", "channel": "weekly", "sources": [], "match": "产品长帖、访谈文字稿" },
+    { "key": "eric_jing", "name": "Eric Jing", "channel": "weekly", "sources": ["https://www.genspark.ai/"], "match": "访谈、演讲；中文原文无需翻译" },
+    { "key": "daniel_hnyk", "name": "Daniel Hnyk", "channel": "weekly", "sources": [], "match": "本人博客/长文，先确认身份再收" },
+    { "key": "chris_grimes", "name": "Chris Grimes", "channel": "weekly", "sources": [], "match": "FT 报道多在付费墙后，只收能拿到全文的" },
+    { "key": "ray_dalio", "name": "Ray Dalio", "channel": "weekly", "sources": ["https://www.linkedin.com/in/raydalio/"], "match": "本人长文、访谈" },
+
+    { "key": "buffett", "name": "Warren Buffett", "channel": "classic", "sources": ["https://www.berkshirehathaway.com/letters/letters.html"], "match": "股东信、感恩节信" },
+    { "key": "charlie_munger", "name": "Charlie Munger", "channel": "classic", "sources": [], "match": "经典演讲（如《人类误判心理学》）、股东会问答整理" }
+  ]
+}

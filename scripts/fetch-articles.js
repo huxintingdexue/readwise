@@ -2,15 +2,27 @@ import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import { Pool } from 'pg';
 import { SOURCE_AVATAR_URLS } from './avatar-config.js';
+import { extractArticle } from './lib/extract-article.js';
+import { checkTranslatedArticle, formatReviewNote } from '../api/_utils/content-quality.js';
+import { inferArticleTag } from '../api/_utils/article-tag.js';
 
 dotenv.config({ path: '.env.local' });
 
+// 31 人人物库中有稳定 RSS 的个人博客。key 对应 authors.source_key。
+// 没有 RSS 或主要发在公司博客/访谈里的人，由 AI 编辑室巡检（docs/EDITOR.md）。
 const FEEDS = [
-  { key: 'sam', urls: ['https://blog.samaltman.com/posts.atom'] },
-  { key: 'andrej', urls: ['https://karpathy.github.io/feed.xml'] },
-  // Peter feed removed due to persistent 404s.
-  { key: 'naval', urls: ['https://nav.al/feed'] }
+  { key: 'sam', author: 'Sam Altman', urls: ['https://blog.samaltman.com/posts.atom'] },
+  { key: 'andrej', author: 'Andrej Karpathy', urls: ['https://karpathy.bearblog.dev/feed/', 'https://karpathy.github.io/feed.xml'] },
+  { key: 'naval', author: 'Naval Ravikant', urls: ['https://nav.al/feed'] },
+  { key: 'simon_willison', author: 'Simon Willison', urls: ['https://simonwillison.net/atom/entries/'] },
+  { key: 'peter_steinberger', author: 'Peter Steinberger', urls: ['https://steipete.me/rss.xml'] },
+  { key: 'nathan_lambert', author: 'Nathan Lambert', urls: ['https://www.interconnects.ai/feed'] },
+  { key: 'hamel_husain', author: 'Hamel Husain', urls: ['https://hamel.dev/index.xml'] },
+  { key: 'marc_andreessen', author: 'Marc Andreessen', urls: ['https://pmarca.substack.com/feed'] },
+  { key: 'reid_hoffman', author: 'Reid Hoffman', urls: ['https://reidhoffman.substack.com/feed'] }
 ];
+// 只收半年内的文章，与 /api/ingest 的 180 天限制一致；INITIAL_FETCH 回填时不限
+const MAX_ARTICLE_AGE_DAYS = 180;
 const TRANSLATE_PROMPT =
   '你是一个技术文章翻译专家。请将以下英文翻译成中文，要求：保留所有专有名词英文原文（如 Transformer、Attention、LLM），人名不翻译，翻译风格自然流畅，不要逐字直译。以下【上文参考】部分仅供理解上下文，不需要翻译。';
 const SUMMARY_CHUNK_PROMPT =
@@ -235,13 +247,17 @@ function chooseMainHtmlDocument(html) {
 async function fetchAndCleanArticleHtml(url, fallbackHintHtml, articleTitle = '') {
   try {
     const rawHtml = await safeFetch(url, 20000);
-    const main = chooseMainHtmlDocument(rawHtml);
-    const cleanHtml = normalizeHtmlForStorage(main);
-    const extractedTitle = cleanHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '';
+    const extracted = extractArticle(rawHtml, url);
+    const mainHtml = extracted?.contentHtml || chooseMainHtmlDocument(rawHtml);
+    const cleanHtml = normalizeHtmlForStorage(mainHtml);
+    const extractedTitle = cleanHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || extracted?.title || '';
     const titleForDedupe = articleTitle || extractedTitle;
     const contentPlain = htmlToPlain(cleanHtml, titleForDedupe);
     if (!contentPlain) {
       throw new Error('Cleaned content is empty');
+    }
+    if (extracted?.removedNoiseBlocks) {
+      console.log(`[clean] removed ${extracted.removedNoiseBlocks} noise block(s): ${url}`);
     }
     return {
       contentEn: cleanHtml,
@@ -468,9 +484,14 @@ async function insertArticle(pool, article, options = {}) {
       read_status,
       url,
       published_at,
+      author,
+      tag,
+      publish_status,
+      review_tier,
+      review_note,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'unread', $13, $14, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'unread', $13, $14, $15, $16, $17, $18, $19, NULL
     )
     ON CONFLICT (url) DO UPDATE SET
       summary_en = EXCLUDED.summary_en,
@@ -497,9 +518,14 @@ async function insertArticle(pool, article, options = {}) {
       read_status,
       url,
       published_at,
+      author,
+      tag,
+      publish_status,
+      review_tier,
+      review_note,
       user_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'unread', $13, $14, NULL
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'unread', $13, $14, $15, $16, $17, $18, $19, NULL
     )
     ON CONFLICT (url) DO NOTHING
     RETURNING id
@@ -519,7 +545,12 @@ async function insertArticle(pool, article, options = {}) {
     article.translationStatus,
     article.translatedChars,
     article.url,
-    parsePublishedAt(article.publishedAt)
+    parsePublishedAt(article.publishedAt),
+    article.author || null,
+    article.tag || null,
+    article.publishStatus || 'published',
+    article.reviewTier || null,
+    article.reviewNote || null
   ];
 
   const { rows } = await pool.query(query, values);
@@ -548,7 +579,7 @@ async function articleExists(pool, url) {
   return rows.length > 0;
 }
 
-async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
+async function processFeed(pool, deepseekApiKey, feed, fetchCount, options = {}) {
   let xml = '';
   let lastError = null;
   for (const candidateUrl of feed.urls) {
@@ -564,8 +595,15 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
     throw lastError || new Error('No available feed URL');
   }
 
+  const minPublishedAt = Date.now() - MAX_ARTICLE_AGE_DAYS * 24 * 60 * 60 * 1000;
   const parsed = parseFeed(xml)
-    .filter((item) => item.url && item.title);
+    .filter((item) => item.url && item.title)
+    .filter((item) => {
+      if (options.ignoreAge) return true;
+      const time = new Date(item.publishedAt || '').getTime();
+      return Number.isFinite(time) && time >= minPublishedAt;
+    })
+    .sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
 
   console.log(`[feed:${feed.key}] found ${parsed.length} candidates`);
 
@@ -586,6 +624,7 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
     const cleaned = await fetchAndCleanArticleHtml(item.url, item.contentHintHtml, item.title);
     const articleBase = {
       sourceKey: feed.key,
+      author: feed.author,
       titleEn: item.title,
       summaryEn: item.summaryEn,
       authorAvatarUrl: sourceAvatarUrl(feed.key),
@@ -606,10 +645,37 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount) {
     articleBase.contentZh = translated.contentZh;
     articleBase.translatedChars = translated.translatedChars;
 
+    // 质量校验与分级：硬错误不入库（下次运行重试），警告降为 C 档待人工确认
+    if (!cleaned.summaryOnly) {
+      const quality = checkTranslatedArticle({
+        contentZh: articleBase.contentZh,
+        contentEnPlain: articleBase.contentPlain,
+        contentEnHtml: articleBase.contentEn
+      });
+      if (quality.errors.length) {
+        console.error(`[quality-rejected] ${item.url} -> ${quality.errors.map((e) => e.code).join(',')} ratio=${quality.ratio}`);
+        continue;
+      }
+      articleBase.reviewTier = quality.impliedTier;
+      articleBase.reviewNote = formatReviewNote(quality.warnings);
+    } else {
+      articleBase.reviewTier = 'C';
+      articleBase.reviewNote = `正文抓取失败，仅有摘要：${cleaned.error || ''}`.trim();
+    }
+    articleBase.publishStatus = articleBase.reviewTier === 'A' ? 'published' : 'pending_review';
+
+    if (deepseekApiKey && articleBase.summaryZh) {
+      try {
+        articleBase.tag = await inferArticleTag(deepseekApiKey, articleBase.summaryZh);
+      } catch (err) {
+        console.warn(`[tag] failed for ${item.url}: ${err.message}`);
+      }
+    }
+
     const writeResult = await insertArticle(pool, articleBase, { repairSummary });
     if (writeResult.inserted) {
       insertedCount += 1;
-      console.log(`[inserted] ${item.title} (${item.url})`);
+      console.log(`[inserted] tier=${articleBase.reviewTier} ${item.title} (${item.url})`);
     } else if (writeResult.repaired) {
       repairedCount += 1;
       console.log(`[repaired] summary fields updated for existing url: ${item.url}`);
@@ -645,7 +711,9 @@ async function main() {
     let totalRepaired = 0;
     for (const feed of FEEDS) {
       try {
-        const { insertedCount, repairedCount } = await processFeed(pool, deepseekApiKey, feed, fetchCount);
+        const { insertedCount, repairedCount } = await processFeed(pool, deepseekApiKey, feed, fetchCount, {
+          ignoreAge: Number.isFinite(initialFetch) && initialFetch > 0
+        });
         totalInserted += insertedCount;
         totalRepaired += repairedCount;
       } catch (err) {

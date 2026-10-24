@@ -58,7 +58,7 @@ async function listHiddenArticles(res) {
 async function listPendingArticles(res) {
   const { rows } = await getPool().query(
     `
-      SELECT id, title_en, title_zh, submitted_by, published_at, fetched_at
+      SELECT id, title_en, title_zh, author, submitted_by, published_at, fetched_at, review_tier, review_note
       FROM articles
       WHERE COALESCE(publish_status, 'published') = 'pending_review'
       ORDER BY fetched_at DESC NULLS LAST, published_at DESC NULLS LAST

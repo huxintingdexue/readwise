@@ -10,6 +10,10 @@ on:
         required: false
         default: ''
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
@@ -34,3 +38,14 @@ jobs:
           NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
           INITIAL_FETCH: ${{ github.event.inputs.initial_fetch || '' }}
         run: node scripts/fetch-articles.js
+
+      # GitHub 会在仓库 60 天无提交后自动停用定时任务（2026-06 曾因此停更）。
+      # 每天顺手重新启用一次，保持三个定时任务常开。
+      - name: Keep scheduled workflows enabled
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in fetch.yml ingest-translate.yml publish-pending.yml; do
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/$wf/enable" && echo "enabled $wf" || echo "enable failed: $wf"
+          done
