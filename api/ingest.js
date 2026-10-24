@@ -738,7 +738,7 @@ async function handleIngestFullText(req, res, userId) {
   });
   if (quality.errors.length > 0) {
     const [first] = quality.errors;
-    badRequest(res, first.code, `${first.message}，请检查后重新提交。`, {
+    badRequest(res, first.code, `${first.message.replace(/。$/, '')}，请检查后重新提交。`, {
       details: {
         ratio: quality.ratio,
         errors: quality.errors,
