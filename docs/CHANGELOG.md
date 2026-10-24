@@ -11,7 +11,7 @@
 - ✅ 分级入库：`articles` 新增 `review_tier`（A/B/C）与 `review_note`；`/api/ingest` 全文模式支持 `review_tier`，A 直接发布、B/C 进待确认；C 档不参与 4 小时自动发布
 - ✅ 新增共用质量校验 `api/_utils/content-quality.js`：中英字数比（拒收 <0.28 或 >1.5，0.28–0.30 / 0.9–1.5 降 C）、段落数比、`\uXXXX` 转义、汉字占比、原文字段误填中文、广告/付费墙残留；阈值经线上 202 篇回测
 - ✅ 新增正文提取 `scripts/lib/extract-article.js`（Readability + 去导航/订阅/赞助/相关文章），RSS 抓取与编辑室共用
-- ✅ RSS 源从 3 个扩到 9 人：新增 Simon Willison、Peter Steinberger、Nathan Lambert、Hamel Husain、Marc Andreessen、Reid Hoffman，Karpathy 改用新博客；只收 180 天内文章，入库同步写作者与标签
+- ✅ RSS 源从 3 个扩到 7 人：新增 Simon Willison、Peter Steinberger、Nathan Lambert、Hamel Husain，Karpathy 改用新博客（Marc Andreessen、Reid Hoffman 的 Substack 屏蔽 GitHub IP，改由编辑室巡检）；正文过短、标题未翻译降 C；只收 180 天内文章，入库同步写作者与标签
 - ✅ `fetch.yml` 每日重新启用三个定时任务，防止 60 天无提交被 GitHub 自动停用（2026-06 曾因此停更）
 - ✅ 新增 `scripts/editor/editor.mjs`（拉 Zara follow-builders 素材、去重、提取、自查、提交、飞书提醒）
 - ✅ 新增 `DB Maintenance` 手动工作流：执行 `migrate-review-tier`、`rotate-editor-code`（编辑室邀请码改为随机码，存 GitHub Secret）

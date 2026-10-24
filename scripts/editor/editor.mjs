@@ -242,7 +242,8 @@ function localCheck(payload) {
   const quality = checkTranslatedArticle({
     contentZh: payload.content_zh,
     contentEnPlain: String(payload.content_en || '').replace(/<[^>]+>/g, ' ').replace(/[ \t]+/g, ' '),
-    contentEnHtml: payload.content_en
+    contentEnHtml: payload.content_en,
+    titleZh: payload.title_zh
   });
   const missing = ['title_zh', 'summary_zh', 'content_zh', 'author', 'source_url', 'published_at', 'review_tier']
     .filter((key) => !String(payload[key] || '').trim());

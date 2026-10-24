@@ -18,6 +18,8 @@ export const PARAGRAPH_WARN_BELOW = 0.75;
 const MIN_EN_PARAGRAPHS = 8;
 const CODE_HEAVY_SHARE = 0.3;
 const MIN_EN_LENGTH_FOR_RATIO = 500;
+// 英文正文太短，多半是播客节目页/摘要页，不是可读长文
+const MIN_EN_LENGTH_FOR_ARTICLE = 1500;
 
 const NOISE_PATTERNS = [
   /subscribe (now|to|for)/i,
@@ -108,7 +110,7 @@ export function detectPaywall(text) {
 
 // 返回 { errors, warnings, ratio, impliedTier }
 // errors：必须拒收；warnings：可入库但需降到 C 档人工确认
-export function checkTranslatedArticle({ contentZh, contentEnPlain, contentEnHtml }) {
+export function checkTranslatedArticle({ contentZh, contentEnPlain, contentEnHtml, titleZh }) {
   const errors = [];
   const warnings = [];
   const zh = String(contentZh || '');
@@ -168,6 +170,14 @@ export function checkTranslatedArticle({ contentZh, contentEnPlain, contentEnHtm
     } else if (paragraphRatio < PARAGRAPH_WARN_BELOW) {
       warnings.push({ code: 'PARAGRAPHS_LOW', message: `${label}，可能漏翻部分段落` });
     }
+  }
+
+  if (enLength > 0 && enLength < MIN_EN_LENGTH_FOR_ARTICLE) {
+    warnings.push({ code: 'CONTENT_SHORT', message: `英文正文仅 ${enLength} 字符，疑似节目页或摘要页` });
+  }
+
+  if (titleZh !== undefined && enLength > 0 && cjkRatio(titleZh) === 0) {
+    warnings.push({ code: 'TITLE_UNTRANSLATED', message: '中文标题未翻译' });
   }
 
   if (detectPaywall(enPlain) || detectPaywall(zh)) {

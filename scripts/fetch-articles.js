@@ -17,9 +17,8 @@ const FEEDS = [
   { key: 'simon_willison', author: 'Simon Willison', urls: ['https://simonwillison.net/atom/entries/'] },
   { key: 'peter_steinberger', author: 'Peter Steinberger', urls: ['https://steipete.me/rss.xml'] },
   { key: 'nathan_lambert', author: 'Nathan Lambert', urls: ['https://www.interconnects.ai/feed'] },
-  { key: 'hamel_husain', author: 'Hamel Husain', urls: ['https://hamel.dev/index.xml'] },
-  { key: 'marc_andreessen', author: 'Marc Andreessen', urls: ['https://pmarca.substack.com/feed'] },
-  { key: 'reid_hoffman', author: 'Reid Hoffman', urls: ['https://reidhoffman.substack.com/feed'] }
+  { key: 'hamel_husain', author: 'Hamel Husain', urls: ['https://hamel.dev/index.xml'] }
+  // Marc Andreessen / Reid Hoffman 的 Substack 对 GitHub Actions 出口 IP 返回 403，改由编辑室本机巡检
 ];
 // 只收半年内的文章，与 /api/ingest 的 180 天限制一致；INITIAL_FETCH 回填时不限
 const MAX_ARTICLE_AGE_DAYS = 180;
@@ -650,7 +649,8 @@ async function processFeed(pool, deepseekApiKey, feed, fetchCount, options = {})
       const quality = checkTranslatedArticle({
         contentZh: articleBase.contentZh,
         contentEnPlain: articleBase.contentPlain,
-        contentEnHtml: articleBase.contentEn
+        contentEnHtml: articleBase.contentEn,
+        titleZh: articleBase.titleZh
       });
       if (quality.errors.length) {
         console.error(`[quality-rejected] ${item.url} -> ${quality.errors.map((e) => e.code).join(',')} ratio=${quality.ratio}`);

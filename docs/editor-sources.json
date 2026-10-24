@@ -8,8 +8,6 @@
     { "key": "peter_steinberger", "name": "Peter Steinberger", "channel": "rss", "sources": ["https://steipete.me/rss.xml"], "also": ["OpenClaw 相关长文", "播客/访谈"] },
     { "key": "nathan_lambert", "name": "Nathan Lambert", "channel": "rss", "sources": ["https://www.interconnects.ai/feed"], "also": [] },
     { "key": "hamel_husain", "name": "Hamel Husain", "channel": "rss", "sources": ["https://hamel.dev/index.xml"], "also": [] },
-    { "key": "marc_andreessen", "name": "Marc Andreessen", "channel": "rss", "sources": ["https://pmarca.substack.com/feed"], "also": ["a16z 官网文章", "播客/访谈"] },
-    { "key": "reid_hoffman", "name": "Reid Hoffman", "channel": "rss", "sources": ["https://reidhoffman.substack.com/feed"], "also": ["播客 Possible / Masters of Scale"] },
 
     { "key": "dario", "name": "Dario Amodei", "channel": "daily", "sources": ["https://www.darioamodei.com/", "https://www.anthropic.com/news"], "match": "本人署名文章或本人公开信" },
     { "key": "alex_albert", "name": "Alex Albert", "channel": "daily", "sources": ["https://claude.com/blog", "https://www.anthropic.com/news"], "match": "本人署名或本人主讲" },
@@ -20,6 +18,8 @@
     { "key": "fei_fei_li", "name": "Fei-Fei Li", "channel": "daily", "sources": ["https://www.worldlabs.ai/blog"], "match": "本人署名文章；访谈归 B 档" },
     { "key": "satya_nadella", "name": "Satya Nadella", "channel": "daily", "sources": ["https://blogs.microsoft.com/feed/"], "match": "仅本人署名（By Satya Nadella）" },
     { "key": "paul_graham", "name": "Paul Graham", "channel": "daily", "sources": ["https://www.paulgraham.com/articles.html"], "match": "列表顶部的新文章" },
+    { "key": "marc_andreessen", "name": "Marc Andreessen", "channel": "daily", "sources": ["https://pmarca.substack.com/feed", "https://a16z.com/"], "match": "本人署名长文；播客/访谈归 B 档（Substack 屏蔽 GitHub IP，只能本机抓）" },
+    { "key": "reid_hoffman", "name": "Reid Hoffman", "channel": "daily", "sources": ["https://reidhoffman.substack.com/feed"], "match": "本人署名长文；播客 Possible / Masters of Scale 归 B 档（同上）" },
     { "key": "dan_shipper", "name": "Dan Shipper", "channel": "daily", "sources": ["https://every.to/chain-of-thought"], "match": "本人署名长文；AI & I 播客归 B 档" },
 
     { "key": "jensen_huang", "name": "Jensen Huang", "channel": "weekly", "sources": [], "match": "长访谈、主题演讲文字稿（GTC/Computex 等）" },

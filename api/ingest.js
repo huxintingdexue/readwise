@@ -734,7 +734,8 @@ async function handleIngestFullText(req, res, userId) {
   const quality = checkTranslatedArticle({
     contentZh,
     contentEnPlain: sanitizeToPlain(contentEnRaw || ''),
-    contentEnHtml: contentEnRaw
+    contentEnHtml: contentEnRaw,
+    titleZh
   });
   if (quality.errors.length > 0) {
     const [first] = quality.errors;
