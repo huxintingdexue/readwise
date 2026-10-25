@@ -34,6 +34,8 @@ const LARK_CLI = path.join(os.homedir(), '.local', 'bin', 'lark-cli');
 const ZARA_BASE = 'https://raw.githubusercontent.com/zarazhangrui/follow-builders/main';
 const ZARA_FEEDS = ['feed-x.json', 'feed-podcasts.json', 'feed-blogs.json'];
 const ZARA_STALE_HOURS = 36;
+// 只收最近两周发布的内容（主编 2026-10-25 要求）
+const MAX_AGE_DAYS = 14;
 
 function loadEnv() {
   const envPath = path.join(HOME_DIR, '.env');
@@ -274,6 +276,11 @@ function cmdCheck(file) {
 async function cmdSubmit(file, flags) {
   const payload = readPayload(file);
   const local = localCheck(payload);
+  const ageDays = (Date.now() - new Date(payload.published_at).getTime()) / 86400000;
+  if (!(ageDays <= MAX_AGE_DAYS)) {
+    print({ ok: false, stage: 'local-check', errors: [{ code: 'TOO_OLD', message: `发布于 ${payload.published_at}，超过 ${MAX_AGE_DAYS} 天，不收` }] });
+    process.exit(2);
+  }
   if (local.missing.length || local.quality.errors.length) {
     print({ ok: false, stage: 'local-check', missing: local.missing, errors: local.quality.errors });
     process.exit(2);

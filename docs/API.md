@@ -280,6 +280,8 @@ Query: `?article_id=uuid`（可选）
 }
 ```
 
+时效：`published_at` 早于 14 天前返回 `422 published_at_too_old`（仅 admin 可绕过）。
+
 可选字段（编辑室）：
 - `review_tier`：`A` 直接发布；`B` 待确认，4 小时无人处理自动发布；`C` 待确认，不确认不发布。传了 `review_tier` 时忽略 `publish_status`
 - `review_note`：定档理由

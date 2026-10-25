@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-10-25 — 只收最近两周的内容（v2.17.2）
+
+### 已完成
+- ✅ 主编要求只要最近两周的内容：`/api/ingest` 时效限制 180 → 14 天，编辑室账号不再能用 `X-Allow-Old` 绕过；RSS 抓取只收 14 天内；`editor.mjs submit` 本地拦截超期内容
+- ✅ 停用存量回填任务（launchd 已卸载），`docs/EDITOR.md` 第 9 节改为「时效：只要最近两周」，不补历史快讯
+- ✅ 新增 `scripts/hide-old-2026-10.js`：隐藏编辑室重建后入库、发布早于 14 天前的文章（可在管理台恢复）
+
+### 变更文件
+- api/ingest.js / scripts/fetch-articles.js / scripts/editor/editor.mjs
+- scripts/hide-old-2026-10.js / .github/workflows/db-maintenance.yml
+- docs/EDITOR.md / docs/API.md / docs/CHANGELOG.md / docs/CONTEXT.md
+
+---
+
 ## 2026-10-25 — 编辑室改为系统定时调 Codex 命令行 + 存量回填 + 数据修复（v2.17.1）
 
 ### 已完成

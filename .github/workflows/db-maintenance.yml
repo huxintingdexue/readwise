@@ -11,6 +11,7 @@ on:
           - migrate-review-tier
           - rotate-editor-code
           - repair-content-2026-10
+          - hide-old-2026-10
       dry_run:
         description: 'Preview only (set to 0 to write)'
         required: false

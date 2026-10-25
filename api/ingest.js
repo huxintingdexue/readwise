@@ -15,7 +15,8 @@ const TRANSLATE_PROMPT =
   '你是一个技术文章翻译专家。请将以下英文翻译成中文，要求：保留所有专有名词英文原文（如 Transformer、Attention、LLM），人名不翻译，翻译风格自然流畅，不要逐字直译。以下【上文参考】部分仅供理解上下文，不需要翻译。';
 
 const TRANSLATE_SEGMENT_CHARS = 1500;
-const MAX_INGEST_AGE_DAYS = 180;
+// 主编要求只收最近两周的内容（2026-10-25）
+const MAX_INGEST_AGE_DAYS = 14;
 
 let pool;
 let cachedAuthorsTable = null;
@@ -273,7 +274,8 @@ function canBypassOldPublishedAt(req, userId) {
   if (isAdmin(userId)) return true;
   const allowOldHeader = String(req.headers['x-allow-old'] || '').trim();
   if (allowOldHeader !== '1') return false;
-  return userId === 'openclaw' || userId === 'user_claw';
+  // 编辑室账号不再允许绕过时效限制
+  return userId === 'user_claw';
 }
 
 function isPublishedAtTooOld(publishedAtIso) {

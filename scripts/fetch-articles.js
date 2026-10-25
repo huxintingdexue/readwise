@@ -20,8 +20,8 @@ const FEEDS = [
   { key: 'hamel_husain', author: 'Hamel Husain', urls: ['https://hamel.dev/index.xml'] }
   // Marc Andreessen / Reid Hoffman 的 Substack 对 GitHub Actions 出口 IP 返回 403，改由编辑室本机巡检
 ];
-// 只收半年内的文章，与 /api/ingest 的 180 天限制一致；INITIAL_FETCH 回填时不限
-const MAX_ARTICLE_AGE_DAYS = 180;
+// 只收最近两周的文章，与 /api/ingest 的 14 天限制一致
+const MAX_ARTICLE_AGE_DAYS = 14;
 const TRANSLATE_PROMPT =
   '你是一个技术文章翻译专家。请将以下英文翻译成中文，要求：保留所有专有名词英文原文（如 Transformer、Attention、LLM），人名不翻译，翻译风格自然流畅，不要逐字直译。以下【上文参考】部分仅供理解上下文，不需要翻译。';
 const SUMMARY_CHUNK_PROMPT =
@@ -711,9 +711,7 @@ async function main() {
     let totalRepaired = 0;
     for (const feed of FEEDS) {
       try {
-        const { insertedCount, repairedCount } = await processFeed(pool, deepseekApiKey, feed, fetchCount, {
-          ignoreAge: Number.isFinite(initialFetch) && initialFetch > 0
-        });
+        const { insertedCount, repairedCount } = await processFeed(pool, deepseekApiKey, feed, fetchCount);
         totalInserted += insertedCount;
         totalRepaired += repairedCount;
       } catch (err) {
