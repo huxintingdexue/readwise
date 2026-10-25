@@ -10,6 +10,11 @@ on:
         options:
           - migrate-review-tier
           - rotate-editor-code
+          - repair-content-2026-10
+      dry_run:
+        description: 'Preview only (set to 0 to write)'
+        required: false
+        default: '1'
 
 jobs:
   run:
@@ -33,4 +38,5 @@ jobs:
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
           EDITOR_INVITE_CODE: ${{ secrets.EDITOR_INVITE_CODE }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: node scripts/${{ inputs.task }}.js
