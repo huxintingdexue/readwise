@@ -33,6 +33,8 @@ const NOISE_PATTERNS = [
   /leave a comment/i,
   /upgrade to paid/i,
   /^no posts$/i,
+  /register (to|for) (our|the) webinar/i,
+  /interested to learn more\?/i,
   /for paid subscribers/i,
   /订阅(本|我的|我们的)?(通讯|频道|专栏|newsletter)/i,
   /感谢阅读/,
