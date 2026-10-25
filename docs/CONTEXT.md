@@ -7,6 +7,7 @@
 
 ## 当前状态（每次任务后必须更新）
 
+- 最近变更：编辑室定时任务改为 launchd 调 Codex 命令行（`~/.readwise-editor/run.sh`，提示词仍取自 `~/.codex/automations/readwise-*/automation.toml`）；新增存量回填分批任务；修复 10 篇坏数据与 8 位人物简介（v2.17.1）✅
 - 最近变更：AI 编辑室重建（v2.17.0）：编辑 Agent 改为 Codex 定时任务（快讯 08:00 / 人物巡检 21:00），规则见 `docs/EDITOR.md`；A/B/C 分级入库（`review_tier`），C 档不自动发布；共用质量校验与去广告；RSS 扩到 9 人；定时任务保活 ✅
 - 最近变更：修复人物列表“卡片样式丢失”回归（恢复 `people-card-main` 边框/阴影/内边距，列表仍与文章页同宽）✅
 - 最近变更：人物列表改为复用 `articles-list` 容器几何（保证左右边距一致），同时移除 `people-card-main` 上的 `article-card` 类，避免交互逻辑耦合 ✅
@@ -290,7 +291,7 @@ ReadWise 是一个个人沉浸式阅读器，聚合 AI 领域大佬博客（Sam 
 ```
 GitHub Actions（每天北京时间 22:00）
     ↓ 抓取RSS + 爬全文 + 生成content_plain + 全量分段翻译
-AI 编辑室（Codex 定时任务，规则 docs/EDITOR.md；2026-10 起替代小龙虾 OpenClaw）
+AI 编辑室（launchd 调 Codex 命令行，规则 docs/EDITOR.md；2026-10 起替代小龙虾 OpenClaw）
     ↓ 每日 08:00 快讯（素材：zarazhangrui/follow-builders）/ 每日 21:00 人物巡检
     ↓ extract 去广告 + 全文翻译 + 质量自查
     ↓ POST /api/ingest（全文 + review_tier：A 发布 / B 4 小时自动发布 / C 不确认不发布）

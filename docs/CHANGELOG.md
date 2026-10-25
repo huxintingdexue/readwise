@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-10-25 — 编辑室改为系统定时调 Codex 命令行 + 存量回填 + 数据修复（v2.17.1）
+
+### 已完成
+- ✅ Codex 应用内定时任务需要应用常开才触发（10-25 08:00 未运行），改为 launchd 调 Codex 命令行：快讯 08:00、人物巡检 21:00、存量回填每天 5 个时段分批（补完自动停）；应用内同名任务已暂停，避免重复
+- ✅ `editor.mjs` 新增 `backfill-next`、`mark-backfilled`；`docs/EDITOR.md` 第 9 节改为自动分批回填
+- ✅ 一次性修复（`scripts/repair-content-2026-10.js`，经 DB Maintenance 执行）：5 篇 `\uXXXX` 转义中文还原为汉字；4 篇英文原文字段误填中文的重新抓取英文；隐藏误发的 Naval 播客节目页；修正 8 位人物简介（Cat Wu、杨立昆、Peter Steinberger、Kevin Weil、巴菲特、Nathan Lambert、李飞飞、Karpathy）
+- ⚠️ 仍待重新翻译：《一份假错误报告就能劫持你的 AI 编程智能体》（原文开头带推广，比例不过线）、《寻找最简单可行的方案》（比例 0.276，疑似漏翻）
+
+### 变更文件
+- scripts/editor/editor.mjs
+- scripts/repair-content-2026-10.js
+- .github/workflows/db-maintenance.yml
+- docs/EDITOR.md / docs/CONTEXT.md / docs/CHANGELOG.md
+
+---
+
 ## 2026-10-25 — AI 编辑室重建：分级入库、质量校验、去广告、扩源（v2.17.0）
 
 ### 已完成

@@ -9,6 +9,8 @@
 //   node scripts/editor/editor.mjs notify <text>            给主编发飞书私信
 //   node scripts/editor/editor.mjs state                    查看巡检状态
 //   node scripts/editor/editor.mjs mark-checked <key...>    记录人物已巡检
+//   node scripts/editor/editor.mjs backfill-next [n]        列出下一批待回填的人（默认 3 人）
+//   node scripts/editor/editor.mjs mark-backfilled <key...> 记录人物已回填
 //
 // 本机配置 ~/.readwise-editor/.env：READWISE_EDITOR_CODE、READWISE_API_BASE、FEISHU_NOTIFY_OPEN_ID
 
@@ -314,6 +316,42 @@ async function cmdSubmit(file, flags) {
   if (!ok && status !== 200) process.exit(3);
 }
 
+const BACKFILL_TARGET = 5;
+
+async function authorCounts() {
+  const { apiBase } = loadEnv();
+  const guest = await (await fetch(`${apiBase}/api/user/guest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}'
+  })).json();
+  const uid = guest?.data?.uid;
+  const res = await fetch(`${apiBase}/api/authors`, { headers: { 'X-Uid': uid } });
+  const body = await res.json();
+  const list = Array.isArray(body) ? body : body.authors || body.data || [];
+  return Object.fromEntries(list.map((row) => [row.source_key, Number(row.article_count || 0)]));
+}
+
+async function cmdBackfillNext(limit = 3) {
+  const sources = JSON.parse(fs.readFileSync(new URL('../../docs/editor-sources.json', import.meta.url), 'utf8'));
+  const state = readState();
+  const done = state.backfilled || {};
+  const counts = await authorCounts();
+  const pending = sources.people
+    .filter((person) => !done[person.key] && (counts[person.key] || 0) < BACKFILL_TARGET)
+    .map((person) => ({ ...person, articleCount: counts[person.key] || 0, need: Math.max(3, BACKFILL_TARGET - (counts[person.key] || 0)) }));
+  print({ pendingTotal: pending.length, batch: pending.slice(0, Number(limit) || 3) });
+}
+
+function cmdMarkBackfilled(keys) {
+  const state = readState();
+  state.backfilled = state.backfilled || {};
+  const now = new Date().toISOString();
+  for (const key of keys) state.backfilled[key] = now;
+  writeState(state);
+  print({ updated: keys, at: now });
+}
+
 function cmdState() {
   print(readState());
 }
@@ -352,8 +390,12 @@ async function main() {
       return cmdState();
     case 'mark-checked':
       return cmdMarkChecked(args);
+    case 'backfill-next':
+      return cmdBackfillNext(args[0]);
+    case 'mark-backfilled':
+      return cmdMarkBackfilled(args);
     default:
-      print(fs.readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 14).join('\n'));
+      print(fs.readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 16).join('\n'));
   }
 }
 
